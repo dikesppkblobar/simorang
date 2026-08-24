@@ -1,0 +1,53 @@
+<svg width="240" height="300" viewBox="0 0 240 300" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Outer Shield - Gold Border -->
+  <path d="M 15 15 L 225 15 L 225 210 C 225 260 120 288 120 288 C 120 288 15 260 15 210 Z" fill="#FFE800" stroke="#111111" stroke-width="5" stroke-linejoin="round" />
+  
+  <!-- Inner Shield Outline -->
+  <path d="M 27 27 L 213 27 L 213 205 C 213 250 120 275 120 275 C 120 275 27 250 27 205 Z" fill="#16BAE7" stroke="#111111" stroke-width="3" stroke-linejoin="round" />
+  
+  <!-- Dark Blue Left Split -->
+  <path d="M 27 27 L 120 27 L 120 275 C 120 275 27 250 27 205 Z" fill="#0B4F9B" />
+  
+  <!-- Top Banner Red -->
+  <rect x="27" y="27" width="186" height="30" fill="#FF0000" stroke="#111111" stroke-width="2.5" />
+  <text x="120" y="48" fill="#FFFFFF" font-size="16" font-weight="900" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="1">LOMBOK BARAT</text>
+
+  <!-- Top Yellow Star -->
+  <polygon points="120,64 123.5,74 134,74 125.5,80 128.5,90 120,84 111.5,90 114.5,80 106,74 116.5,74" fill="#FFE800" stroke="#111111" stroke-width="1.5" />
+
+  <!-- Main Ring Ornament Outer & Inner -->
+  <circle cx="120" cy="150" r="42" fill="none" stroke="#FFE800" stroke-width="12" />
+  <circle cx="120" cy="150" r="48" fill="none" stroke="#111111" stroke-width="2" />
+  <circle cx="120" cy="150" r="36" fill="none" stroke="#111111" stroke-width="2" />
+
+  <!-- 4 Prongs / Crowns around Ring -->
+  <!-- Top Prong -->
+  <path d="M 120 92 C 114 96 110 102 110 108 L 130 108 C 130 102 126 96 120 92 Z" fill="#FFE800" stroke="#111111" stroke-width="1.8" />
+  <path d="M 120 90 L 115 102 L 125 102 Z" fill="#FFE800" stroke="#111111" stroke-width="1.5" />
+
+  <!-- Bottom Prong -->
+  <path d="M 120 208 C 114 204 110 198 110 192 L 130 192 C 130 198 126 204 120 208 Z" fill="#FFE800" stroke="#111111" stroke-width="1.8" />
+
+  <!-- Left Prong -->
+  <path d="M 62 150 C 66 144 72 140 78 140 L 78 160 C 72 160 66 156 62 150 Z" fill="#FFE800" stroke="#111111" stroke-width="1.8" />
+
+  <!-- Right Prong -->
+  <path d="M 178 150 C 174 144 168 140 162 140 L 162 160 C 168 160 174 156 178 150 Z" fill="#FFE800" stroke="#111111" stroke-width="1.8" />
+
+  <!-- Inner Center Dome Frame -->
+  <path d="M 92 160 C 92 126 148 126 148 160 Z" fill="#0B4F9B" stroke="#FFE800" stroke-width="3" />
+  <path d="M 92 160 C 92 126 148 126 148 160 Z" fill="none" stroke="#111111" stroke-width="1.5" />
+
+  <!-- White Ocean Wave Lines -->
+  <path d="M 96 154 Q 102 150 108 154 T 120 154 T 132 154 T 144 154" fill="none" stroke="#FFFFFF" stroke-width="2.5" />
+  <path d="M 96 160 Q 102 156 108 160 T 120 160 T 132 160 T 144 160" fill="none" stroke="#FFFFFF" stroke-width="2.5" />
+
+  <!-- Yellow Lotus Flower -->
+  <path d="M 120 130 C 112 140 110 150 120 150 C 130 150 128 140 120 130 Z" fill="#FFE800" stroke="#111111" stroke-width="1.5" />
+  <path d="M 120 150 C 108 142 100 136 108 132 C 116 128 118 140 120 150 Z" fill="#FFE800" stroke="#111111" stroke-width="1.2" />
+  <path d="M 120 150 C 132 142 140 136 132 132 C 124 128 122 140 120 150 Z" fill="#FFE800" stroke="#111111" stroke-width="1.2" />
+
+  <!-- Bottom Ribbon Scroll - White -->
+  <path d="M 35 220 L 55 212 L 185 212 L 205 220 L 220 240 L 198 234 L 120 252 L 42 234 L 20 240 Z" fill="#FFFFFF" stroke="#111111" stroke-width="2.5" stroke-linejoin="round" />
+  <text x="120" y="235" fill="#111111" font-size="12" font-weight="900" font-family="Arial, sans-serif" text-anchor="middle" letter-spacing="0.5">PATUT PATUH PATJU</text>
+</svg>

@@ -1,0 +1,6 @@
+{
+  "name": "SIMORANG DINKES-PPKB",
+  "description": "SIMORANG DINKES-PPKB - Sistem Monitoring Ruang Kepegawaian Dinas Kesehatan, Pengendalian Penduduk dan Keluarga Berencana Kab. Lombok Barat",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

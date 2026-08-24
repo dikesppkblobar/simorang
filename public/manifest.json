@@ -1,0 +1,19 @@
+{
+  "short_name": "SIMORANG",
+  "name": "SIMORANG DINKES-PPKB Kab. Lombok Barat",
+  "description": "Sistem Monitoring Ruang Kepegawaian Dinas Kesehatan, Pengendalian Penduduk dan Keluarga Berencana Kab. Lombok Barat",
+  "icons": [
+    {
+      "src": "/logo-lombok-barat.jpeg",
+      "type": "image/jpeg",
+      "sizes": "192x192 512x512",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#0F172A",
+  "theme_color": "#0B4F9B",
+  "display": "standalone",
+  "orientation": "any",
+  "scope": "/"
+}
