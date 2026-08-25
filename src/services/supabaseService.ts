@@ -101,8 +101,6 @@ export const supabaseService = {
       if (pegawai.profesi_sdmk) fallbackPayload.profesi_sdmk = pegawai.profesi_sdmk;
       if (pegawai.golongan_pangkat) fallbackPayload.golongan_pangkat = pegawai.golongan_pangkat;
       if (pegawai.nama_pangkat) fallbackPayload.nama_pangkat = pegawai.nama_pangkat;
-      if (pegawai.no_str) fallbackPayload.no_str = pegawai.no_str;
-      if (pegawai.no_sip) fallbackPayload.no_sip = pegawai.no_sip;
 
       const { error: fbErr } = await supabase.from('pegawai').upsert(fallbackPayload, { onConflict: 'nip' });
       if (fbErr) {
