@@ -13,22 +13,10 @@ export const LoginBackground: React.FC = () => {
 
       {/* 2. Canva Giri Menang Lombok Barat Embedded Background (if available) */}
       <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center opacity-85">
-        <iframe
-          loading="lazy"
-          title="Background Desain Giri Menang Lombok Barat"
-          className="w-full h-full border-none pointer-events-none object-cover"
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            width: '100%',
-            height: '100%',
-            border: 'none',
-            objectFit: 'cover',
-          }}
-          src="public/backkgroun login.png"
-          allowFullScreen
-          allow="fullscreen"
+        <img
+          src="/backkgroun login.png"
+          alt="Background Login SIMORANG"
+          className="w-full h-full object-cover"
         />
       </div>
 
