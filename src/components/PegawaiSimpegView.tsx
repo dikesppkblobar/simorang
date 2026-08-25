@@ -226,7 +226,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
     unit_kerja: synchronizedUnitOptions[0] || 'Dinas Kesehatan Kab. Lombok Barat',
     status_ukom: false,
     tmt_cpns: '',
-    pendidikan_terakhir: 'S1 Keperawatan',
+    pendidikan_terakhir: '',
     status_izin_belajar: false,
     no_whatsapp: '',
     sisa_cuti_tahunan: 12,
@@ -762,7 +762,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                 unit_kerja: defaultUnit,
                 status_ukom: false,
                 tmt_cpns: '',
-                pendidikan_terakhir: 'S1 Keperawatan',
+                pendidikan_terakhir: '',
                 nama_universitas_pt: '',
                 program_studi: '',
                 status_izin_belajar: false,
@@ -2514,65 +2514,103 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                   </div>
                 ) : formData.jenis_jabatan === 'Fungsional' ? (
                   /* JENIS JABATAN = FUNGSIONAL */
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">Jenjang Jabatan Fungsional:*</label>
-                      <select
-                        value={formData.jenjang_jabatan || 'Ahli Utama'}
-                        onChange={(e) => setFormData({ ...formData, jenjang_jabatan: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                      >
-                        <option value="Ahli Utama">Ahli Utama</option>
-                        <option value="Ahli Madya">Ahli Madya</option>
-                        <option value="Ahli Muda">Ahli Muda</option>
-                        <option value="Ahli Pertama">Ahli Pertama</option>
-                        <option value="Penyelia">Penyelia</option>
-                        <option value="Mahir">Mahir</option>
-                        <option value="Terampil">Terampil</option>
-                        <option value="Pemula">Pemula</option>
-                      </select>
+                  <div className="space-y-3">
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="block font-bold text-slate-800 mb-1">Jenjang Jabatan Fungsional:*</label>
+                        <select
+                          value={formData.jenjang_jabatan || 'Ahli Pertama'}
+                          onChange={(e) => setFormData({ ...formData, jenjang_jabatan: e.target.value })}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
+                        >
+                          <option value="Ahli Pertama">Ahli Pertama</option>
+                          <option value="Ahli Muda">Ahli Muda</option>
+                          <option value="Ahli Madya">Ahli Madya</option>
+                          <option value="Ahli Utama">Ahli Utama</option>
+                          <option value="Penyelia">Penyelia</option>
+                          <option value="Mahir">Mahir</option>
+                          <option value="Terampil">Terampil</option>
+                          <option value="Pemula">Pemula</option>
+                        </select>
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-800 mb-1">
+                          AK Konversi SKP (Tahunan):
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={
+                            Number.isNaN(Number(formData.ak_konversi_skp))
+                              ? 0
+                              : (formData.ak_konversi_skp ?? 12.5)
+                          }
+                          onChange={(e) => {
+                            const parsed = parseFloat(e.target.value);
+                            setFormData({ ...formData, ak_konversi_skp: Number.isNaN(parsed) ? 0 : parsed });
+                          }}
+                          placeholder="12.5"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-mono font-bold"
+                        />
+                      </div>
+
+                      <div>
+                        <label className="block font-bold text-slate-800 mb-1">
+                          Total AK Kumulatif (PAK):
+                        </label>
+                        <input
+                          type="number"
+                          step="0.01"
+                          value={
+                            Number.isNaN(Number(formData.total_ak_kumulatif))
+                              ? 0
+                              : (formData.total_ak_kumulatif ?? 37.5)
+                          }
+                          onChange={(e) => {
+                            const parsed = parseFloat(e.target.value);
+                            setFormData({ ...formData, total_ak_kumulatif: Number.isNaN(parsed) ? 0 : parsed });
+                          }}
+                          placeholder="37.5"
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-mono font-bold text-indigo-900"
+                        />
+                      </div>
                     </div>
 
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">
-                        AK Konversi SKP (Tahunan):
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={
-                          Number.isNaN(Number(formData.ak_konversi_skp))
-                            ? 0
-                            : (formData.ak_konversi_skp ?? 0)
-                        }
-                        onChange={(e) => {
-                          const parsed = parseFloat(e.target.value);
-                          setFormData({ ...formData, ak_konversi_skp: Number.isNaN(parsed) ? 0 : parsed });
-                        }}
-                        placeholder="0"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-mono font-bold"
-                      />
-                    </div>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-indigo-200/60">
+                      <div>
+                        <label className="block font-bold text-slate-800 mb-1">
+                          Status Uji Kompetensi (UKKJ / Ukom):
+                        </label>
+                        <select
+                          value={formData.status_ukkj || 'Belum UKKJ'}
+                          onChange={(e) => setFormData({ ...formData, status_ukkj: e.target.value as any })}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
+                        >
+                          <option value="Belum UKKJ">Belum UKKJ</option>
+                          <option value="Lulus UKKJ">Lulus UKKJ</option>
+                          <option value="Dalam Proses">Dalam Proses Ukom</option>
+                          <option value="Bukan Jafung">Bukan Jafung</option>
+                          <option value="Tidak ada">Tidak ada</option>
+                        </select>
+                      </div>
 
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">
-                        Total AK Kumulatif (PAK):
-                      </label>
-                      <input
-                        type="number"
-                        step="0.01"
-                        value={
-                          Number.isNaN(Number(formData.total_ak_kumulatif))
-                            ? 0
-                            : (formData.total_ak_kumulatif ?? 0)
-                        }
-                        onChange={(e) => {
-                          const parsed = parseFloat(e.target.value);
-                          setFormData({ ...formData, total_ak_kumulatif: Number.isNaN(parsed) ? 0 : parsed });
-                        }}
-                        placeholder="0"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-mono font-bold text-indigo-900"
-                      />
+                      <div>
+                        <label className="block font-bold text-slate-800 mb-1">
+                          Status Pencantuman Gelar BKN:
+                        </label>
+                        <select
+                          value={formData.status_pencantuman_gelar || 'Terverifikasi BKN'}
+                          onChange={(e) => setFormData({ ...formData, status_pencantuman_gelar: e.target.value as any })}
+                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
+                        >
+                          <option value="Terverifikasi BKN">Terverifikasi BKN</option>
+                          <option value="Proses Verval">Proses Verval / Pengajuan</option>
+                          <option value="Belum Pengajuan">Belum Pengajuan</option>
+                          <option value="Bukan Tugas Belajar">Bukan Tugas Belajar</option>
+                          <option value="Tidak ada">Tidak ada</option>
+                        </select>
+                      </div>
                     </div>
                   </div>
                 ) : formData.jenis_jabatan === 'Pelaksana' ? (
