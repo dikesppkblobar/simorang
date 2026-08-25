@@ -1,22 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, User, ShieldCheck, Building, ChevronDown, Check, Download, Smartphone } from 'lucide-react';
+import { LogOut, Smartphone, ShieldCheck, Building2, User } from 'lucide-react';
 import { LogoLombokBarat } from './LogoLombokBarat';
 import { UserAccount } from '../types';
 
 interface NavbarProps {
   currentUser: UserAccount;
-  usersList: UserAccount[];
-  onSwitchUser: (user: UserAccount) => void;
+  usersList?: UserAccount[];
+  onSwitchUser?: (user: UserAccount) => void;
   onLogout: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
-  usersList,
-  onSwitchUser,
   onLogout,
 }) => {
-  const [isSwitcherOpen, setIsSwitcherOpen] = useState(false);
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
 
@@ -48,6 +45,7 @@ export const Navbar: React.FC<NavbarProps> = ({
   };
 
   const getInitials = (name: string) => {
+    if (!name) return 'U';
     return name
       .split(' ')
       .map((n) => n[0])
@@ -90,122 +88,42 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
         )}
 
-        {/* Account Switcher Dropdown Button */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setIsSwitcherOpen(!isSwitcherOpen)}
-            className="flex items-center space-x-2.5 bg-white/10 hover:bg-white/20 border border-white/20 px-3 py-1.5 rounded-xl transition-all"
-          >
+        {/* User Identity Display Badge */}
+        <div className="flex items-center space-x-2.5 bg-white/10 border border-white/20 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-xs">
+          <div className="relative">
             <div
-              className={`w-7 h-7 rounded-lg flex items-center justify-center font-heading font-bold text-xs text-white shadow-xs ${
+              className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-heading font-bold text-xs text-white shadow-xs ${
                 isSuperAdmin ? 'bg-[#00A3AD]' : 'bg-[#003663]'
               }`}
             >
-              {getInitials(currentUser.nama_lengkap)}
+              {getInitials(currentUser.nama_lengkap || currentUser.username)}
             </div>
+            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#004B87] rounded-full"></span>
+          </div>
 
-            <div className="text-left hidden md:block">
-              <div className="text-xs font-heading font-bold text-white flex items-center space-x-1">
-                <span className="max-w-[150px] truncate">{currentUser.nama_lengkap}</span>
-                {isSuperAdmin ? (
-                  <ShieldCheck className="w-3.5 h-3.5 text-[#00A3AD]" />
-                ) : (
-                  <Building className="w-3.5 h-3.5 text-blue-200" />
-                )}
-              </div>
-              <div className="text-[10px] text-blue-100 font-medium max-w-[170px] truncate">
-                {currentUser.unit_kerja}
-              </div>
+          <div className="text-left leading-tight max-w-[130px] sm:max-w-[170px] md:max-w-[220px]">
+            <div className="text-xs font-heading font-bold text-white flex items-center space-x-1 truncate">
+              <span className="truncate">{currentUser.nama_lengkap || currentUser.username}</span>
+              {isSuperAdmin ? (
+                <ShieldCheck className="w-3.5 h-3.5 text-emerald-300 shrink-0" title="Super Admin DINKES" />
+              ) : (
+                <Building2 className="w-3.5 h-3.5 text-blue-200 shrink-0" title="Admin Unit Kerja" />
+              )}
             </div>
-
-            <ChevronDown className="w-3.5 h-3.5 text-blue-200" />
-          </button>
-
-          {/* Dropdown Popover */}
-          {isSwitcherOpen && (
-            <div className="absolute right-0 mt-2 w-80 bg-white rounded-2xl shadow-2xl border border-slate-200 text-slate-800 p-3 z-50 animate-in fade-in duration-150">
-              <div className="px-3 py-2 border-b border-slate-100 mb-2">
-                <div className="text-[10px] font-extrabold uppercase text-slate-400 tracking-wider">
-                  Sesi Pengguna Saat Ini
-                </div>
-                <div className="font-extrabold text-xs text-slate-900 mt-0.5">{currentUser.nama_lengkap}</div>
-                <div className="text-[11px] font-bold text-blue-600 flex items-center space-x-1 mt-0.5">
-                  {isSuperAdmin ? (
-                    <span className="bg-purple-100 text-purple-900 px-2 py-0.5 rounded-full text-[10px] font-extrabold">
-                      Admin Dinkes (Super Admin)
-                    </span>
-                  ) : (
-                    <span className="bg-blue-100 text-blue-900 px-2 py-0.5 rounded-full text-[10px] font-extrabold">
-                      Admin Unit Kerja
-                    </span>
-                  )}
-                  <span className="text-slate-400">&bull;</span>
-                  <span className="text-slate-600 truncate">{currentUser.unit_kerja}</span>
-                </div>
-              </div>
-
-              <div className="px-3 py-1 text-[10px] font-extrabold uppercase text-slate-400 tracking-wider mb-1">
-                Ganti Akun Demo / Login Role
-              </div>
-
-              <div className="space-y-1 max-h-60 overflow-y-auto">
-                {usersList.map((user) => {
-                  const isSelected = user.id === currentUser.id;
-                  const isUserSuper = user.role === 'Admin Dinkes';
-
-                  return (
-                    <button
-                      key={user.id}
-                      type="button"
-                      onClick={() => {
-                        onSwitchUser(user);
-                        setIsSwitcherOpen(false);
-                      }}
-                      className={`w-full text-left p-2.5 rounded-xl text-xs flex items-center justify-between transition-colors ${
-                        isSelected
-                          ? 'bg-blue-50 border border-blue-200 text-blue-950 font-extrabold'
-                          : 'hover:bg-slate-50 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2.5 min-w-0">
-                        <div
-                          className={`w-7 h-7 rounded-lg flex items-center justify-center font-bold text-xs text-white shrink-0 ${
-                            isUserSuper ? 'bg-purple-600' : 'bg-blue-600'
-                          }`}
-                        >
-                          {getInitials(user.nama_lengkap)}
-                        </div>
-                        <div className="min-w-0">
-                          <div className="font-bold text-xs truncate">{user.nama_lengkap}</div>
-                          <div className="text-[10px] text-slate-500 truncate">
-                            {user.role} &bull; {user.unit_kerja}
-                          </div>
-                        </div>
-                      </div>
-
-                      {isSelected && <Check className="w-4 h-4 text-blue-600 shrink-0 ml-2" />}
-                    </button>
-                  );
-                })}
-              </div>
-
-              <div className="pt-2 border-t border-slate-100 mt-2 text-center">
-                <span className="text-[10px] text-slate-400 font-medium">
-                  Kelola akun & unit kerja lengkap di menu Sidebar &quot;Manajemen User&quot;
-                </span>
-              </div>
+            <div className="text-[10px] text-blue-100 font-medium truncate flex items-center gap-1 mt-0.5">
+              <span className="truncate">{currentUser.unit_kerja || 'Dinas Kesehatan'}</span>
             </div>
-          )}
+          </div>
         </div>
 
+        {/* Logout Button */}
         <button
           onClick={onLogout}
-          className="p-2 hover:bg-slate-800 rounded-xl text-slate-300 hover:text-white transition-colors flex items-center space-x-1.5 text-xs font-semibold border border-slate-700/60"
-          title="Keluar Sistem"
+          className="px-2.5 sm:px-3 py-1.5 hover:bg-rose-600/20 active:bg-rose-600/30 rounded-xl text-rose-200 hover:text-white transition-all flex items-center space-x-1.5 text-xs font-semibold border border-rose-400/30 hover:border-rose-400/60 shadow-xs cursor-pointer"
+          title="Keluar dari Sistem"
         >
-          <LogOut className="w-4 h-4 text-rose-400" />
-          <span className="hidden md:inline">Keluar</span>
+          <LogOut className="w-4 h-4 text-rose-300" />
+          <span className="hidden sm:inline">Keluar</span>
         </button>
       </div>
     </nav>
