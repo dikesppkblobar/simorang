@@ -125,16 +125,7 @@ CREATE TABLE IF NOT EXISTS pegawai (
   -- Atribut Khusus Non-ASN
   no_sk_kontrak TEXT,
   masa_kerja_non_asn TEXT,
-  sumber_pembiayaan TEXT,
-
-  -- Tenaga Medis / Kesehatan (STR & SIP Kemenkes)
-  no_str TEXT,
-  tgl_terbit_str TEXT,
-  tgl_akhir_str TEXT,
-  is_str_seumur_hidup BOOLEAN DEFAULT FALSE,
-  no_sip TEXT,
-  tgl_berlaku_sip_mulai TEXT,
-  tgl_berlaku_sip_akhir TEXT
+  sumber_pembiayaan TEXT
 );
 
 -- Indexing untuk query cepat
