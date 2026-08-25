@@ -1,4 +1,6 @@
 import { dbStore } from './dbStore';
+import { supabaseService } from './supabaseService';
+import { SUPABASE_SCHEMA_SQL } from '../data/supabaseSchema';
 import {
   Pegawai,
   RiwayatSK,
@@ -11,334 +13,339 @@ import {
 
 const API_BASE = '/api';
 
+/**
+ * Helper to safely fetch JSON from the API backend.
+ * If the response is not OK (e.g. 404 on Vercel static hosting) or not JSON,
+ * it returns null instead of throwing "Unexpected token < or T ... is not valid JSON".
+ */
+async function safeFetchJson<T = any>(
+  url: string,
+  options?: RequestInit
+): Promise<{ success: boolean; data?: T; error?: string } | null> {
+  try {
+    const res = await fetch(url, options);
+    if (!res.ok) {
+      return null;
+    }
+    const contentType = res.headers.get('content-type') || '';
+    if (!contentType.includes('application/json')) {
+      return null;
+    }
+    const json = await res.json();
+    return json;
+  } catch (err) {
+    return null;
+  }
+}
+
 export const apiClient = {
   // --- PEGAWAI CRUD ---
   async getPegawaiList(includeDeleted: boolean = true): Promise<Pegawai[]> {
-    try {
-      const res = await fetch(`${API_BASE}/pegawai?include_deleted=${includeDeleted}`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          // Sync with local dbStore for smooth offline operation
-          return json.data;
-        }
-      }
-    } catch (err) {
-      console.warn('API getPegawaiList failed, fallback to dbStore:', err);
+    const json = await safeFetchJson<Pegawai[]>(`${API_BASE}/pegawai?include_deleted=${includeDeleted}`);
+    if (json && json.success && Array.isArray(json.data)) {
+      return json.data;
     }
     return dbStore.getPegawaiList(includeDeleted);
   },
 
   async addPegawai(formData: any, adminEmail: string): Promise<Pegawai> {
-    try {
-      const res = await fetch(`${API_BASE}/pegawai`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menambahkan pegawai via API.');
-      }
-      // Also update local dbStore
+    const json = await safeFetchJson<Pegawai>(`${API_BASE}/pegawai`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(formData),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.addPegawai(json.data, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      // Fallback
-      return dbStore.addPegawai(
-        {
-          ...formData,
-          is_deleted: false,
-          created_at: new Date().toISOString(),
-        },
-        adminEmail
-      );
     }
+
+    // Direct fallback (client/dbStore + Supabase direct)
+    const localCreated = dbStore.addPegawai(
+      {
+        ...formData,
+        is_deleted: false,
+        created_at: new Date().toISOString(),
+      },
+      adminEmail
+    );
+    try {
+      supabaseService.upsertPegawai(localCreated).catch(() => {});
+    } catch (_) {}
+    return localCreated;
   },
 
   async updatePegawai(nip: string, updates: any, adminEmail: string): Promise<Pegawai> {
-    try {
-      const res = await fetch(`${API_BASE}/pegawai/${nip}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal memperbarui pegawai via API.');
-      }
+    const json = await safeFetchJson<Pegawai>(`${API_BASE}/pegawai/${nip}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.updatePegawai(nip, updates, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.updatePegawai(nip, updates, adminEmail);
     }
+
+    const localUpdated = dbStore.updatePegawai(nip, updates, adminEmail);
+    try {
+      supabaseService.upsertPegawai(localUpdated).catch(() => {});
+    } catch (_) {}
+    return localUpdated;
   },
 
   async softDeletePegawai(nip: string, adminEmail: string): Promise<Pegawai> {
-    try {
-      const res = await fetch(`${API_BASE}/pegawai/${nip}`, {
-        method: 'DELETE',
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menghapus pegawai via API.');
-      }
+    const json = await safeFetchJson<Pegawai>(`${API_BASE}/pegawai/${nip}`, {
+      method: 'DELETE',
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.softDeletePegawai(nip, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.softDeletePegawai(nip, adminEmail);
     }
+
+    const localDeleted = dbStore.softDeletePegawai(nip, adminEmail);
+    try {
+      supabaseService.deletePegawaiSoft(nip).catch(() => {});
+    } catch (_) {}
+    return localDeleted;
   },
 
   async deletePegawaiPermanent(nip: string, adminEmail: string): Promise<boolean> {
-    try {
-      const res = await fetch(`${API_BASE}/pegawai/${nip}/permanent`, {
-        method: 'DELETE',
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menghapus pegawai secara permanen.');
-      }
+    const json = await safeFetchJson(`${API_BASE}/pegawai/${nip}/permanent`, {
+      method: 'DELETE',
+    });
+
+    if (json && json.success) {
       try {
         dbStore.deletePegawaiPermanent(nip, adminEmail);
       } catch (_) {}
       return true;
-    } catch (err) {
-      return dbStore.deletePegawaiPermanent(nip, adminEmail);
     }
+
+    const result = dbStore.deletePegawaiPermanent(nip, adminEmail);
+    try {
+      supabaseService.deletePegawaiPermanent(nip).catch(() => {});
+    } catch (_) {}
+    return result;
   },
 
   async restorePegawai(nip: string, adminEmail: string): Promise<Pegawai> {
-    try {
-      const res = await fetch(`${API_BASE}/pegawai/${nip}/restore`, {
-        method: 'PATCH',
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal mengaktifkan kembali pegawai via API.');
-      }
+    const json = await safeFetchJson<Pegawai>(`${API_BASE}/pegawai/${nip}/restore`, {
+      method: 'PATCH',
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.restorePegawai(nip, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.restorePegawai(nip, adminEmail);
     }
+
+    const localRestored = dbStore.restorePegawai(nip, adminEmail);
+    try {
+      supabaseService.restorePegawai(nip).catch(() => {});
+    } catch (_) {}
+    return localRestored;
   },
 
   // --- RIWAYAT SK CRUD ---
   async getAllSk(): Promise<RiwayatSK[]> {
-    try {
-      const res = await fetch(`${API_BASE}/arsip`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          return json.data;
-        }
-      }
-    } catch (err) {
-      console.warn('API getAllSk failed, fallback to dbStore:', err);
+    const json = await safeFetchJson<RiwayatSK[]>(`${API_BASE}/arsip`);
+    if (json && json.success && Array.isArray(json.data)) {
+      return json.data;
     }
     return dbStore.getAllSk();
   },
 
   async addSk(data: any, adminEmail: string): Promise<RiwayatSK> {
-    try {
-      const res = await fetch(`${API_BASE}/arsip/sk`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menambahkan SK via API.');
-      }
+    const json = await safeFetchJson<RiwayatSK>(`${API_BASE}/arsip/sk`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.addSk(json.data, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.addSk(
-        {
-          id: `sk-${Date.now()}`,
-          ...data,
-          created_at: new Date().toISOString(),
-        },
-        adminEmail
-      );
     }
+
+    const localSk = dbStore.addSk(
+      {
+        id: `sk-${Date.now()}`,
+        ...data,
+        created_at: new Date().toISOString(),
+      },
+      adminEmail
+    );
+    try {
+      supabaseService.insertSk(localSk).catch(() => {});
+    } catch (_) {}
+    return localSk;
   },
 
   async deleteSk(id: string, adminEmail: string): Promise<boolean> {
-    try {
-      const res = await fetch(`${API_BASE}/arsip/sk/${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menghapus berkas SK via API.');
-      }
+    const json = await safeFetchJson(`${API_BASE}/arsip/sk/${id}`, { method: 'DELETE' });
+    if (json && json.success) {
       try {
         dbStore.deleteSk(id, adminEmail);
       } catch (_) {}
       return true;
-    } catch (err) {
-      return dbStore.deleteSk(id, adminEmail);
     }
+
+    const res = dbStore.deleteSk(id, adminEmail);
+    try {
+      supabaseService.deleteSk(id).catch(() => {});
+    } catch (_) {}
+    return res;
   },
 
   // --- KELUARGA KP4 CRUD ---
   async getAllKeluarga(): Promise<KeluargaKP4[]> {
-    try {
-      const res = await fetch(`${API_BASE}/kp4`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          return json.data;
-        }
-      }
-    } catch (err) {
-      console.warn('API getAllKeluarga failed, fallback to dbStore:', err);
+    const json = await safeFetchJson<KeluargaKP4[]>(`${API_BASE}/kp4`);
+    if (json && json.success && Array.isArray(json.data)) {
+      return json.data;
     }
     return dbStore.getAllKeluarga();
   },
 
   async addKeluarga(data: any, adminEmail: string): Promise<KeluargaKP4> {
-    try {
-      const res = await fetch(`${API_BASE}/kp4`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menambahkan KP4 via API.');
-      }
+    const json = await safeFetchJson<KeluargaKP4>(`${API_BASE}/kp4`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.addKeluarga(json.data, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.addKeluarga(
-        {
-          id: `kp4-${Date.now()}`,
-          nip_pegawai: data.nip_pegawai,
-          nama_keluarga: data.nama_keluarga,
-          status_hubungan: data.status_hubungan,
-          tanggal_lahir: data.tanggal_lahir,
-          status_tanggungan: data.status_tanggungan !== undefined ? data.status_tanggungan : true,
-          nama_sekolah_pt: data.nama_sekolah_pt || null,
-          surat_ket_kuliah_url: data.surat_ket_kuliah_url || null,
-          no_surat_kuliah: data.no_surat_kuliah || null,
-          tgl_surat_kuliah: data.tgl_surat_kuliah || null,
-          semester_kuliah: data.semester_kuliah || null,
-        },
-        adminEmail
-      );
     }
+
+    const localKeluarga = dbStore.addKeluarga(
+      {
+        id: `kp4-${Date.now()}`,
+        nip_pegawai: data.nip_pegawai,
+        nama_keluarga: data.nama_keluarga,
+        status_hubungan: data.status_hubungan,
+        tanggal_lahir: data.tanggal_lahir,
+        status_tanggungan: data.status_tanggungan !== undefined ? data.status_tanggungan : true,
+        nama_sekolah_pt: data.nama_sekolah_pt || null,
+        surat_ket_kuliah_url: data.surat_ket_kuliah_url || null,
+        no_surat_kuliah: data.no_surat_kuliah || null,
+        tgl_surat_kuliah: data.tgl_surat_kuliah || null,
+        semester_kuliah: data.semester_kuliah || null,
+      },
+      adminEmail
+    );
+    try {
+      supabaseService.upsertKeluarga(localKeluarga).catch(() => {});
+    } catch (_) {}
+    return localKeluarga;
   },
 
   async updateKeluarga(id: string, updates: Partial<KeluargaKP4>, adminEmail: string): Promise<KeluargaKP4> {
-    try {
-      const res = await fetch(`${API_BASE}/kp4/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal mengupdate KP4 via API.');
-      }
+    const json = await safeFetchJson<KeluargaKP4>(`${API_BASE}/kp4/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.updateKeluarga(id, updates, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.updateKeluarga(id, updates, adminEmail);
     }
+
+    const localKeluarga = dbStore.updateKeluarga(id, updates, adminEmail);
+    try {
+      supabaseService.upsertKeluarga(localKeluarga).catch(() => {});
+    } catch (_) {}
+    return localKeluarga;
   },
 
   async deleteKeluarga(id: string, adminEmail: string): Promise<boolean> {
-    try {
-      const res = await fetch(`${API_BASE}/kp4/${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menghapus KP4 via API.');
-      }
+    const json = await safeFetchJson(`${API_BASE}/kp4/${id}`, { method: 'DELETE' });
+    if (json && json.success) {
       try {
         dbStore.deleteKeluarga(id, adminEmail);
       } catch (_) {}
       return true;
-    } catch (err) {
-      return dbStore.deleteKeluarga(id, adminEmail);
     }
+
+    const res = dbStore.deleteKeluarga(id, adminEmail);
+    try {
+      supabaseService.deleteKeluarga(id).catch(() => {});
+    } catch (_) {}
+    return res;
   },
 
   // --- USERS CRUD ---
   async getAllUsers(): Promise<UserAccount[]> {
-    try {
-      const res = await fetch(`${API_BASE}/auth/users`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          return json.data;
-        }
-      }
-    } catch (err) {
-      console.warn('API getAllUsers failed, fallback to dbStore:', err);
+    const json = await safeFetchJson<UserAccount[]>(`${API_BASE}/auth/users`);
+    if (json && json.success && Array.isArray(json.data)) {
+      return json.data;
     }
     return dbStore.getAllUsers();
   },
 
   async addUser(userData: any, adminEmail: string): Promise<UserAccount> {
-    try {
-      const res = await fetch(`${API_BASE}/auth/users`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(userData),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menambahkan user via API.');
-      }
+    const json = await safeFetchJson<UserAccount>(`${API_BASE}/auth/users`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(userData),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.addUser(json.data, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.addUser(
-        {
-          id: `usr-${Date.now()}`,
-          ...userData,
-          created_at: new Date().toISOString(),
-        },
-        adminEmail
-      );
     }
+
+    const localUser = dbStore.addUser(
+      {
+        id: `usr-${Date.now()}`,
+        ...userData,
+        created_at: new Date().toISOString(),
+      },
+      adminEmail
+    );
+    try {
+      supabaseService.upsertUser(localUser).catch(() => {});
+    } catch (_) {}
+    return localUser;
   },
 
   async updateUser(id: string, updates: any, adminEmail: string): Promise<UserAccount> {
-    try {
-      const res = await fetch(`${API_BASE}/auth/users/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal mengupdate user via API.');
-      }
+    const json = await safeFetchJson<UserAccount>(`${API_BASE}/auth/users/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.updateUser(id, updates, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.updateUser(id, updates, adminEmail);
     }
+
+    const localUser = dbStore.updateUser(id, updates, adminEmail);
+    try {
+      supabaseService.upsertUser(localUser).catch(() => {});
+    } catch (_) {}
+    return localUser;
   },
 
   async recordUserLogin(userId: string): Promise<void> {
@@ -348,182 +355,201 @@ export const apiClient = {
   },
 
   async deleteUser(id: string, adminEmail: string): Promise<boolean> {
-    try {
-      const res = await fetch(`${API_BASE}/auth/users/${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menghapus user via API.');
-      }
+    const json = await safeFetchJson(`${API_BASE}/auth/users/${id}`, { method: 'DELETE' });
+    if (json && json.success) {
       try {
         dbStore.deleteUser(id, adminEmail);
       } catch (_) {}
       return true;
-    } catch (err) {
-      return dbStore.deleteUser(id, adminEmail);
     }
+
+    const res = dbStore.deleteUser(id, adminEmail);
+    try {
+      supabaseService.deleteUser(id).catch(() => {});
+    } catch (_) {}
+    return res;
   },
 
   // --- UNITS CRUD ---
   async getAllUnits(): Promise<UnitKerjaItem[]> {
-    try {
-      const res = await fetch(`${API_BASE}/auth/units`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          return json.data;
-        }
-      }
-    } catch (err) {
-      console.warn('API getAllUnits failed, fallback to dbStore:', err);
+    const json = await safeFetchJson<UnitKerjaItem[]>(`${API_BASE}/auth/units`);
+    if (json && json.success && Array.isArray(json.data)) {
+      return json.data;
     }
     return dbStore.getAllUnits();
   },
 
   async addUnit(unitData: any, adminEmail: string): Promise<UnitKerjaItem> {
-    try {
-      const res = await fetch(`${API_BASE}/auth/units`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(unitData),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menambahkan unit kerja via API.');
-      }
+    const json = await safeFetchJson<UnitKerjaItem>(`${API_BASE}/auth/units`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(unitData),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.addUnit(json.data, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.addUnit(
-        {
-          id: `unit-${Date.now()}`,
-          ...unitData,
-        },
-        adminEmail
-      );
     }
+
+    const localUnit = dbStore.addUnit(
+      {
+        id: `unit-${Date.now()}`,
+        ...unitData,
+      },
+      adminEmail
+    );
+    try {
+      supabaseService.upsertUnit(localUnit).catch(() => {});
+    } catch (_) {}
+    return localUnit;
   },
 
   async updateUnit(id: string, updates: any, adminEmail: string): Promise<UnitKerjaItem> {
-    try {
-      const res = await fetch(`${API_BASE}/auth/units/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(updates),
-      });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal mengupdate unit kerja via API.');
-      }
+    const json = await safeFetchJson<UnitKerjaItem>(`${API_BASE}/auth/units/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(updates),
+    });
+
+    if (json && json.success && json.data) {
       try {
         dbStore.updateUnit(id, updates, adminEmail);
       } catch (_) {}
       return json.data;
-    } catch (err) {
-      return dbStore.updateUnit(id, updates, adminEmail);
     }
+
+    const localUnit = dbStore.updateUnit(id, updates, adminEmail);
+    try {
+      supabaseService.upsertUnit(localUnit).catch(() => {});
+    } catch (_) {}
+    return localUnit;
   },
 
   async deleteUnit(id: string, adminEmail: string): Promise<boolean> {
-    try {
-      const res = await fetch(`${API_BASE}/auth/units/${id}`, { method: 'DELETE' });
-      const json = await res.json();
-      if (!res.ok || !json.success) {
-        throw new Error(json.error || 'Gagal menghapus unit kerja via API.');
-      }
+    const json = await safeFetchJson(`${API_BASE}/auth/units/${id}`, { method: 'DELETE' });
+    if (json && json.success) {
       try {
         dbStore.deleteUnit(id, adminEmail);
       } catch (_) {}
       return true;
-    } catch (err) {
-      return dbStore.deleteUnit(id, adminEmail);
     }
+
+    const res = dbStore.deleteUnit(id, adminEmail);
+    try {
+      supabaseService.deleteUnit(id).catch(() => {});
+    } catch (_) {}
+    return res;
   },
 
   // --- AUDIT LOGS & RESET ---
   async getAuditLogs(): Promise<AuditLog[]> {
-    try {
-      const res = await fetch(`${API_BASE}/audit-logs`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          return json.data;
-        }
-      }
-    } catch (err) {
-      console.warn('API getAuditLogs failed, fallback to dbStore:', err);
+    const json = await safeFetchJson<AuditLog[]>(`${API_BASE}/audit-logs`);
+    if (json && json.success && Array.isArray(json.data)) {
+      return json.data;
     }
     return dbStore.getAuditLogs();
   },
 
   async clearAllDummyData(adminEmail: string): Promise<void> {
-    try {
-      await fetch(`${API_BASE}/stats/clear-dummy`, { method: 'POST' });
-    } catch (err) {}
+    safeFetchJson(`${API_BASE}/stats/clear-dummy`, { method: 'POST' }).catch(() => {});
     dbStore.clearAllDummyData(adminEmail);
   },
 
   async resetToSampleData(adminEmail: string): Promise<void> {
-    try {
-      await fetch(`${API_BASE}/stats/reset-sample`, { method: 'POST' });
-    } catch (err) {}
+    safeFetchJson(`${API_BASE}/stats/reset-sample`, { method: 'POST' }).catch(() => {});
     dbStore.resetToSampleData(adminEmail);
   },
 
-  // --- SUPABASE CONTROL ---
+  // --- SUPABASE CONTROL (CLIENT + SERVER DUAL SUPPORT) ---
   async getSupabaseStatus(): Promise<{ connected: boolean; message: string; url?: string }> {
-    try {
-      const res = await fetch(`${API_BASE}/supabase/status`);
-      if (res.ok) {
-        const json = await res.json();
-        return {
-          connected: json.health?.connected ?? true,
-          message: json.health?.message || 'Supabase terhubung',
-          url: json.url,
-        };
-      }
-    } catch (err: any) {
-      console.warn('getSupabaseStatus failed:', err);
+    // 1. Try server endpoint first if available
+    const json = await safeFetchJson<{ health?: { connected: boolean; message: string }; url?: string }>(
+      `${API_BASE}/supabase/status`
+    );
+
+    if (json && json.success && json.data) {
+      return {
+        connected: json.data.health?.connected ?? true,
+        message: json.data.health?.message || 'Supabase terhubung via Server Express',
+        url: json.data.url || 'https://pjofydlrdyxttogrxaju.supabase.co',
+      };
     }
-    return { connected: true, message: 'Koneksi Supabase Aktif' };
+
+    // 2. Direct client test if running in static/Vercel mode
+    try {
+      const directHealth = await supabaseService.checkConnection();
+      return {
+        connected: directHealth.connected,
+        message: directHealth.message || 'Koneksi Langsung Supabase Cloud Aktif',
+        url: 'https://pjofydlrdyxttogrxaju.supabase.co',
+      };
+    } catch (err: any) {
+      return {
+        connected: true,
+        message: 'Koneksi Supabase Siap Digunakan',
+        url: 'https://pjofydlrdyxttogrxaju.supabase.co',
+      };
+    }
   },
 
   async syncSupabaseNow(): Promise<{ success: boolean; details: string }> {
-    try {
-      const res = await fetch(`${API_BASE}/supabase/sync`, { method: 'POST' });
-      const json = await res.json();
+    // 1. Try server sync if backend API is responding
+    const json = await safeFetchJson<{ details?: string; message?: string }>(`${API_BASE}/supabase/sync`, {
+      method: 'POST',
+    });
+
+    if (json && json.success) {
       return {
-        success: json.success,
-        details: json.details || json.message,
+        success: true,
+        details: json.data?.details || json.data?.message || 'Sinkronisasi dengan Database Supabase Berhasil!',
+      };
+    }
+
+    // 2. Direct Client-to-Supabase Sync Fallback (for Vercel, Netlify, Static Hosting)
+    try {
+      // Step A: Pull & merge remote Supabase data into local store
+      await dbStore.fetchAndMergeSupabaseData();
+
+      // Step B: Push local data to Supabase
+      const syncRes = await supabaseService.syncBulkToSupabase({
+        pegawai: dbStore.getPegawaiList(true),
+        skHistory: dbStore.getAllSk(),
+        keluarga: dbStore.getAllKeluarga(),
+        auditLogs: dbStore.getAuditLogs(),
+        units: dbStore.getAllUnits(),
+        users: dbStore.getAllUsers(),
+        aplikasi: dbStore.getAllAplikasi(),
+      });
+
+      return {
+        success: syncRes.success,
+        details: syncRes.details || 'Sinkronisasi langsung Supabase Cloud selesai!',
       };
     } catch (err: any) {
-      return { success: false, details: err.message };
+      return {
+        success: false,
+        details: `Sinkronisasi gagal: ${err.message || 'Terjadi kesalahan jaringan'}`,
+      };
     }
   },
 
   async getSupabaseSchemaSql(): Promise<string> {
-    try {
-      const res = await fetch(`${API_BASE}/supabase/schema`);
-      const json = await res.json();
-      return json.sql || '';
-    } catch (err) {
-      return '';
+    // 1. Try server endpoint
+    const json = await safeFetchJson<{ sql?: string }>(`${API_BASE}/supabase/schema`);
+    if (json && json.success && json.data?.sql) {
+      return json.data.sql;
     }
+    // 2. Fallback to local SQL schema constant
+    return SUPABASE_SCHEMA_SQL;
   },
 
   // --- APLIKASI KEPEGAWAIAN CRUD ---
   async getAplikasiList(): Promise<AplikasiKepegawaian[]> {
-    try {
-      const res = await fetch(`${API_BASE}/aplikasi`);
-      if (res.ok) {
-        const json = await res.json();
-        if (json.success && Array.isArray(json.data)) {
-          return json.data;
-        }
-      }
-    } catch (err) {
-      console.warn('API getAplikasiList fallback to dbStore:', err);
+    const json = await safeFetchJson<AplikasiKepegawaian[]>(`${API_BASE}/aplikasi`);
+    if (json && json.success && Array.isArray(json.data)) {
+      return json.data;
     }
     return dbStore.getAllAplikasi();
   },
@@ -532,23 +558,24 @@ export const apiClient = {
     data: Omit<AplikasiKepegawaian, 'id' | 'created_at'>,
     adminEmail: string
   ): Promise<AplikasiKepegawaian> {
-    try {
-      const res = await fetch(`${API_BASE}/aplikasi`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...data, admin_email: adminEmail }),
-      });
-      const json = await res.json();
-      if (res.ok && json.success) {
-        try {
-          dbStore.addAplikasi(json.data, adminEmail);
-        } catch (_) {}
-        return json.data;
-      }
-    } catch (err) {
-      console.warn('API addAplikasi fallback to dbStore:', err);
+    const json = await safeFetchJson<AplikasiKepegawaian>(`${API_BASE}/aplikasi`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...data, admin_email: adminEmail }),
+    });
+
+    if (json && json.success && json.data) {
+      try {
+        dbStore.addAplikasi(json.data, adminEmail);
+      } catch (_) {}
+      return json.data;
     }
-    return dbStore.addAplikasi(data, adminEmail);
+
+    const localApp = dbStore.addAplikasi(data, adminEmail);
+    try {
+      supabaseService.upsertAplikasi(localApp).catch(() => {});
+    } catch (_) {}
+    return localApp;
   },
 
   async updateAplikasi(
@@ -556,42 +583,44 @@ export const apiClient = {
     updates: Partial<AplikasiKepegawaian>,
     adminEmail: string
   ): Promise<AplikasiKepegawaian> {
-    try {
-      const res = await fetch(`${API_BASE}/aplikasi/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...updates, admin_email: adminEmail }),
-      });
-      const json = await res.json();
-      if (res.ok && json.success) {
-        try {
-          dbStore.updateAplikasi(id, updates, adminEmail);
-        } catch (_) {}
-        return json.data;
-      }
-    } catch (err) {
-      console.warn('API updateAplikasi fallback to dbStore:', err);
+    const json = await safeFetchJson<AplikasiKepegawaian>(`${API_BASE}/aplikasi/${id}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ ...updates, admin_email: adminEmail }),
+    });
+
+    if (json && json.success && json.data) {
+      try {
+        dbStore.updateAplikasi(id, updates, adminEmail);
+      } catch (_) {}
+      return json.data;
     }
-    return dbStore.updateAplikasi(id, updates, adminEmail);
+
+    const localApp = dbStore.updateAplikasi(id, updates, adminEmail);
+    try {
+      supabaseService.upsertAplikasi(localApp).catch(() => {});
+    } catch (_) {}
+    return localApp;
   },
 
   async deleteAplikasi(id: string, adminEmail: string): Promise<boolean> {
-    try {
-      const res = await fetch(`${API_BASE}/aplikasi/${id}`, {
-        method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ admin_email: adminEmail }),
-      });
-      const json = await res.json();
-      if (res.ok && json.success) {
-        try {
-          dbStore.deleteAplikasi(id, adminEmail);
-        } catch (_) {}
-        return true;
-      }
-    } catch (err) {
-      console.warn('API deleteAplikasi fallback to dbStore:', err);
+    const json = await safeFetchJson(`${API_BASE}/aplikasi/${id}`, {
+      method: 'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_email: adminEmail }),
+    });
+
+    if (json && json.success) {
+      try {
+        dbStore.deleteAplikasi(id, adminEmail);
+      } catch (_) {}
+      return true;
     }
-    return dbStore.deleteAplikasi(id, adminEmail);
+
+    const res = dbStore.deleteAplikasi(id, adminEmail);
+    try {
+      supabaseService.deleteAplikasi(id).catch(() => {});
+    } catch (_) {}
+    return res;
   },
 };
