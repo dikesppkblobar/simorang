@@ -222,102 +222,120 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
   };
 
   return (
-    <div className="space-y-6">
-      {/* Header Banner */}
-      <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center space-x-2">
-            <FileSpreadsheet className="w-5 h-5 text-emerald-600" />
-            <h2 className="text-lg font-bold text-slate-900">Ekspor Laporan Spreadsheet (.XLSX)</h2>
+    <div className="space-y-5 font-body">
+      {/* Header Banner Bersih & Minimalis */}
+      <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex items-start space-x-3.5">
+          <div className="p-3 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-700 shrink-0">
+            <FileSpreadsheet className="w-5 h-5" />
           </div>
-          <p className="text-xs text-slate-500 mt-1">
-            Unduh rekapitulasi data SIMORANG DINKES-PPKB ke format file Microsoft Excel (.XLSX) resmi untuk keperluan pelaporan BKN, BKPSDM, dan Audit BPK.
-          </p>
+          <div>
+            <h2 className="text-lg md:text-xl font-heading font-extrabold text-[#004B87]">
+              Ekspor Laporan Spreadsheet (.XLSX)
+            </h2>
+            <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+              Unduh rekapitulasi data SIMORANG DINKES-PPKB ke format Microsoft Excel (.XLSX) resmi untuk keperluan pelaporan BKN, BKPSDM, dan Audit BPK.
+            </p>
+          </div>
         </div>
 
         <button
+          type="button"
+          id="btn-export-all-xlsx"
           onClick={exportAllToXLSX}
           disabled={isExporting}
-          className="w-full md:w-auto shrink-0 flex items-center justify-center space-x-2 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-700 hover:to-teal-800 text-white font-extrabold text-xs px-5 py-3 rounded-xl transition-all shadow-md cursor-pointer"
+          className="w-full md:w-auto shrink-0 flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003866] text-white font-heading font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all shadow-2xs cursor-pointer"
         >
-          <Layers className="w-4 h-4" />
-          <span>{isExporting ? 'Memproses Excel...' : 'Ekspor Paket Lengkap 3 Sheet (.XLSX)'}</span>
+          <Layers className="w-4 h-4 text-cyan-300" />
+          <span>{isExporting ? 'Memproses File Excel...' : 'Ekspor Paket Lengkap (3 Sheet)'}</span>
         </button>
       </div>
 
-      {/* Export Options Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      {/* Export Options Grid (3 Kolom Bersih) */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {/* Card 1: Data Pegawai */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-emerald-400 transition-colors">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-emerald-300 transition-colors">
           <div>
-            <div className="p-3 bg-emerald-50 rounded-xl text-emerald-600 w-fit mb-4">
-              <Users className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 bg-emerald-50 border border-emerald-100 rounded-xl text-emerald-700">
+                <Users className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-heading font-bold text-emerald-800 bg-emerald-50 px-2.5 py-1 rounded-full border border-emerald-200">
+                {pegawaiList.length} Pegawai
+              </span>
             </div>
-            <h3 className="font-bold text-slate-900 text-sm mb-1">Rekap Master Data Pegawai</h3>
+            <h3 className="font-heading font-bold text-slate-900 text-sm mb-1">Rekap Master Data Pegawai</h3>
             <p className="text-xs text-slate-500 leading-relaxed mb-4">
               Mencakup NIP, Nama Lengkap, Jabatan, Unit Kerja, TMT CPNS, Status UKOM, Masa Kerja, dan Pendidikan.
             </p>
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs text-slate-600 font-semibold mb-6">
-              Total Data: {pegawaiList.length} Pegawai
-            </div>
           </div>
 
           <button
+            type="button"
+            id="btn-export-pegawai"
             onClick={exportPegawaiToXLSX}
             disabled={isExporting}
-            className="w-full flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+            className="w-full flex items-center justify-center space-x-2 bg-emerald-600 hover:bg-emerald-700 text-white font-heading font-bold text-xs py-2 rounded-xl transition-all shadow-2xs cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             <span>Ekspor Master Pegawai (.XLSX)</span>
           </button>
         </div>
 
         {/* Card 2: Riwayat SK */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-blue-400 transition-colors">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-blue-300 transition-colors">
           <div>
-            <div className="p-3 bg-blue-50 rounded-xl text-blue-600 w-fit mb-4">
-              <FileText className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 bg-blue-50 border border-blue-100 rounded-xl text-[#004B87]">
+                <FileText className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-heading font-bold text-[#004B87] bg-blue-50 px-2.5 py-1 rounded-full border border-blue-200">
+                {skList.length} SK Terdaftar
+              </span>
             </div>
-            <h3 className="font-bold text-slate-900 text-sm mb-1">Laporan Riwayat SK Digital</h3>
+            <h3 className="font-heading font-bold text-slate-900 text-sm mb-1">Laporan Riwayat SK Digital</h3>
             <p className="text-xs text-slate-500 leading-relaxed mb-4">
               Rekap seluruh SK KGB, Kenaikan Pangkat, Mutasi, dan Izin Belajar terdaftar di sistem.
             </p>
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs text-slate-600 font-semibold mb-6">
-              Total Data: {skList.length} SK Terdaftar
-            </div>
           </div>
 
           <button
+            type="button"
+            id="btn-export-sk"
             onClick={exportSkToXLSX}
             disabled={isExporting}
-            className="w-full flex items-center justify-center space-x-2 bg-[#2563EB] hover:bg-blue-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+            className="w-full flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003866] text-white font-heading font-bold text-xs py-2 rounded-xl transition-all shadow-2xs cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             <span>Ekspor Riwayat SK (.XLSX)</span>
           </button>
         </div>
 
         {/* Card 3: KP4 Tunjangan */}
-        <div className="bg-white p-6 rounded-2xl border border-slate-200/80 shadow-sm flex flex-col justify-between hover:border-purple-400 transition-colors">
+        <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col justify-between hover:border-purple-300 transition-colors">
           <div>
-            <div className="p-3 bg-purple-50 rounded-xl text-purple-600 w-fit mb-4">
-              <Baby className="w-6 h-6" />
+            <div className="flex items-center justify-between mb-3">
+              <div className="p-2.5 bg-purple-50 border border-purple-100 rounded-xl text-purple-700">
+                <Baby className="w-5 h-5" />
+              </div>
+              <span className="text-[11px] font-heading font-bold text-purple-800 bg-purple-50 px-2.5 py-1 rounded-full border border-purple-200">
+                {keluargaList.length} Tanggungan
+              </span>
             </div>
-            <h3 className="font-bold text-slate-900 text-sm mb-1">Laporan Tunjangan KP4</h3>
+            <h3 className="font-heading font-bold text-slate-900 text-sm mb-1">Laporan Tunjangan KP4</h3>
             <p className="text-xs text-slate-500 leading-relaxed mb-4">
               Rekap seluruh tanggungan keluarga, anak usia kuliah, dan status tunjangan aktif/non-aktif.
             </p>
-            <div className="bg-slate-50 p-2.5 rounded-xl border border-slate-200 text-xs text-slate-600 font-semibold mb-6">
-              Total Data: {keluargaList.length} Tanggungan KP4
-            </div>
           </div>
 
           <button
+            type="button"
+            id="btn-export-kp4"
             onClick={exportKp4ToXLSX}
             disabled={isExporting}
-            className="w-full flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white font-bold text-xs py-2.5 rounded-xl transition-all shadow-sm cursor-pointer"
+            className="w-full flex items-center justify-center space-x-2 bg-purple-600 hover:bg-purple-700 text-white font-heading font-bold text-xs py-2 rounded-xl transition-all shadow-2xs cursor-pointer"
           >
-            <Download className="w-4 h-4" />
+            <Download className="w-3.5 h-3.5" />
             <span>Ekspor Tunjangan KP4 (.XLSX)</span>
           </button>
         </div>
