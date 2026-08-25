@@ -14,8 +14,30 @@ interface UploadSkModalProps {
     tmt_berlaku: string;
     file_url?: string;
     keterangan?: string;
+    golongan_pangkat?: string;
+    nama_pangkat?: string;
   }) => Promise<boolean>;
 }
+
+const GOLONGAN_OPTIONS = [
+  { gol: 'I/a', nama: 'Juru Muda' },
+  { gol: 'I/b', nama: 'Juru Muda Tk. I' },
+  { gol: 'I/c', nama: 'Juru' },
+  { gol: 'I/d', nama: 'Juru Tk. I' },
+  { gol: 'II/a', nama: 'Pengatur Muda' },
+  { gol: 'II/b', nama: 'Pengatur Muda Tk. I' },
+  { gol: 'II/c', nama: 'Pengatur' },
+  { gol: 'II/d', nama: 'Pengatur Tk. I' },
+  { gol: 'III/a', nama: 'Penata Muda' },
+  { gol: 'III/b', nama: 'Penata Muda Tk. I' },
+  { gol: 'III/c', nama: 'Penata' },
+  { gol: 'III/d', nama: 'Penata Tk. I' },
+  { gol: 'IV/a', nama: 'Pembina' },
+  { gol: 'IV/b', nama: 'Pembina Tk. I' },
+  { gol: 'IV/c', nama: 'Pembina Utama Muda' },
+  { gol: 'IV/d', nama: 'Pembina Utama Madya' },
+  { gol: 'IV/e', nama: 'Pembina Utama' },
+];
 
 export const UploadSkModal: React.FC<UploadSkModalProps> = ({
   pegawaiList,
@@ -28,25 +50,47 @@ export const UploadSkModal: React.FC<UploadSkModalProps> = ({
   const [jenisSk, setJenisSk] = useState<JenisSK>(defaultJenisSk);
   const [nomorSk, setNomorSk] = useState('');
   const [tmtBerlaku, setTmtBerlaku] = useState(new Date().toISOString().slice(0, 10));
-  const [fileUrl, setFileUrl] = useState('https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf');
+  const [fileUrl, setFileUrl] = useState<string>('');
   const [fileName, setFileName] = useState<string>('');
   const [fileSize, setFileSize] = useState<string>('');
   const [keterangan, setKeterangan] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   const selectedPegawai = pegawaiList.find((p) => p.nip === nip) || pegawaiList.find((p) => p.nip === defaultNip);
+  const [golonganPangkat, setGolonganPangkat] = useState(selectedPegawai?.golongan_pangkat || 'III/a');
+  const [namaPangkat, setNamaPangkat] = useState(selectedPegawai?.nama_pangkat || 'Penata Muda');
+
+  const handleGolonganChange = (newGol: string) => {
+    setGolonganPangkat(newGol);
+    const matched = GOLONGAN_OPTIONS.find((g) => g.gol === newGol);
+    if (matched) {
+      setNamaPangkat(matched.nama);
+    }
+  };
 
   const handlePdfFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (file) {
-      if (file.type !== 'application/pdf') {
+      if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
         alert('Mohon unggah file format PDF resmi (.pdf)');
         return;
       }
-      const url = URL.createObjectURL(file);
-      setFileUrl(url);
-      setFileName(file.name);
-      setFileSize(`${(file.size / (1024 * 1024)).toFixed(2)} MB`);
+      if (file.size > 15 * 1024 * 1024) {
+        alert('Ukuran file terlalu besar. Maksimum 15MB.');
+        return;
+      }
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64Data = reader.result as string;
+        setFileUrl(base64Data);
+        setFileName(file.name);
+        setFileSize(`${(file.size / (1024 * 1024)).toFixed(2)} MB`);
+      };
+      reader.onerror = () => {
+        alert('Gagal membaca file berkas. Silakan coba unggah kembali.');
+      };
+      reader.readAsDataURL(file);
     }
   };
 
@@ -60,8 +104,10 @@ export const UploadSkModal: React.FC<UploadSkModalProps> = ({
       jenis_sk: jenisSk,
       nomor_sk: nomorSk,
       tmt_berlaku: tmtBerlaku,
-      file_url: fileUrl,
+      file_url: fileUrl || undefined,
       keterangan: keterangan || `Berkas SK ${jenisSk} Nomor ${nomorSk}`,
+      golongan_pangkat: jenisSk === 'Pangkat' ? golonganPangkat : undefined,
+      nama_pangkat: jenisSk === 'Pangkat' ? namaPangkat : undefined,
     });
     setIsSubmitting(false);
 
@@ -177,6 +223,40 @@ export const UploadSkModal: React.FC<UploadSkModalProps> = ({
               className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl outline-none font-mono font-bold text-slate-800"
             />
           </div>
+
+          {/* Golongan & Pangkat Baru jika SK Pangkat */}
+          {jenisSk === 'Pangkat' && (
+            <div className="p-3 bg-blue-50/70 border border-blue-200/80 rounded-xl space-y-2">
+              <div className="text-[11px] font-bold text-[#004B87] uppercase tracking-wide">
+                Pembaruan Golongan & Pangkat ASN (Langsung Update Data Pegawai):
+              </div>
+              <div className="grid grid-cols-2 gap-2.5">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Golongan / Ruang:*</label>
+                  <select
+                    value={golonganPangkat}
+                    onChange={(e) => handleGolonganChange(e.target.value)}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-none"
+                  >
+                    {GOLONGAN_OPTIONS.map((g) => (
+                      <option key={g.gol} value={g.gol}>
+                        {g.gol} ({g.nama})
+                      </option>
+                    ))}
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-700 mb-1">Nama Pangkat:</label>
+                  <input
+                    type="text"
+                    value={namaPangkat}
+                    onChange={(e) => setNamaPangkat(e.target.value)}
+                    className="w-full px-2.5 py-1.5 bg-white border border-slate-200 rounded-lg text-xs font-semibold text-slate-800 outline-none"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* PDF FILE UPLOAD SECTION */}
           <div>
