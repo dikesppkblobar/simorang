@@ -13,11 +13,22 @@ export const LoginBackground: React.FC = () => {
 
       {/* 2. Canva Giri Menang Lombok Barat Embedded Background (if available) */}
       <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center opacity-85">
-        <img
-          src="https://images.genpi.co/uploads/news/watermark/2019/04/01/be018b8227afd5e25068f8122a63cc26.jpg"
-          alt="Background Kantor Gubernur / Giri Menang Lombok"
-          className="w-full h-full object-cover object-center"
-          loading="eager"
+        <iframe
+          loading="lazy"
+          title="Background Desain Giri Menang Lombok Barat"
+          className="w-full h-full border-none pointer-events-none object-cover"
+          style={{
+            position: 'absolute',
+            top: 0,
+            left: 0,
+            width: '100%',
+            height: '100%',
+            border: 'none',
+            objectFit: 'cover',
+          }}
+          src="https://www.canva.com/design/DAHTMkoTTHo/HDRkgOVBNHWFmEAH_dXCwg/view?embed"
+          allowFullScreen
+          allow="fullscreen"
         />
       </div>
 
