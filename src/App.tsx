@@ -115,6 +115,45 @@ export default function App() {
   const [selectedNipForSk, setSelectedNipForSk] = useState<string | undefined>(undefined);
   const [defaultJenisSkForModal, setDefaultJenisSkForModal] = useState<JenisSK>('KGB');
 
+  // Subtab navigation states
+  const [alertsDefaultSubTab, setAlertsDefaultSubTab] = useState<
+    'pangkat' | 'jafung' | 'ukom' | 'ujian_dinas' | 'kgb' | 'cuti' | 'pensiun' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4'
+  >('jafung');
+  const [settingsDefaultSubTab, setSettingsDefaultSubTab] = useState<'scope' | 'users' | 'export' | 'audit'>('scope');
+  const [managementDefaultSubTab, setManagementDefaultSubTab] = useState<'users' | 'units' | 'database'>('units');
+
+  const handleNavigateTab = (tab: string, subTab?: string) => {
+    if (tab === 'alerts' || tab === 'kgb' || tab === 'pangkat' || tab === 'kp4' || tab === 'pensiun' || tab === 'jafung' || tab === 'ukom' || tab === 'ujian_dinas' || tab === 'cuti' || tab === 'izin_belajar' || tab === 'pencantuman_gelar' || tab === 'mutasi') {
+      if (tab === 'kgb' || subTab === 'kgb') {
+        setAlertsDefaultSubTab('kgb');
+      } else if (tab === 'pangkat' || subTab === 'pangkat') {
+        setAlertsDefaultSubTab('pangkat');
+      } else if (tab === 'kp4' || subTab === 'kp4') {
+        setAlertsDefaultSubTab('kp4');
+      } else if (tab === 'pensiun' || subTab === 'pensiun') {
+        setAlertsDefaultSubTab('pensiun');
+      } else if (subTab) {
+        setAlertsDefaultSubTab(subTab as any);
+      }
+      setActiveTab('alerts');
+    } else if (tab === 'users_units' || tab === 'units' || tab === 'users' || subTab === 'units' || subTab === 'users') {
+      setSettingsDefaultSubTab('users');
+      if (tab === 'units' || subTab === 'units' || tab === 'users_units') {
+        setManagementDefaultSubTab('units');
+      } else {
+        setManagementDefaultSubTab('users');
+      }
+      setActiveTab(currentUser.role === 'Admin Dinkes' ? 'users' : 'settings');
+    } else if (tab === 'settings') {
+      if (subTab) {
+        setSettingsDefaultSubTab(subTab as any);
+      }
+      setActiveTab('settings');
+    } else {
+      setActiveTab(tab);
+    }
+  };
+
   // Load Data
   const refreshData = async () => {
     try {
@@ -848,11 +887,11 @@ export default function App() {
               {activeTab === 'dashboard' && (
                 <DashboardView
                   stats={dashboardStats}
-                  pegawaiList={pegawaiList}
+                  pegawaiList={scopedPegawaiList}
                   unitsList={unitsList}
                   skList={skList}
                   keluargaList={keluargaList}
-                  onNavigateTab={(tab) => setActiveTab(tab)}
+                  onNavigateTab={handleNavigateTab}
                   onOpenAddPegawai={() => setActiveTab('pegawai')}
                   onOpenUploadSk={() => handleOpenUploadSkModal()}
                 />
@@ -885,6 +924,7 @@ export default function App() {
                   pangkatAlerts={scopedPangkatAlerts}
                   pensiunAlerts={scopedPensiunAlerts}
                   kp4Alerts={scopedKp4Alerts}
+                  defaultSubTab={alertsDefaultSubTab}
                   onOpenUploadSkModal={handleOpenUploadSkModal}
                   onUpdateKp4Tanggungan={handleUpdateTanggungan}
                   onUpdatePegawai={handleUpdatePegawai}
@@ -935,7 +975,8 @@ export default function App() {
                   onUpdateUnit={handleUpdateUnit}
                   onDeleteUnit={handleDeleteUnit}
                   onSwitchUser={handleSwitchUser}
-                  defaultSubTab="scope"
+                  defaultSubTab={settingsDefaultSubTab}
+                  defaultManagementSubTab={managementDefaultSubTab}
                 />
               )}
 
@@ -959,6 +1000,7 @@ export default function App() {
                   onDeleteUnit={handleDeleteUnit}
                   onSwitchUser={handleSwitchUser}
                   defaultSubTab="users"
+                  defaultManagementSubTab={managementDefaultSubTab}
                 />
               )}
 
