@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Smartphone, ShieldCheck, Building2, User } from 'lucide-react';
+import { LogOut, Smartphone, ShieldCheck, Building2, User, Menu, X } from 'lucide-react';
 import { LogoLombokBarat } from './LogoLombokBarat';
 import { UserAccount } from '../types';
 
@@ -8,11 +8,15 @@ interface NavbarProps {
   usersList?: UserAccount[];
   onSwitchUser?: (user: UserAccount) => void;
   onLogout: () => void;
+  onToggleMobileMenu?: () => void;
+  isMobileMenuOpen?: boolean;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onLogout,
+  onToggleMobileMenu,
+  isMobileMenuOpen = false,
 }) => {
   const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
   const [isInstalled, setIsInstalled] = useState(false);
@@ -57,40 +61,67 @@ export const Navbar: React.FC<NavbarProps> = ({
   const isSuperAdmin = currentUser.role === 'Admin Dinkes';
 
   return (
-    <nav className="bg-[#004B87] text-white px-3 md:px-6 py-2 min-h-16 flex items-center justify-between shrink-0 shadow-md border-b border-[#003663] z-30 font-body">
-      <div className="flex items-center space-x-3">
+    <nav className="bg-[#004B87] text-white px-3 sm:px-4 md:px-6 py-2.5 min-h-14 sm:min-h-16 flex items-center justify-between shrink-0 shadow-md border-b border-[#003663] z-30 font-body relative">
+      {/* Left: Hamburger Button (Mobile Only) + Logo + App Title */}
+      <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
+        {/* Hamburger Menu Button on Mobile */}
+        {onToggleMobileMenu && (
+          <button
+            type="button"
+            onClick={onToggleMobileMenu}
+            className="md:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-colors cursor-pointer shrink-0"
+            title={isMobileMenuOpen ? 'Tutup Menu Navigasi' : 'Buka Menu Navigasi'}
+            aria-label="Toggle Navigation Menu"
+          >
+            {isMobileMenuOpen ? (
+              <X className="w-5 h-5" />
+            ) : (
+              <Menu className="w-5 h-5" />
+            )}
+          </button>
+        )}
+
         {/* Lombok Barat Official Coat of Arms Logo */}
         <div className="bg-white/15 p-1 rounded-xl backdrop-blur-xs border border-white/25 shadow-xs flex items-center justify-center shrink-0">
-          <LogoLombokBarat size={38} />
+          <LogoLombokBarat size={32} />
         </div>
 
-        <div className="flex flex-col justify-center">
-          <span className="font-heading font-extrabold text-base md:text-lg lg:text-xl tracking-tight text-white leading-tight">
-            SIMORANG DINKES-PPKB
+        <div className="flex flex-col justify-center min-w-0">
+          <div className="flex items-center space-x-1.5">
+            <span className="font-heading font-extrabold text-sm sm:text-base md:text-lg lg:text-xl tracking-tight text-white leading-tight truncate">
+              SIMORANG DINKES-PPKB
+            </span>
+            <span className="hidden sm:inline-block bg-[#82BE00] text-[#003663] font-heading font-extrabold text-[9px] px-1.5 py-0.2 rounded font-bold">
+              v2.5
+            </span>
+          </div>
+          <span className="text-[10px] sm:text-[11px] md:text-xs text-blue-100 font-medium leading-tight truncate hidden sm:block max-w-xs sm:max-w-md md:max-w-xl lg:max-w-3xl">
+            Sistem Monitoring Ruang Kepegawaian Dinkes-PPKB Kab. Lombok Barat
           </span>
-          <span className="text-[10px] sm:text-[11px] md:text-xs text-blue-100 font-medium leading-tight line-clamp-1 max-w-xs sm:max-w-md md:max-w-xl lg:max-w-3xl">
-            Sistem Monitoring Ruang Kepegawaian Dinas Kesehatan, Pengendalian Penduduk dan Keluarga Berencana
+          <span className="text-[9px] text-blue-100/90 font-medium leading-tight truncate sm:hidden">
+            Dinas Kesehatan Kab. Lombok Barat
           </span>
         </div>
       </div>
 
-      <div className="flex items-center gap-2 md:gap-3">
+      {/* Right: Actions & User Profile */}
+      <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
         {/* PWA Install Button if prompt is available */}
         {deferredPrompt && !isInstalled && (
           <button
             type="button"
             onClick={handleInstallPWA}
-            className="flex items-center space-x-1.5 bg-[#82BE00] hover:bg-[#6ea000] text-white px-2.5 py-1.5 rounded-xl text-xs font-heading font-bold shadow-xs transition-all cursor-pointer animate-pulse"
-            title="Install SIMORANG DINKES-PPKB ke HP / Laptop Anda (PWA)"
+            className="flex items-center space-x-1 sm:space-x-1.5 bg-[#82BE00] hover:bg-[#6ea000] text-white px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-heading font-bold shadow-xs transition-all cursor-pointer"
+            title="Install SIMORANG DINKES-PPKB ke HP (PWA)"
           >
             <Smartphone className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Install App PWA</span>
+            <span className="hidden lg:inline">Install App</span>
           </button>
         )}
 
         {/* User Identity Display Badge */}
-        <div className="flex items-center space-x-2.5 bg-white/10 border border-white/20 px-2.5 sm:px-3 py-1.5 rounded-xl shadow-xs">
-          <div className="relative">
+        <div className="flex items-center space-x-2 bg-white/10 border border-white/20 px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 rounded-xl shadow-xs">
+          <div className="relative shrink-0">
             <div
               className={`w-7 h-7 sm:w-8 sm:h-8 rounded-lg flex items-center justify-center font-heading font-bold text-xs text-white shadow-xs ${
                 isSuperAdmin ? 'bg-[#00A3AD]' : 'bg-[#003663]'
@@ -98,10 +129,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             >
               {getInitials(currentUser.nama_lengkap || currentUser.username)}
             </div>
-            <span className="absolute -bottom-0.5 -right-0.5 w-2.5 h-2.5 bg-emerald-400 border-2 border-[#004B87] rounded-full"></span>
+            <span className="absolute -bottom-0.5 -right-0.5 w-2 h-2 sm:w-2.5 sm:h-2.5 bg-emerald-400 border-2 border-[#004B87] rounded-full"></span>
           </div>
 
-          <div className="text-left leading-tight max-w-[130px] sm:max-w-[170px] md:max-w-[220px]">
+          <div className="text-left leading-tight hidden sm:block max-w-[110px] md:max-w-[170px] lg:max-w-[220px]">
             <div className="text-xs font-heading font-bold text-white flex items-center space-x-1 truncate">
               <span className="truncate">{currentUser.nama_lengkap || currentUser.username}</span>
               {isSuperAdmin ? (
@@ -119,11 +150,12 @@ export const Navbar: React.FC<NavbarProps> = ({
         {/* Logout Button */}
         <button
           onClick={onLogout}
-          className="px-2.5 sm:px-3 py-1.5 hover:bg-rose-600/20 active:bg-rose-600/30 rounded-xl text-rose-200 hover:text-white transition-all flex items-center space-x-1.5 text-xs font-semibold border border-rose-400/30 hover:border-rose-400/60 shadow-xs cursor-pointer"
+          className="p-1.5 sm:px-2.5 sm:py-1.5 hover:bg-rose-600/30 active:bg-rose-600/40 rounded-xl text-rose-200 hover:text-white transition-all flex items-center space-x-1.5 text-xs font-semibold border border-rose-400/30 hover:border-rose-400/60 shadow-xs cursor-pointer"
           title="Keluar dari Sistem"
+          aria-label="Logout"
         >
           <LogOut className="w-4 h-4 text-rose-300" />
-          <span className="hidden sm:inline">Keluar</span>
+          <span className="hidden md:inline">Keluar</span>
         </button>
       </div>
     </nav>
