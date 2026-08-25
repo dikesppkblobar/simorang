@@ -119,7 +119,7 @@ export default function App() {
   const [alertsDefaultSubTab, setAlertsDefaultSubTab] = useState<
     'pangkat' | 'jafung' | 'ukom' | 'ujian_dinas' | 'kgb' | 'cuti' | 'pensiun' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4'
   >('jafung');
-  const [settingsDefaultSubTab, setSettingsDefaultSubTab] = useState<'scope' | 'users' | 'export' | 'audit'>('scope');
+  const [settingsDefaultSubTab, setSettingsDefaultSubTab] = useState<'users' | 'export' | 'scope'>('users');
   const [managementDefaultSubTab, setManagementDefaultSubTab] = useState<'users' | 'units' | 'database'>('units');
 
   const handleNavigateTab = (tab: string, subTab?: string) => {
@@ -1024,29 +1024,6 @@ export default function App() {
                   onDeleteUnit={handleDeleteUnit}
                   onSwitchUser={handleSwitchUser}
                   defaultSubTab="export"
-                />
-              )}
-
-              {activeTab === 'audit' && (
-                <SettingsView
-                  currentUser={currentUser}
-                  selectedUnitScope={selectedUnitScope}
-                  onSelectUnitScope={setSelectedUnitScope}
-                  unitsList={unitsList}
-                  usersList={usersList}
-                  pegawaiList={pegawaiList}
-                  scopedPegawaiList={scopedPegawaiList}
-                  skList={skList}
-                  keluargaList={keluargaList}
-                  auditLogs={auditLogs}
-                  onAddUser={handleAddUser}
-                  onUpdateUser={handleUpdateUser}
-                  onDeleteUser={handleDeleteUser}
-                  onAddUnit={handleAddUnit}
-                  onUpdateUnit={handleUpdateUnit}
-                  onDeleteUnit={handleDeleteUnit}
-                  onSwitchUser={handleSwitchUser}
-                  defaultSubTab="audit"
                 />
               )}
             </motion.div>
