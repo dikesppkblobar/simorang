@@ -778,9 +778,23 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                 status_ukom: false,
                 tmt_cpns: '',
                 pendidikan_terakhir: 'S1 Keperawatan',
+                nama_universitas_pt: '',
+                program_studi: '',
                 status_izin_belajar: false,
                 no_whatsapp: '',
                 sisa_cuti_tahunan: 12,
+
+                // Atribut Pemantauan ASN
+                jenjang_jabatan: 'Ahli Pertama',
+                ak_konversi_skp: 12.5,
+                total_ak_kumulatif: 37.5,
+                predikat_skp_terakhir: 'Baik',
+                status_ukkj: 'Belum UKKJ',
+                no_sertifikat_ukkj: '',
+                tgl_lulus_ukkj: '',
+                status_ujian_dinas: 'Bukan Pelaksana',
+                no_stlud: '',
+                status_pencantuman_gelar: 'Terverifikasi BKN',
 
                 golongan_pangkat: 'III/a',
                 nama_pangkat: 'Penata Muda',
@@ -1477,18 +1491,40 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                       </span>
                     </div>
 
-                    <div>
-                      <span className="text-[#64748B] text-[11px] block">Status UKOM / UKKJ:</span>
-                      <span
-                        className={`font-bold ${
-                          selectedPegawaiDetail.pegawai.status_ukkj === 'Lulus UKKJ' || selectedPegawaiDetail.pegawai.status_ukom
-                            ? 'text-emerald-700'
-                            : 'text-amber-700'
-                        }`}
-                      >
-                        {selectedPegawaiDetail.pegawai.status_ukkj || (selectedPegawaiDetail.pegawai.status_ukom ? 'Lulus UKKJ' : 'Belum UKKJ')}
-                      </span>
-                    </div>
+                    {selectedPegawaiDetail.pegawai.jenis_jabatan === 'Fungsional' ? (
+                      <div>
+                        <span className="text-[#64748B] text-[11px] block">Status UKOM / UKKJ:</span>
+                        <span
+                          className={`font-bold ${
+                            selectedPegawaiDetail.pegawai.status_ukkj === 'Lulus UKKJ' || selectedPegawaiDetail.pegawai.status_ukom
+                              ? 'text-emerald-700'
+                              : 'text-amber-700'
+                          }`}
+                        >
+                          {selectedPegawaiDetail.pegawai.status_ukkj || (selectedPegawaiDetail.pegawai.status_ukom ? 'Lulus UKKJ' : 'Belum UKKJ')}
+                        </span>
+                      </div>
+                    ) : selectedPegawaiDetail.pegawai.jenis_jabatan === 'Pelaksana' ? (
+                      <div>
+                        <span className="text-[#64748B] text-[11px] block">Status Ujian Dinas (STLUD):</span>
+                        <span
+                          className={`font-bold ${
+                            selectedPegawaiDetail.pegawai.status_ujian_dinas === 'Lulus STLUD'
+                              ? 'text-emerald-700'
+                              : 'text-slate-800'
+                          }`}
+                        >
+                          {selectedPegawaiDetail.pegawai.status_ujian_dinas || 'Bukan Pelaksana'}
+                        </span>
+                      </div>
+                    ) : (
+                      <div>
+                        <span className="text-[#64748B] text-[11px] block">Jenjang Manajerial:</span>
+                        <span className="font-bold text-slate-800">
+                          {selectedPegawaiDetail.pegawai.jenjang_jabatan || 'Eselon III.a'}
+                        </span>
+                      </div>
+                    )}
 
                     <div>
                       <span className="text-[#64748B] text-[11px] block">Izin / Tugas Belajar & Gelar:</span>
@@ -1560,45 +1596,58 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Highlight Block: Pemantauan Karir ASN (PermenPANRB 1/2023) */}
-                  <div className="bg-indigo-50/80 p-4 rounded-xl border border-indigo-200 space-y-3">
-                    <h4 className="font-bold text-indigo-900 text-xs flex items-center space-x-2">
-                      <Award className="w-4 h-4 text-indigo-600" />
-                      <span>Atribut Pemantauan ASN (Jabatan Fungsional, PAK Integrasi, UKKJ & Ujian Dinas)</span>
-                    </h4>
+                  {/* Highlight Block: Pemantauan Karir ASN (PermenPANRB 1/2023) - Hanya Ditampilkan untuk Jabatan Fungsional */}
+                  {selectedPegawaiDetail.pegawai.jenis_jabatan === 'Fungsional' &&
+                    selectedPegawaiDetail.pegawai.status_kepegawaian !== 'Non-ASN' && (
+                      <div className="bg-indigo-50/80 p-4 rounded-xl border border-indigo-200 space-y-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-bold text-indigo-900 text-xs flex items-center space-x-2">
+                            <Award className="w-4 h-4 text-indigo-600" />
+                            <span>Atribut Pemantauan ASN (Jabatan Fungsional & PAK Integrasi)</span>
+                          </h4>
+                          <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-200/70 text-indigo-900">
+                            PermenPANRB 1/2023
+                          </span>
+                        </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                      <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
-                        <span className="text-slate-500 text-[10px] block font-semibold">Jenjang Jafung</span>
-                        <span className="font-extrabold text-indigo-900">{selectedPegawaiDetail.pegawai.jenjang_jabatan || 'Ahli Pertama'}</span>
-                      </div>
+                        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                          <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
+                            <span className="text-slate-500 text-[10px] block font-semibold">Jenjang Jafung</span>
+                            <span className="font-extrabold text-indigo-900">
+                              {selectedPegawaiDetail.pegawai.jenjang_jabatan || 'Ahli Pertama'}
+                            </span>
+                          </div>
 
-                      <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
-                        <span className="text-slate-500 text-[10px] block font-semibold">AK Konversi SKP</span>
-                        <span className="font-mono font-bold text-slate-800">
-                          {Number.isNaN(Number(selectedPegawaiDetail.pegawai.ak_konversi_skp))
-                            ? 0
-                            : (selectedPegawaiDetail.pegawai.ak_konversi_skp ?? 0)}{' '}
-                          Point
-                        </span>
-                      </div>
+                          <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
+                            <span className="text-slate-500 text-[10px] block font-semibold">AK Konversi SKP</span>
+                            <span className="font-mono font-bold text-slate-800">
+                              {Number.isNaN(Number(selectedPegawaiDetail.pegawai.ak_konversi_skp))
+                                ? 0
+                                : (selectedPegawaiDetail.pegawai.ak_konversi_skp ?? 0)}{' '}
+                              Point
+                            </span>
+                          </div>
 
-                      <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
-                        <span className="text-slate-500 text-[10px] block font-semibold">Total AK Kumulatif</span>
-                        <span className="font-mono font-bold text-indigo-700">
-                          {Number.isNaN(Number(selectedPegawaiDetail.pegawai.total_ak_kumulatif))
-                            ? 0
-                            : (selectedPegawaiDetail.pegawai.total_ak_kumulatif ?? 0)}{' '}
-                          Point
-                        </span>
-                      </div>
+                          <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
+                            <span className="text-slate-500 text-[10px] block font-semibold">Total AK Kumulatif</span>
+                            <span className="font-mono font-bold text-indigo-700">
+                              {Number.isNaN(Number(selectedPegawaiDetail.pegawai.total_ak_kumulatif))
+                                ? 0
+                                : (selectedPegawaiDetail.pegawai.total_ak_kumulatif ?? 0)}{' '}
+                              Point
+                            </span>
+                          </div>
 
-                      <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
-                        <span className="text-slate-500 text-[10px] block font-semibold">Ujian Dinas (Pelaksana)</span>
-                        <span className="font-bold text-slate-800">{selectedPegawaiDetail.pegawai.status_ujian_dinas || 'Bukan Pelaksana'}</span>
+                          <div className="bg-white p-2.5 rounded-lg border border-indigo-100">
+                            <span className="text-slate-500 text-[10px] block font-semibold">Status UKKJ (Ukom)</span>
+                            <span className="font-bold text-slate-800">
+                              {selectedPegawaiDetail.pegawai.status_ukkj ||
+                                (selectedPegawaiDetail.pegawai.status_ukom ? 'Lulus UKKJ' : 'Belum UKKJ')}
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  </div>
+                    )}
                 </div>
               )}
 
