@@ -38,21 +38,22 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
   const [birthdayIndex, setBirthdayIndex] = useState(0);
   const [promotionIndex, setPromotionIndex] = useState(0);
   const [isAutoPlay, setIsAutoPlay] = useState(true);
-  const [searchQuery, setSearchQuery] = useState('');
 
   const today = new Date();
   const currentMonth = today.getMonth() + 1; // 1-12
+  const currentYear = today.getFullYear();
   const currentDay = today.getDate();
+  const currentMonthName = BULAN_INDONESIA[currentMonth - 1] || 'Bulan Ini';
 
-  // 1. Process Birthday Celebrants from Real Pegawai Database
-  const realBirthdays = pegawaiList
+  // 1. Process Birthday Celebrants: ONLY for the CURRENT RUNNING MONTH
+  const birthdayCelebrants = pegawaiList
     .filter((p) => !p.is_deleted && p.tanggal_lahir && p.tanggal_lahir.includes('-'))
     .map((p) => {
       const parts = p.tanggal_lahir.split('-');
       const birthYear = parseInt(parts[0] || '1990', 10);
       const birthMonth = parseInt(parts[1] || '0', 10);
       const birthDay = parseInt(parts[2] || '0', 10);
-      const age = today.getFullYear() - birthYear;
+      const age = currentYear - birthYear;
 
       const isToday = birthMonth === currentMonth && birthDay === currentDay;
       const isThisMonth = birthMonth === currentMonth;
@@ -71,22 +72,20 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
         formattedBirthDate,
       };
     })
+    // STRICT FILTER: Only show employees born in current month
+    .filter((p) => p.isThisMonth)
     .sort((a, b) => {
       if (a.isToday && !b.isToday) return -1;
       if (!a.isToday && b.isToday) return 1;
-      if (a.isThisMonth && !b.isThisMonth) return -1;
-      if (!a.isThisMonth && b.isThisMonth) return 1;
       return a.birthDay - b.birthDay;
     });
 
-  const birthdayCelebrants = realBirthdays;
-
-  // 2. Process Promotions (Kenaikan Pangkat) from Real Pegawai & SK History Database
-  const realPromotions = pegawaiList
+  // 2. Process Promotions (Kenaikan Pangkat): Current Running Month OR Recently Updated in App
+  const promotionCelebrants = pegawaiList
     .filter(
       (p) =>
         !p.is_deleted &&
-        (p.golongan_pangkat || p.status_kepegawaian === 'PNS' || p.tmt_pangkat_terakhir)
+        (p.golongan_pangkat || p.status_kepegawaian === 'PNS' || p.tmt_pangkat_terakhir || p.tmt_golongan)
     )
     .map((p) => {
       // Find matching promotion SK in database
@@ -98,12 +97,29 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
 
       const rawTmt = skPangkat?.tmt_berlaku || p.tmt_pangkat_terakhir || p.tmt_golongan || '';
       let formattedTmt = rawTmt;
+      let tmtMonth = 0;
+      let tmtYear = 0;
+
       if (rawTmt && rawTmt.includes('-')) {
         const parts = rawTmt.split('-');
-        const tmtYear = parts[0];
-        const tmtMonth = parseInt(parts[1] || '1', 10);
+        tmtYear = parseInt(parts[0] || '0', 10);
+        tmtMonth = parseInt(parts[1] || '0', 10);
         const tmtDay = parseInt(parts[2] || '1', 10);
-        formattedTmt = `${tmtDay} ${BULAN_INDONESIA[tmtMonth - 1] || ''} ${tmtYear}`;
+        formattedTmt = `${tmtDay} ${BULAN_INDONESIA[tmtMonth - 1] || ''} ${tmtYear || ''}`;
+      }
+
+      // Check if promotion is in the current running month
+      const isThisMonth = tmtMonth === currentMonth;
+
+      // Check if recently updated in the app (has SK record or recent update)
+      const hasSk = !!skPangkat;
+      const isAppUpdated = hasSk || !!p.no_sk_pangkat || !!p.tgl_sk_pangkat;
+
+      let statusBadge = `Periode ${BULAN_INDONESIA[tmtMonth - 1] || 'Pangkat'}`;
+      if (isThisMonth) {
+        statusBadge = `🎉 Kenaikan Pangkat Bulan Ini (${currentMonthName})`;
+      } else if (isAppUpdated) {
+        statusBadge = `⚡ Pangkat Diperbarui di App`;
       }
 
       return {
@@ -111,40 +127,59 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
         pangkat_baru: p.nama_pangkat || 'Penata',
         golongan_baru: p.golongan_pangkat || 'III/c',
         tmt_pangkat: formattedTmt || '-',
+        raw_tmt: rawTmt,
+        tmt_month: tmtMonth,
+        tmt_year: tmtYear,
         no_sk: skPangkat?.nomor_sk || p.no_sk_pangkat || '-',
+        isThisMonth,
+        isAppUpdated,
+        statusBadge,
+        skCreatedAt: skPangkat?.created_at || p.created_at || '',
       };
+    })
+    .filter((p) => p.isThisMonth || p.isAppUpdated || p.golongan_pangkat)
+    .sort((a, b) => {
+      // 1. Promotions in current month first
+      if (a.isThisMonth && !b.isThisMonth) return -1;
+      if (!a.isThisMonth && b.isThisMonth) return 1;
+      // 2. Promotions with SK uploaded / updated in app
+      if (a.isAppUpdated && !b.isAppUpdated) return -1;
+      if (!a.isAppUpdated && b.isAppUpdated) return 1;
+      // 3. Newest TMT
+      return (b.raw_tmt || '').localeCompare(a.raw_tmt || '');
     });
-
-  const promotionCelebrants = realPromotions;
 
   // Auto-play timer
   useEffect(() => {
     if (!isAutoPlay) return;
     const interval = setInterval(() => {
-      if (activeTab === 'birthday') {
+      if (activeTab === 'birthday' && birthdayCelebrants.length > 0) {
         setBirthdayIndex((prev) => (prev + 1) % birthdayCelebrants.length);
-      } else {
+      } else if (activeTab === 'promotion' && promotionCelebrants.length > 0) {
         setPromotionIndex((prev) => (prev + 1) % promotionCelebrants.length);
       }
     }, 7000);
     return () => clearInterval(interval);
   }, [isAutoPlay, activeTab, birthdayCelebrants.length, promotionCelebrants.length]);
 
-  const currentBirthday = birthdayCelebrants[birthdayIndex] || birthdayCelebrants[0];
-  const currentPromotion = promotionCelebrants[promotionIndex] || promotionCelebrants[0];
+  const safeBirthdayIndex = birthdayCelebrants.length > 0 ? Math.min(birthdayIndex, birthdayCelebrants.length - 1) : 0;
+  const safePromotionIndex = promotionCelebrants.length > 0 ? Math.min(promotionIndex, promotionCelebrants.length - 1) : 0;
+
+  const currentBirthday = birthdayCelebrants[safeBirthdayIndex];
+  const currentPromotion = promotionCelebrants[safePromotionIndex];
 
   const handleNext = () => {
-    if (activeTab === 'birthday') {
+    if (activeTab === 'birthday' && birthdayCelebrants.length > 0) {
       setBirthdayIndex((prev) => (prev + 1) % birthdayCelebrants.length);
-    } else {
+    } else if (activeTab === 'promotion' && promotionCelebrants.length > 0) {
       setPromotionIndex((prev) => (prev + 1) % promotionCelebrants.length);
     }
   };
 
   const handlePrev = () => {
-    if (activeTab === 'birthday') {
+    if (activeTab === 'birthday' && birthdayCelebrants.length > 0) {
       setBirthdayIndex((prev) => (prev - 1 + birthdayCelebrants.length) % birthdayCelebrants.length);
-    } else {
+    } else if (activeTab === 'promotion' && promotionCelebrants.length > 0) {
       setPromotionIndex((prev) => (prev - 1 + promotionCelebrants.length) % promotionCelebrants.length);
     }
   };
@@ -211,7 +246,6 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
               type="button"
               onClick={() => {
                 setActiveTab('birthday');
-                setSearchQuery('');
               }}
               className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[11px] font-heading font-bold transition-all cursor-pointer ${
                 activeTab === 'birthday'
@@ -220,7 +254,7 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
               }`}
             >
               <Cake className="w-3 h-3" />
-              <span>🎂 Ulang Tahun ASN</span>
+              <span>🎂 Ultah {currentMonthName}</span>
               {birthdayCelebrants.length > 0 && (
                 <span className={`text-[9.5px] px-1.5 py-0.2 rounded-full font-bold ${activeTab === 'birthday' ? 'bg-white/25 text-white' : 'bg-slate-200 text-slate-700'}`}>
                   {birthdayCelebrants.length}
@@ -232,7 +266,6 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
               type="button"
               onClick={() => {
                 setActiveTab('promotion');
-                setSearchQuery('');
               }}
               className={`flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-[11px] font-heading font-bold transition-all cursor-pointer ${
                 activeTab === 'promotion'
@@ -383,7 +416,7 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
                 <div className="flex items-center justify-between">
                   <div className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-blue-100 text-[#004B87] border border-blue-300 text-[10px] font-heading font-bold shadow-2xs">
                     <Award className="w-3 h-3 text-[#004B87]" />
-                    <span>APRESIASI KENAIKAN PANGKAT ASN</span>
+                    <span>{(currentPromotion as any).statusBadge || 'APRESIASI KENAIKAN PANGKAT ASN'}</span>
                   </div>
                   <span className="text-[10px] text-[#004B87] font-semibold flex items-center gap-1">
                     <MousePointerClick className="w-3 h-3" />
@@ -429,6 +462,11 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
                       <span className="text-[9.5px] font-semibold text-teal-800 bg-teal-100 px-1.5 py-0.2 rounded-md">
                         TMT: {(currentPromotion as any).tmt_pangkat}
                       </span>
+                      {(currentPromotion as any).no_sk && (currentPromotion as any).no_sk !== '-' && (
+                        <span className="text-[9.5px] font-medium text-slate-600 bg-slate-100 px-1.5 py-0.2 rounded-md truncate max-w-[170px]" title={(currentPromotion as any).no_sk}>
+                          SK: {(currentPromotion as any).no_sk}
+                        </span>
+                      )}
                     </div>
 
                     <div className="flex items-center gap-1.5 pt-0.5 text-[10.5px] text-slate-600">
@@ -449,9 +487,9 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
             ) : (
               <div className="p-6 text-center rounded-xl bg-blue-50/60 border border-blue-200/60 text-slate-600 space-y-2">
                 <Award className="w-8 h-8 text-[#004B87] mx-auto" />
-                <div className="font-heading font-bold text-sm text-slate-800">Tidak Ada Riwayat Kenaikan Pangkat</div>
+                <div className="font-heading font-bold text-sm text-slate-800">Tidak Ada Kenaikan Pangkat Bulan Ini</div>
                 <p className="text-xs text-slate-500 max-w-sm mx-auto">
-                  Belum ada data riwayat SK kenaikan pangkat pada periode ini di database.
+                  Belum ada data kenaikan pangkat atau pembaruan SK pangkat pada bulan {currentMonthName} di sistem SIMPEG.
                 </p>
               </div>
             )
@@ -465,8 +503,8 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
               <Users className="w-3 h-3 text-[#004B87]" />
               <span>
                 {activeTab === 'birthday'
-                  ? 'Daftar ASN Berulang Tahun:'
-                  : 'Daftar ASN Kenaikan Pangkat:'}
+                  ? `Daftar ASN Berulang Tahun (${currentMonthName}):`
+                  : `Daftar ASN Kenaikan Pangkat / Update:`}
               </span>
             </div>
             <span className="text-[9.5px] text-slate-500 font-medium">
@@ -480,11 +518,11 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
               {activeTab === 'birthday' ? (
                 birthdayCelebrants.length === 0 ? (
                   <div className="p-3 text-center text-[11px] text-slate-400 italic">
-                    Tidak ada ASN berulang tahun pada bulan ini
+                    Tidak ada ASN berulang tahun pada bulan {currentMonthName}
                   </div>
                 ) : (
                   birthdayCelebrants.map((b, idx) => {
-                    const isSelected = idx === birthdayIndex;
+                    const isSelected = idx === safeBirthdayIndex;
                     return (
                       <button
                         key={b.nip}
@@ -540,11 +578,11 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
               ) : (
                 promotionCelebrants.length === 0 ? (
                   <div className="p-3 text-center text-[11px] text-slate-400 italic">
-                    Tidak ada riwayat kenaikan pangkat pada periode ini
+                    Tidak ada data kenaikan pangkat pada bulan {currentMonthName}
                   </div>
                 ) : (
                   promotionCelebrants.map((p, idx) => {
-                    const isSelected = idx === promotionIndex;
+                    const isSelected = idx === safePromotionIndex;
                     return (
                       <button
                         key={p.nip}
@@ -565,8 +603,17 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
                             {idx + 1}
                           </div>
                           <div className="min-w-0 flex-1">
-                            <div className="font-heading font-bold text-slate-900 text-[11px] truncate">
-                              {p.nama_lengkap}
+                            <div className="font-heading font-bold text-slate-900 text-[11px] truncate flex items-center gap-1">
+                              <span>{p.nama_lengkap}</span>
+                              {(p as any).isThisMonth ? (
+                                <span className="px-1 py-0.1 rounded-full bg-teal-600 text-white text-[8px] font-extrabold">
+                                  BULAN INI
+                                </span>
+                              ) : (p as any).isAppUpdated ? (
+                                <span className="px-1 py-0.1 rounded-full bg-blue-600 text-white text-[8px] font-extrabold">
+                                  UPDATE APP
+                                </span>
+                              ) : null}
                             </div>
                             <div className="text-[9.5px] text-slate-500 truncate">
                               {p.unit_kerja.replace('Puskesmas ', 'PKM ')} • {p.nip}
