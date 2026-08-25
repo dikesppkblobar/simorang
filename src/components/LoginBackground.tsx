@@ -26,7 +26,7 @@ export const LoginBackground: React.FC = () => {
             border: 'none',
             objectFit: 'cover',
           }}
-          src="https://www.canva.com/design/DAHTMkoTTHo/HDRkgOVBNHWFmEAH_dXCwg/view?embed"
+          src="public/backkgroun login.png"
           allowFullScreen
           allow="fullscreen"
         />
