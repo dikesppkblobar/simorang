@@ -26,16 +26,6 @@ export function getDashboardStats(req: Request, res: Response) {
     const fungsionalJatuhTempoCount = activePegawai.filter((p) => {
       if (p.jenis_jabatan !== 'Fungsional') return false;
       if (kgbNips.has(p.nip) || pangkatNips.has(p.nip)) return true;
-      if (p.no_str && !p.is_str_seumur_hidup && p.tgl_akhir_str) {
-        const exp = new Date(p.tgl_akhir_str + 'T00:00:00');
-        const daysLeft = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysLeft <= 90) return true;
-      }
-      if (p.no_sip && p.tgl_berlaku_sip_akhir) {
-        const exp = new Date(p.tgl_berlaku_sip_akhir + 'T00:00:00');
-        const daysLeft = Math.ceil((exp.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (daysLeft <= 90) return true;
-      }
       if (p.status_ukkj === 'Belum UKKJ' || p.status_ukkj === 'Dalam Proses' || p.status_ukom === false) {
         return true;
       }
