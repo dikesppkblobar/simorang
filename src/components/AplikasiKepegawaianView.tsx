@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import {
   AppWindow,
   Plus,
@@ -17,12 +17,14 @@ import {
   Layers,
   Building2,
   CheckCircle2,
-  Sparkles,
   LayoutGrid,
   List,
   RefreshCw,
   X,
   AlertTriangle,
+  MoreVertical,
+  KeyRound,
+  ShieldCheck,
 } from 'lucide-react';
 import { AplikasiKepegawaian, KategoriAplikasi, UnitKerjaItem, UserAccount } from '../types';
 
@@ -89,14 +91,8 @@ const AppLogoImage: React.FC<{
 
   const sizeClasses = {
     sm: 'w-8 h-8 rounded-lg text-xs',
-    md: 'w-12 h-12 rounded-xl text-sm',
-    lg: 'w-16 h-16 rounded-2xl text-base',
-  };
-
-  const iconSizes = {
-    sm: 'w-4 h-4',
-    md: 'w-6 h-6',
-    lg: 'w-8 h-8',
+    md: 'w-11 h-11 rounded-xl text-sm',
+    lg: 'w-14 h-14 rounded-2xl text-base',
   };
 
   if (imgError || !url) {
@@ -111,7 +107,7 @@ const AppLogoImage: React.FC<{
 
     return (
       <div
-        className={`${sizeClasses[size]} bg-gradient-to-br from-[#004B87] to-[#00A3AD] text-white font-heading font-extrabold flex items-center justify-center shadow-xs shrink-0`}
+        className={`${sizeClasses[size]} bg-gradient-to-br from-[#004B87] to-[#00A3AD] text-white font-heading font-extrabold flex items-center justify-center shadow-2xs shrink-0`}
       >
         {initials}
       </div>
@@ -120,7 +116,7 @@ const AppLogoImage: React.FC<{
 
   return (
     <div
-      className={`${sizeClasses[size]} bg-white border border-[#E2E8F0] p-1.5 flex items-center justify-center shadow-xs shrink-0 overflow-hidden group-hover:scale-105 transition-transform`}
+      className={`${sizeClasses[size]} bg-white border border-slate-200 p-1.5 flex items-center justify-center shadow-2xs shrink-0 overflow-hidden group-hover:scale-105 transition-transform`}
     >
       <img
         src={logoUrl}
@@ -146,13 +142,17 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
   const [selectedKategori, setSelectedKategori] = useState<string>('Semua');
   const [viewMode, setViewMode] = useState<'grid' | 'table'>('grid');
 
-  // Reveal password state for each app id
-  const [revealedPasswords, setRevealedPasswords] = useState<Record<string, boolean>>({});
+  // Kebab menu open state
+  const [activeMenuId, setActiveMenuId] = useState<string | null>(null);
+
+  // Credential popover / modal state
+  const [credentialModalApp, setCredentialModalApp] = useState<AplikasiKepegawaian | null>(null);
+  const [isCredentialPasswordRevealed, setIsCredentialPasswordRevealed] = useState(false);
 
   // Copied indicator state
   const [copiedKey, setCopiedKey] = useState<string | null>(null);
 
-  // Modal State
+  // Modal State for Add / Edit
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingApp, setEditingApp] = useState<AplikasiKepegawaian | null>(null);
 
@@ -175,6 +175,18 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
   const [deleteTarget, setDeleteTarget] = useState<AplikasiKepegawaian | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // Close kebab menu on outside click
+  useEffect(() => {
+    const handleClickOutside = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.kebab-menu-container')) {
+        setActiveMenuId(null);
+      }
+    };
+    document.addEventListener('click', handleClickOutside);
+    return () => document.removeEventListener('click', handleClickOutside);
+  }, []);
+
   // Copy helper
   const handleCopy = (text: string, key: string) => {
     if (!text) return;
@@ -183,13 +195,6 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
     setTimeout(() => {
       setCopiedKey((prev) => (prev === key ? null : prev));
     }, 2000);
-  };
-
-  const toggleRevealPassword = (id: string) => {
-    setRevealedPasswords((prev) => ({
-      ...prev,
-      [id]: !prev[id],
-    }));
   };
 
   // Open Add Modal
@@ -212,6 +217,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
 
   // Open Edit Modal
   const handleOpenEditModal = (app: AplikasiKepegawaian) => {
+    setActiveMenuId(null);
     setEditingApp(app);
     setFormData({
       nama_aplikasi: app.nama_aplikasi,
@@ -295,163 +301,248 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
   ).length;
 
   return (
-    <div className="space-y-6 pb-12 font-body text-[#1E293B]">
-      {/* Header Banner */}
-      <div className="bg-[#004B87] text-white p-5 rounded-2xl border border-[#003663] shadow-md flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-start space-x-3.5">
-          <div className="p-3 rounded-xl bg-white/15 border border-white/25 text-white shrink-0 mt-0.5">
-            <AppWindow className="w-6 h-6" />
+    <div className="space-y-4 font-body text-slate-800">
+      {/* 1. Header Halaman: Judul di Kiri & Satu Tombol Utama di Kanan */}
+      <div className="bg-white p-4 sm:p-5 rounded-2xl border border-slate-200/80 shadow-xs flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+        <div className="flex items-center space-x-3">
+          <div className="p-2.5 bg-blue-50 border border-blue-200/80 rounded-xl text-[#004B87] shrink-0">
+            <AppWindow className="w-5 h-5" />
           </div>
           <div>
-            <div className="flex items-center space-x-2.5 flex-wrap">
-              <h2 className="text-base font-heading font-extrabold text-white">
+            <div className="flex items-center space-x-2 flex-wrap">
+              <h2 className="text-base sm:text-lg font-heading font-extrabold text-slate-900">
                 Direktori Portal & Aplikasi Kepegawaian
               </h2>
-              <span className="px-2.5 py-0.5 rounded-full text-[10px] font-heading font-bold uppercase tracking-wide bg-[#82BE00] text-white border border-[#6ea000]">
-                Single Sign-On & Akses Cepat SDMK
+              <span className="px-2 py-0.5 rounded-md text-[10px] font-heading font-bold bg-emerald-50 text-emerald-800 border border-emerald-200">
+                Single Sign-On SDMK
               </span>
             </div>
-            <p className="text-xs text-blue-100 mt-1 max-w-3xl leading-relaxed">
-              Pengelolaan tautan resmi, kredensial login (username & password), serta deteksi logo otomatis untuk seluruh portal kepegawaian nasional (BKN, Kemenkes), daerah (Lombok Barat), dan layanan jaminan ASN.
+            <p className="text-xs text-slate-500 font-medium mt-0.5">
+              Katalog tautan resmi, akun login SSO, dan integrasi portal kepegawaian ASN
             </p>
           </div>
         </div>
 
-        <div className="flex items-center space-x-2 shrink-0 w-full md:w-auto">
+        <div className="flex items-center space-x-2 w-full sm:w-auto shrink-0">
           {onRefresh && (
             <button
               onClick={onRefresh}
-              className="p-2 bg-white/10 hover:bg-white/20 text-white rounded-xl border border-white/20 transition-colors"
+              className="p-2.5 bg-slate-50 hover:bg-slate-100 text-slate-600 rounded-xl border border-slate-200 transition-colors cursor-pointer"
               title="Segarkan Data"
             >
               <RefreshCw className="w-4 h-4" />
             </button>
           )}
           <button
+            id="btn-tambah-aplikasi-utama"
             onClick={handleOpenAddModal}
-            className="btn-success text-xs px-4 py-2.5 flex items-center space-x-2 shrink-0 shadow-sm"
+            className="flex-1 sm:flex-none inline-flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003663] text-white text-xs font-heading font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>Tambah Aplikasi Baru</span>
+            <span>+ Tambah Aplikasi Baru</span>
           </button>
         </div>
       </div>
 
-      {/* 4 Stat Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="bg-white p-5 rounded-xl shadow-xs border-l-4 border-l-[#004B87] border border-[#E2E8F0] flex flex-col justify-between">
-          <div className="text-xs font-heading font-semibold text-[#64748B]">Total Aplikasi Terdaftar</div>
-          <div className="text-2xl font-heading font-extrabold text-[#004B87] mt-1">{totalCount} Portal</div>
-          <div className="text-xs text-[#64748B] font-medium mt-2 flex items-center justify-between">
-            <span>Terintegrasi SDMK</span>
-            <Layers className="w-4 h-4 text-[#004B87] opacity-80" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl shadow-xs border-l-4 border-l-[#00A3AD] border border-[#E2E8F0] flex flex-col justify-between">
-          <div className="text-xs font-heading font-semibold text-[#64748B]">Portal Nasional (BKN/Kemkes)</div>
-          <div className="text-2xl font-heading font-extrabold text-[#00A3AD] mt-1">{nasionalCount} Portal</div>
-          <div className="text-xs text-[#64748B] font-medium mt-2 flex items-center justify-between">
-            <span>SIASN, E-Kinerja, SISDMK</span>
-            <Globe className="w-4 h-4 text-[#00A3AD] opacity-80" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl shadow-xs border-l-4 border-l-[#004B87] border border-[#E2E8F0] flex flex-col justify-between">
-          <div className="text-xs font-heading font-semibold text-[#64748B]">Portal Daerah (Lobar / NTB)</div>
-          <div className="text-2xl font-heading font-extrabold text-[#004B87] mt-1">{daerahCount} Portal</div>
-          <div className="text-xs text-[#64748B] font-medium mt-2 flex items-center justify-between">
-            <span>SIMPEG & Layanan BKD</span>
-            <Building2 className="w-4 h-4 text-[#004B87] opacity-80" />
-          </div>
-        </div>
-
-        <div className="bg-white p-5 rounded-xl shadow-xs border-l-4 border-l-[#82BE00] border border-[#E2E8F0] flex flex-col justify-between">
-          <div className="text-xs font-heading font-semibold text-[#64748B]">Layanan Keuangan & Jaminan</div>
-          <div className="text-2xl font-heading font-extrabold text-[#82BE00] mt-1">{finansialCount} Portal</div>
-          <div className="text-xs text-[#6ea000] font-semibold mt-2 flex items-center justify-between">
-            <span>Taspen, BPJS & Asuransi</span>
-            <Shield className="w-4 h-4 text-[#82BE00] opacity-80" />
-          </div>
-        </div>
-      </div>
-
-      {/* Filter and Search Controls */}
-      <div className="bg-white p-4 rounded-xl border border-[#E2E8F0] shadow-xs flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-3">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="w-4 h-4 text-[#64748B] absolute left-3 top-2.5" />
-          <input
-            type="text"
-            placeholder="Cari nama aplikasi, domain, username, atau deskripsi..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-[#E2E8F0] rounded-xl text-xs focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none font-medium text-[#1E293B] placeholder:text-[#64748B]"
-          />
-          {searchTerm && (
-            <button
-              onClick={() => setSearchTerm('')}
-              className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
-            >
-              <X className="w-4 h-4" />
-            </button>
-          )}
-        </div>
-
-        {/* Category Pills & View Switcher */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1 lg:pb-0">
-          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl shrink-0">
-            <button
-              type="button"
-              onClick={() => setSelectedKategori('Semua')}
-              className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-colors ${
-                selectedKategori === 'Semua'
-                  ? 'bg-[#004B87] text-white shadow-xs'
-                  : 'text-[#64748B] hover:text-[#1E293B]'
+      {/* 2. Ringkasan Statistik Kompak & Clickable (Berfungsi sebagai Filter Cepat) */}
+      <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
+        {/* Total Portal */}
+        <button
+          id="stat-filter-semua"
+          type="button"
+          onClick={() => setSelectedKategori('Semua')}
+          className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            selectedKategori === 'Semua'
+              ? 'bg-[#004B87] text-white border-[#004B87] shadow-xs ring-2 ring-[#004B87]/20'
+              : 'bg-white hover:border-slate-300 border-slate-200/80 text-slate-700'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <Layers className={`w-4 h-4 ${selectedKategori === 'Semua' ? 'text-white' : 'text-[#004B87]'}`} />
+            <span
+              className={`text-base font-heading font-extrabold ${
+                selectedKategori === 'Semua' ? 'text-white' : 'text-slate-900'
               }`}
             >
-              Semua ({totalCount})
-            </button>
-            {KATEGORI_OPTIONS.map((kat) => {
-              const count = aplikasiList.filter((a) => a.kategori === kat).length;
-              return (
-                <button
-                  key={kat}
-                  type="button"
-                  onClick={() => setSelectedKategori(kat)}
-                  className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-colors whitespace-nowrap ${
-                    selectedKategori === kat
-                      ? 'bg-[#004B87] text-white shadow-xs'
-                      : 'text-[#64748B] hover:text-[#1E293B]'
-                  }`}
-                >
-                  {kat.split(' ')[0]} ({count})
-                </button>
-              );
-            })}
+              {totalCount}
+            </span>
+          </div>
+          <div
+            className={`text-xs font-heading font-bold ${
+              selectedKategori === 'Semua' ? 'text-white' : 'text-slate-800'
+            }`}
+          >
+            Semua Portal Aplikasi
+          </div>
+          <div
+            className={`text-[10px] mt-0.5 truncate ${
+              selectedKategori === 'Semua' ? 'text-blue-100' : 'text-slate-400'
+            }`}
+          >
+            Terintegrasi SDMK
+          </div>
+        </button>
+
+        {/* Portal Nasional */}
+        <button
+          id="stat-filter-nasional"
+          type="button"
+          onClick={() => setSelectedKategori('Nasional (BKN / Kemenkes)')}
+          className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            selectedKategori === 'Nasional (BKN / Kemenkes)'
+              ? 'bg-[#00A3AD] text-white border-[#00A3AD] shadow-xs ring-2 ring-[#00A3AD]/20'
+              : 'bg-white hover:border-teal-300 border-teal-200/70 text-slate-700'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <Globe className={`w-4 h-4 ${selectedKategori === 'Nasional (BKN / Kemenkes)' ? 'text-white' : 'text-[#00A3AD]'}`} />
+            <span
+              className={`text-base font-heading font-extrabold ${
+                selectedKategori === 'Nasional (BKN / Kemenkes)' ? 'text-white' : 'text-[#00A3AD]'
+              }`}
+            >
+              {nasionalCount}
+            </span>
+          </div>
+          <div
+            className={`text-xs font-heading font-bold ${
+              selectedKategori === 'Nasional (BKN / Kemenkes)' ? 'text-white' : 'text-slate-800'
+            }`}
+          >
+            Portal Nasional (BKN/Kemkes)
+          </div>
+          <div
+            className={`text-[10px] mt-0.5 truncate ${
+              selectedKategori === 'Nasional (BKN / Kemenkes)' ? 'text-teal-100' : 'text-slate-400'
+            }`}
+          >
+            SIASN, E-Kinerja, SISDMK
+          </div>
+        </button>
+
+        {/* Portal Pemda */}
+        <button
+          id="stat-filter-pemda"
+          type="button"
+          onClick={() => setSelectedKategori('Pemerintah Daerah (Lombok Barat / NTB)')}
+          className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            selectedKategori === 'Pemerintah Daerah (Lombok Barat / NTB)'
+              ? 'bg-[#004B87] text-white border-[#004B87] shadow-xs ring-2 ring-[#004B87]/20'
+              : 'bg-white hover:border-blue-300 border-blue-200/70 text-slate-700'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <Building2 className={`w-4 h-4 ${selectedKategori === 'Pemerintah Daerah (Lombok Barat / NTB)' ? 'text-white' : 'text-[#004B87]'}`} />
+            <span
+              className={`text-base font-heading font-extrabold ${
+                selectedKategori === 'Pemerintah Daerah (Lombok Barat / NTB)' ? 'text-white' : 'text-[#004B87]'
+              }`}
+            >
+              {daerahCount}
+            </span>
+          </div>
+          <div
+            className={`text-xs font-heading font-bold ${
+              selectedKategori === 'Pemerintah Daerah (Lombok Barat / NTB)' ? 'text-white' : 'text-slate-800'
+            }`}
+          >
+            Portal Daerah (Lobar / NTB)
+          </div>
+          <div
+            className={`text-[10px] mt-0.5 truncate ${
+              selectedKategori === 'Pemerintah Daerah (Lombok Barat / NTB)' ? 'text-blue-100' : 'text-slate-400'
+            }`}
+          >
+            SIMPEG & Layanan BKD
+          </div>
+        </button>
+
+        {/* Layanan Finansial */}
+        <button
+          id="stat-filter-finansial"
+          type="button"
+          onClick={() => setSelectedKategori('Layanan Finansial & Jaminan ASN')}
+          className={`p-3 rounded-xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
+            selectedKategori === 'Layanan Finansial & Jaminan ASN'
+              ? 'bg-emerald-600 text-white border-emerald-600 shadow-xs ring-2 ring-emerald-600/20'
+              : 'bg-white hover:border-emerald-300 border-emerald-200/70 text-slate-700'
+          }`}
+        >
+          <div className="flex items-center justify-between gap-1 mb-1">
+            <Shield className={`w-4 h-4 ${selectedKategori === 'Layanan Finansial & Jaminan ASN' ? 'text-white' : 'text-emerald-600'}`} />
+            <span
+              className={`text-base font-heading font-extrabold ${
+                selectedKategori === 'Layanan Finansial & Jaminan ASN' ? 'text-white' : 'text-emerald-700'
+              }`}
+            >
+              {finansialCount}
+            </span>
+          </div>
+          <div
+            className={`text-xs font-heading font-bold ${
+              selectedKategori === 'Layanan Finansial & Jaminan ASN' ? 'text-white' : 'text-slate-800'
+            }`}
+          >
+            Keuangan & Jaminan ASN
+          </div>
+          <div
+            className={`text-[10px] mt-0.5 truncate ${
+              selectedKategori === 'Layanan Finansial & Jaminan ASN' ? 'text-emerald-100' : 'text-slate-400'
+            }`}
+          >
+            Taspen, BPJS & Asuransi
+          </div>
+        </button>
+      </div>
+
+      {/* 3. Control Bar: Baris 1 (Pencarian Lebar + View Mode) & Baris 2 (Pill Tabs Kategori) */}
+      <div className="bg-white p-3.5 sm:p-4 rounded-2xl border border-slate-200/80 shadow-xs space-y-3">
+        {/* Baris 1: Kotak Pencarian Lebar Berdiri Sendiri + Tombol View Mode */}
+        <div className="flex items-center gap-2.5">
+          <div className="relative flex-1">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <input
+              id="input-cari-aplikasi"
+              type="text"
+              placeholder="Cari nama aplikasi, domain, peruntukan, atau username..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-9 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-900 placeholder:text-slate-400 focus:bg-white focus:border-[#004B87] focus:ring-2 focus:ring-[#004B87]/20 outline-none transition-all"
+            />
+            {searchTerm && (
+              <button
+                onClick={() => setSearchTerm('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1 cursor-pointer"
+                title="Hapus pencarian"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            )}
           </div>
 
-          {/* View Mode Toggle */}
-          <div className="flex items-center space-x-1 bg-slate-100 p-1 rounded-xl shrink-0">
+          {/* Tombol Pengatur Tampilan Grid/Table */}
+          <div className="flex items-center bg-slate-100 p-1 rounded-xl border border-slate-200/80 shrink-0">
             <button
+              id="view-grid-btn"
               type="button"
               onClick={() => setViewMode('grid')}
-              className={`p-1.5 rounded-lg text-xs transition-colors ${
+              className={`p-2 rounded-lg text-xs transition-all cursor-pointer ${
                 viewMode === 'grid'
-                  ? 'bg-white text-[#004B87] shadow-xs'
-                  : 'text-[#64748B] hover:text-[#1E293B]'
+                  ? 'bg-white text-[#004B87] shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
               title="Tampilan Grid Kartu"
             >
               <LayoutGrid className="w-4 h-4" />
             </button>
             <button
+              id="view-table-btn"
               type="button"
               onClick={() => setViewMode('table')}
-              className={`p-1.5 rounded-lg text-xs transition-colors ${
+              className={`p-2 rounded-lg text-xs transition-all cursor-pointer ${
                 viewMode === 'table'
-                  ? 'bg-white text-[#004B87] shadow-xs'
-                  : 'text-[#64748B] hover:text-[#1E293B]'
+                  ? 'bg-white text-[#004B87] shadow-xs font-bold'
+                  : 'text-slate-500 hover:text-slate-800'
               }`}
               title="Tampilan Tabel"
             >
@@ -459,44 +550,88 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
             </button>
           </div>
         </div>
+
+        {/* Baris 2: Tab Filter Kategori (Pill Tabs yang Bersih) */}
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 pt-0.5 border-t border-slate-100">
+          <button
+            id="tab-kategori-semua"
+            type="button"
+            onClick={() => setSelectedKategori('Semua')}
+            className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+              selectedKategori === 'Semua'
+                ? 'bg-[#004B87] text-white shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+          >
+            Semua ({totalCount})
+          </button>
+          {KATEGORI_OPTIONS.map((kat) => {
+            const count = aplikasiList.filter((a) => a.kategori === kat).length;
+            const shortLabel =
+              kat === 'Nasional (BKN / Kemenkes)'
+                ? 'Nasional'
+                : kat === 'Pemerintah Daerah (Lombok Barat / NTB)'
+                ? 'Pemda Lombok Barat'
+                : kat === 'Layanan Finansial & Jaminan ASN'
+                ? 'Finansial & Jaminan'
+                : 'Lainnya';
+
+            return (
+              <button
+                key={kat}
+                id={`tab-kategori-${shortLabel.toLowerCase().replace(/\s+/g, '-')}`}
+                type="button"
+                onClick={() => setSelectedKategori(kat)}
+                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  selectedKategori === kat
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                {shortLabel} ({count})
+              </button>
+            );
+          })}
+        </div>
       </div>
 
-      {/* Main Content: Grid vs Table */}
+      {/* 4. Main Content: Redesigned Clean Grid vs Table */}
       {filteredList.length === 0 ? (
-        <div className="bg-white rounded-2xl border border-[#E2E8F0] p-12 text-center text-[#64748B] shadow-xs">
-          <AppWindow className="w-12 h-12 text-slate-300 mx-auto mb-3" />
-          <h3 className="text-base font-heading font-bold text-[#1E293B]">
+        <div className="bg-white rounded-2xl border border-slate-200/80 p-12 text-center text-slate-500 shadow-xs space-y-2">
+          <AppWindow className="w-10 h-10 text-slate-300 mx-auto" />
+          <h3 className="text-sm font-heading font-bold text-slate-800">
             Tidak ada aplikasi kepegawaian yang sesuai
           </h3>
-          <p className="text-xs text-[#64748B] mt-1 max-w-md mx-auto">
-            Coba ubah kata kunci pencarian atau tambahkan aplikasi kepegawaian baru ke direktori.
+          <p className="text-xs text-slate-400 max-w-md mx-auto">
+            Coba sesuaikan kata kunci pencarian atau pilih tab kategori aplikasi lainnya.
           </p>
           <button
             onClick={handleOpenAddModal}
-            className="btn-primary text-xs px-4 py-2 mt-4 inline-flex items-center space-x-2"
+            className="inline-flex items-center space-x-1.5 bg-[#004B87] text-white text-xs font-heading font-bold px-4 py-2 rounded-xl mt-3 shadow-xs hover:bg-[#003663] transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             <span>Tambah Aplikasi Sekarang</span>
           </button>
         </div>
       ) : viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
+        /* Redesigned Card Grid: Clean, Uncluttered, Kebab Menu, Popover Credentials, Truncated Desc */
+        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           {filteredList.map((app) => {
             const domain = extractDomain(app.url_aplikasi);
-            const isPasswordRevealed = !!revealedPasswords[app.id];
-            const isUsernameCopied = copiedKey === `user-${app.id}`;
-            const isPasswordCopied = copiedKey === `pass-${app.id}`;
-            const isLinkCopied = copiedKey === `link-${app.id}`;
+            const hasCredentials = Boolean(app.username || app.password);
+            const isMenuOpen = activeMenuId === app.id;
 
             return (
               <div
                 key={app.id}
-                className="bg-white rounded-2xl border border-[#E2E8F0] shadow-xs hover:shadow-md transition-all flex flex-col justify-between overflow-hidden group hover:border-[#004B87]/40"
+                id={`card-app-${app.id}`}
+                className="bg-white rounded-2xl border border-slate-200/90 shadow-2xs hover:shadow-md transition-all flex flex-col justify-between group hover:border-[#004B87]/50 relative"
               >
-                {/* Card Top / Header */}
-                <div className="p-5 space-y-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start space-x-3.5">
+                {/* Card Top / Header Area */}
+                <div className="p-4 sm:p-5 space-y-3">
+                  {/* Top Bar: Logo + Name + Kebab Menu */}
+                  <div className="flex items-start justify-between gap-2.5">
+                    <div className="flex items-center space-x-3 min-w-0 flex-1">
                       <AppLogoImage
                         url={app.url_aplikasi}
                         customLogo={app.custom_logo_url}
@@ -504,193 +639,163 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                         size="md"
                       />
                       <div className="min-w-0 flex-1">
-                        <h4 className="font-heading font-bold text-sm text-[#1E293B] leading-tight group-hover:text-[#004B87] transition-colors">
+                        <h4 className="font-heading font-bold text-sm text-slate-900 leading-snug group-hover:text-[#004B87] transition-colors truncate">
                           {app.nama_aplikasi}
                         </h4>
-                        <a
-                          href={app.url_aplikasi.startsWith('http') ? app.url_aplikasi : `https://${app.url_aplikasi}`}
-                          target="_blank"
-                          rel="noreferrer"
-                          className="text-[11px] text-[#00A3AD] font-medium hover:underline inline-flex items-center space-x-1 mt-0.5 truncate max-w-full"
-                          title="Buka URL Aplikasi"
-                        >
-                          <span className="truncate">{domain || app.url_aplikasi}</span>
-                          <ExternalLink className="w-3 h-3 shrink-0 opacity-70" />
-                        </a>
+                        <div className="text-[11px] text-slate-500 font-mono truncate mt-0.5">
+                          {domain || app.url_aplikasi}
+                        </div>
                       </div>
                     </div>
 
-                    <span
-                      className={`text-[10px] font-heading font-bold px-2 py-0.5 rounded-full uppercase tracking-wider shrink-0 ${
-                        app.kategori.includes('Nasional')
-                          ? 'bg-blue-50 text-[#004B87] border border-blue-200/80'
-                          : app.kategori.includes('Daerah')
-                          ? 'bg-teal-50 text-[#00A3AD] border border-teal-200/80'
-                          : 'bg-emerald-50 text-[#6ea000] border border-emerald-200/80'
-                      }`}
-                    >
-                      {app.kategori.includes('Nasional')
-                        ? 'Nasional'
-                        : app.kategori.includes('Daerah')
-                        ? 'Pemda'
-                        : 'Jaminan'}
-                    </span>
-                  </div>
+                    {/* Kebab Menu (Dropdown Titik Tiga) */}
+                    <div className="relative shrink-0 kebab-menu-container">
+                      <button
+                        id={`btn-menu-${app.id}`}
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setActiveMenuId(isMenuOpen ? null : app.id);
+                        }}
+                        className="p-1.5 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer"
+                        title="Opsi Aplikasi"
+                      >
+                        <MoreVertical className="w-4 h-4" />
+                      </button>
 
-                  {/* Description */}
-                  {app.deskripsi && (
-                    <p className="text-xs text-[#64748B] leading-relaxed line-clamp-2">
-                      {app.deskripsi}
-                    </p>
-                  )}
-
-                  {/* Credentials Box (Username & Password) */}
-                  <div className="bg-[#F8FAFC] p-3 rounded-xl border border-[#E2E8F0] space-y-2 text-xs">
-                    {/* Username Row */}
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-1.5 text-[#64748B] min-w-0">
-                        <User className="w-3.5 h-3.5 shrink-0 text-[#004B87]" />
-                        <span className="text-[11px] font-medium">Username:</span>
-                        <span className="font-mono font-semibold text-[#1E293B] truncate ml-1">
-                          {app.username || '-'}
-                        </span>
-                      </div>
-                      {app.username && (
-                        <button
-                          type="button"
-                          onClick={() => handleCopy(app.username || '', `user-${app.id}`)}
-                          className={`p-1 rounded-md transition-colors ${
-                            isUsernameCopied
-                              ? 'bg-emerald-100 text-emerald-800'
-                              : 'hover:bg-slate-200 text-[#64748B]'
-                          }`}
-                          title="Salin Username"
-                        >
-                          {isUsernameCopied ? (
-                            <Check className="w-3.5 h-3.5 text-emerald-600" />
-                          ) : (
-                            <Copy className="w-3.5 h-3.5" />
-                          )}
-                        </button>
-                      )}
-                    </div>
-
-                    {/* Password Row */}
-                    <div className="flex items-center justify-between pt-1 border-t border-slate-200/60">
-                      <div className="flex items-center space-x-1.5 text-[#64748B] min-w-0">
-                        <Lock className="w-3.5 h-3.5 shrink-0 text-[#00A3AD]" />
-                        <span className="text-[11px] font-medium">Password:</span>
-                        <span className="font-mono font-semibold text-[#1E293B] truncate ml-1">
-                          {app.password
-                            ? isPasswordRevealed
-                              ? app.password
-                              : '••••••••'
-                            : '-'}
-                        </span>
-                      </div>
-                      {app.password && (
-                        <div className="flex items-center space-x-1">
+                      {isMenuOpen && (
+                        <div className="absolute right-0 top-8 w-44 bg-white rounded-xl shadow-lg border border-slate-200 py-1.5 z-20 animate-in fade-in zoom-in-95 duration-100">
                           <button
                             type="button"
-                            onClick={() => toggleRevealPassword(app.id)}
-                            className="p-1 hover:bg-slate-200 rounded-md text-[#64748B] transition-colors"
-                            title={isPasswordRevealed ? 'Sembunyikan Password' : 'Lihat Password'}
+                            onClick={() => handleOpenEditModal(app)}
+                            className="w-full text-left px-3 py-2 text-xs font-heading font-medium text-slate-700 hover:bg-slate-50 hover:text-[#004B87] flex items-center space-x-2 transition-colors cursor-pointer"
                           >
-                            {isPasswordRevealed ? (
-                              <EyeOff className="w-3.5 h-3.5" />
-                            ) : (
-                              <Eye className="w-3.5 h-3.5" />
-                            )}
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Edit Detail</span>
                           </button>
                           <button
                             type="button"
-                            onClick={() => handleCopy(app.password || '', `pass-${app.id}`)}
-                            className={`p-1 rounded-md transition-colors ${
-                              isPasswordCopied
-                                ? 'bg-emerald-100 text-emerald-800'
-                                : 'hover:bg-slate-200 text-[#64748B]'
-                            }`}
-                            title="Salin Password"
+                            onClick={() => {
+                              setActiveMenuId(null);
+                              setDeleteTarget(app);
+                            }}
+                            className="w-full text-left px-3 py-2 text-xs font-heading font-medium text-rose-600 hover:bg-rose-50 flex items-center space-x-2 transition-colors cursor-pointer border-t border-slate-100 mt-1"
                           >
-                            {isPasswordCopied ? (
-                              <Check className="w-3.5 h-3.5 text-emerald-600" />
-                            ) : (
-                              <Copy className="w-3.5 h-3.5" />
-                            )}
+                            <Trash2 className="w-3.5 h-3.5" />
+                            <span>Hapus Aplikasi</span>
                           </button>
                         </div>
                       )}
                     </div>
                   </div>
+
+                  {/* Badges Bar: Kategori & Status/Kredensial */}
+                  <div className="flex items-center justify-between gap-2 pt-1">
+                    <span
+                      className={`text-[10px] font-heading font-bold px-2 py-0.5 rounded-md uppercase tracking-wider shrink-0 ${
+                        app.kategori.includes('Nasional')
+                          ? 'bg-blue-50 text-[#004B87] border border-blue-200'
+                          : app.kategori.includes('Daerah')
+                          ? 'bg-teal-50 text-[#00A3AD] border border-teal-200'
+                          : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
+                      }`}
+                    >
+                      {app.kategori.includes('Nasional')
+                        ? 'Nasional'
+                        : app.kategori.includes('Daerah')
+                        ? 'Pemda Lobar'
+                        : 'Jaminan ASN'}
+                    </span>
+
+                    {/* Tombol Ringkas / Indikator Kredensial */}
+                    {hasCredentials ? (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setCredentialModalApp(app);
+                          setIsCredentialPasswordRevealed(false);
+                        }}
+                        className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-md text-[10.5px] font-heading font-semibold text-slate-600 bg-slate-100 hover:bg-amber-50 hover:text-amber-900 hover:border-amber-300 border border-slate-200 transition-colors cursor-pointer"
+                        title="Klik untuk melihat username & password"
+                      >
+                        <KeyRound className="w-3 h-3 text-amber-600" />
+                        <span>Kredensial Login</span>
+                      </button>
+                    ) : (
+                      <span className="text-[10px] text-slate-400 italic">Login Terbuka</span>
+                    )}
+                  </div>
+
+                  {/* Ringkas Deskripsi Maksimal 1 Baris (Truncated) */}
+                  {app.deskripsi && (
+                    <p
+                      className="text-xs text-slate-500 line-clamp-1 leading-normal pt-0.5"
+                      title={app.deskripsi}
+                    >
+                      {app.deskripsi}
+                    </p>
+                  )}
                 </div>
 
-                {/* Card Footer: Action Buttons */}
-                <div className="px-5 py-3 bg-[#F8FAFC] border-t border-[#E2E8F0] flex items-center justify-between">
+                {/* Card Footer: Tombol Utama Buka Portal yang Mencolok & Elegan */}
+                <div className="p-3 bg-slate-50/80 border-t border-slate-200/80 rounded-b-2xl flex items-center gap-2">
                   <a
                     href={app.url_aplikasi.startsWith('http') ? app.url_aplikasi : `https://${app.url_aplikasi}`}
                     target="_blank"
                     rel="noreferrer"
-                    className="btn-primary text-xs px-3.5 py-1.5 flex items-center space-x-1.5 shadow-xs"
+                    className="flex-1 inline-flex items-center justify-center space-x-1.5 bg-[#004B87] hover:bg-[#003663] text-white text-xs font-heading font-bold py-2 px-3 rounded-xl shadow-2xs transition-all text-center"
                   >
                     <span>Buka Portal</span>
                     <ExternalLink className="w-3.5 h-3.5" />
                   </a>
 
-                  <div className="flex items-center space-x-1">
+                  {hasCredentials && (
                     <button
                       type="button"
-                      onClick={() => handleOpenEditModal(app)}
-                      className="p-1.5 hover:bg-slate-200 text-[#64748B] hover:text-[#004B87] rounded-lg transition-colors"
-                      title="Edit Detail Aplikasi"
+                      onClick={() => {
+                        setCredentialModalApp(app);
+                        setIsCredentialPasswordRevealed(false);
+                      }}
+                      className="p-2 bg-white hover:bg-slate-100 text-slate-700 border border-slate-200 rounded-xl transition-colors shrink-0 cursor-pointer"
+                      title="Lihat Username & Password"
                     >
-                      <Edit3 className="w-4 h-4" />
+                      <Lock className="w-3.5 h-3.5 text-slate-600" />
                     </button>
-                    <button
-                      type="button"
-                      onClick={() => setDeleteTarget(app)}
-                      className="p-1.5 hover:bg-red-50 text-[#64748B] hover:text-red-600 rounded-lg transition-colors"
-                      title="Hapus Aplikasi"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
-                  </div>
+                  )}
                 </div>
               </div>
             );
           })}
         </div>
       ) : (
-        /* Table View */
-        <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xs overflow-hidden">
-          <div className="px-6 py-3.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
-            <span className="text-xs font-heading font-bold text-[#1E293B] uppercase tracking-wider">
-              DAFTAR PORTAL & APLIKASI KEPEGAWAIAN ({filteredList.length} PORTAL)
+        /* Redesigned Table View */
+        <div className="bg-white rounded-2xl border border-slate-200/80 shadow-xs overflow-hidden">
+          <div className="px-5 py-3 bg-slate-50/80 border-b border-slate-200/80 flex items-center justify-between">
+            <span className="text-xs font-heading font-extrabold text-slate-800 uppercase tracking-wide">
+              Daftar Portal & Aplikasi Kepegawaian ({filteredList.length} Portal)
             </span>
           </div>
 
           <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs font-body">
+            <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] uppercase tracking-wider font-heading font-bold text-[11px]">
-                  <th className="p-3.5 text-center w-12">NO</th>
-                  <th className="p-3.5">APLIKASI & LOGO</th>
-                  <th className="p-3.5">KATEGORI & LINGKUP</th>
-                  <th className="p-3.5">URL / TAUTAN RESMI</th>
-                  <th className="p-3.5">USERNAME / AKUN</th>
-                  <th className="p-3.5">PASSWORD</th>
-                  <th className="p-3.5 text-center">AKSI</th>
+                <tr className="bg-slate-50/60 border-b border-slate-200/80 text-slate-500 uppercase tracking-wider font-heading font-bold text-[11px]">
+                  <th className="p-3.5 text-center w-12">No</th>
+                  <th className="p-3.5">Aplikasi & Logo</th>
+                  <th className="p-3.5">Kategori</th>
+                  <th className="p-3.5">Tautan Resmi</th>
+                  <th className="p-3.5">Kredensial</th>
+                  <th className="p-3.5 text-right">Aksi</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#E2E8F0]">
+              <tbody className="divide-y divide-slate-100">
                 {filteredList.map((app, idx) => {
                   const domain = extractDomain(app.url_aplikasi);
-                  const isPasswordRevealed = !!revealedPasswords[app.id];
-                  const isUsernameCopied = copiedKey === `user-${app.id}`;
-                  const isPasswordCopied = copiedKey === `pass-${app.id}`;
+                  const hasCredentials = Boolean(app.username || app.password);
 
                   return (
                     <tr key={app.id} className="hover:bg-slate-50/80 transition-colors">
-                      <td className="p-3.5 text-center font-semibold text-[#64748B]">{idx + 1}</td>
+                      <td className="p-3.5 text-center font-semibold text-slate-400">{idx + 1}</td>
                       <td className="p-3.5">
                         <div className="flex items-center space-x-3">
                           <AppLogoImage
@@ -700,11 +805,11 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                             size="sm"
                           />
                           <div>
-                            <div className="font-heading font-bold text-[#1E293B]">
+                            <div className="font-heading font-bold text-slate-900">
                               {app.nama_aplikasi}
                             </div>
                             {app.deskripsi && (
-                              <div className="text-[11px] text-[#64748B] line-clamp-1 max-w-xs">
+                              <div className="text-[11px] text-slate-500 line-clamp-1 max-w-xs">
                                 {app.deskripsi}
                               </div>
                             )}
@@ -713,15 +818,19 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                       </td>
                       <td className="p-3.5">
                         <span
-                          className={`text-[10px] font-heading font-bold px-2 py-0.5 rounded-full uppercase tracking-wider ${
+                          className={`text-[10px] font-heading font-bold px-2 py-0.5 rounded-md uppercase tracking-wider ${
                             app.kategori.includes('Nasional')
                               ? 'bg-blue-50 text-[#004B87] border border-blue-200'
                               : app.kategori.includes('Daerah')
                               ? 'bg-teal-50 text-[#00A3AD] border border-teal-200'
-                              : 'bg-emerald-50 text-[#6ea000] border border-emerald-200'
+                              : 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                           }`}
                         >
-                          {app.kategori}
+                          {app.kategori.includes('Nasional')
+                            ? 'Nasional'
+                            : app.kategori.includes('Daerah')
+                            ? 'Pemda'
+                            : 'Jaminan'}
                         </span>
                       </td>
                       <td className="p-3.5">
@@ -736,80 +845,37 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                         </a>
                       </td>
                       <td className="p-3.5">
-                        <div className="flex items-center space-x-1.5 font-mono">
-                          <span className="font-semibold text-[#1E293B]">
-                            {app.username || '-'}
-                          </span>
-                          {app.username && (
-                            <button
-                              type="button"
-                              onClick={() => handleCopy(app.username || '', `user-${app.id}`)}
-                              className="p-1 hover:bg-slate-100 rounded text-[#64748B]"
-                              title="Salin Username"
-                            >
-                              {isUsernameCopied ? (
-                                <Check className="w-3 h-3 text-emerald-600" />
-                              ) : (
-                                <Copy className="w-3 h-3" />
-                              )}
-                            </button>
-                          )}
-                        </div>
+                        {hasCredentials ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setCredentialModalApp(app);
+                              setIsCredentialPasswordRevealed(false);
+                            }}
+                            className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-lg text-xs font-heading font-semibold bg-amber-50 text-amber-900 border border-amber-200 hover:bg-amber-100 transition-colors cursor-pointer"
+                          >
+                            <KeyRound className="w-3 h-3 text-amber-600" />
+                            <span>Lihat Akun</span>
+                          </button>
+                        ) : (
+                          <span className="text-slate-400 italic text-[11px]">Tidak Ada</span>
+                        )}
                       </td>
-                      <td className="p-3.5">
-                        <div className="flex items-center space-x-1.5 font-mono">
-                          <span className="font-semibold text-[#1E293B]">
-                            {app.password
-                              ? isPasswordRevealed
-                                ? app.password
-                                : '••••••••'
-                              : '-'}
-                          </span>
-                          {app.password && (
-                            <>
-                              <button
-                                type="button"
-                                onClick={() => toggleRevealPassword(app.id)}
-                                className="p-1 hover:bg-slate-100 rounded text-[#64748B]"
-                                title={isPasswordRevealed ? 'Sembunyikan' : 'Lihat'}
-                              >
-                                {isPasswordRevealed ? (
-                                  <EyeOff className="w-3 h-3" />
-                                ) : (
-                                  <Eye className="w-3 h-3" />
-                                )}
-                              </button>
-                              <button
-                                type="button"
-                                onClick={() => handleCopy(app.password || '', `pass-${app.id}`)}
-                                className="p-1 hover:bg-slate-100 rounded text-[#64748B]"
-                                title="Salin Password"
-                              >
-                                {isPasswordCopied ? (
-                                  <Check className="w-3 h-3 text-emerald-600" />
-                                ) : (
-                                  <Copy className="w-3 h-3" />
-                                )}
-                              </button>
-                            </>
-                          )}
-                        </div>
-                      </td>
-                      <td className="p-3.5 text-center">
-                        <div className="flex items-center justify-center space-x-1">
+                      <td className="p-3.5 text-right">
+                        <div className="inline-flex items-center justify-end space-x-1.5">
                           <a
                             href={app.url_aplikasi.startsWith('http') ? app.url_aplikasi : `https://${app.url_aplikasi}`}
                             target="_blank"
                             rel="noreferrer"
-                            className="p-1.5 bg-blue-50 text-[#004B87] hover:bg-blue-100 rounded-lg transition-colors"
-                            title="Buka Aplikasi"
+                            className="px-2.5 py-1 bg-[#004B87] text-white text-xs font-heading font-bold rounded-lg hover:bg-[#003663] transition-all inline-flex items-center space-x-1"
                           >
-                            <ExternalLink className="w-3.5 h-3.5" />
+                            <span>Buka</span>
+                            <ExternalLink className="w-3 h-3" />
                           </a>
                           <button
                             type="button"
                             onClick={() => handleOpenEditModal(app)}
-                            className="p-1.5 hover:bg-slate-100 text-[#64748B] hover:text-[#004B87] rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-slate-100 text-slate-500 hover:text-[#004B87] rounded-lg transition-colors cursor-pointer"
                             title="Edit"
                           >
                             <Edit3 className="w-3.5 h-3.5" />
@@ -817,7 +883,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                           <button
                             type="button"
                             onClick={() => setDeleteTarget(app)}
-                            className="p-1.5 hover:bg-red-50 text-[#64748B] hover:text-red-600 rounded-lg transition-colors"
+                            className="p-1.5 hover:bg-rose-50 text-slate-400 hover:text-rose-600 rounded-lg transition-colors cursor-pointer"
                             title="Hapus"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -833,10 +899,143 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
         </div>
       )}
 
+      {/* POP-UP MODAL KREDENSIAL LOGIN (Sleek, Aman, Tidak Berantakan) */}
+      {credentialModalApp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-sm border border-slate-200 p-5 space-y-4 animate-in zoom-in-95 duration-150">
+            {/* Header */}
+            <div className="flex items-start justify-between gap-3">
+              <div className="flex items-center space-x-3 min-w-0">
+                <AppLogoImage
+                  url={credentialModalApp.url_aplikasi}
+                  customLogo={credentialModalApp.custom_logo_url}
+                  name={credentialModalApp.nama_aplikasi}
+                  size="sm"
+                />
+                <div className="min-w-0">
+                  <h3 className="font-heading font-extrabold text-sm text-slate-900 truncate">
+                    {credentialModalApp.nama_aplikasi}
+                  </h3>
+                  <p className="text-[11px] text-slate-500 font-mono truncate">
+                    {extractDomain(credentialModalApp.url_aplikasi)}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setCredentialModalApp(null)}
+                className="p-1 text-slate-400 hover:text-slate-700 rounded-lg cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {/* Credentials Card Box */}
+            <div className="bg-slate-50 p-3.5 rounded-xl border border-slate-200/90 space-y-3 text-xs">
+              {/* Username Field */}
+              <div className="space-y-1">
+                <div className="text-[10.5px] font-heading font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1">
+                  <User className="w-3 h-3 text-[#004B87]" />
+                  <span>Username / NIP Login</span>
+                </div>
+                <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
+                  <span className="font-mono font-bold text-slate-900 truncate">
+                    {credentialModalApp.username || '-'}
+                  </span>
+                  {credentialModalApp.username && (
+                    <button
+                      type="button"
+                      onClick={() => handleCopy(credentialModalApp.username || '', `modal-user`)}
+                      className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-[#004B87] cursor-pointer"
+                      title="Salin Username"
+                    >
+                      {copiedKey === 'modal-user' ? (
+                        <Check className="w-3.5 h-3.5 text-emerald-600" />
+                      ) : (
+                        <Copy className="w-3.5 h-3.5" />
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* Password Field */}
+              <div className="space-y-1">
+                <div className="text-[10.5px] font-heading font-bold text-slate-500 uppercase tracking-wider flex items-center space-x-1">
+                  <Lock className="w-3 h-3 text-[#00A3AD]" />
+                  <span>Kata Sandi / Password</span>
+                </div>
+                <div className="flex items-center justify-between bg-white px-2.5 py-1.5 rounded-lg border border-slate-200">
+                  <span className="font-mono font-bold text-slate-900 truncate">
+                    {credentialModalApp.password
+                      ? isCredentialPasswordRevealed
+                        ? credentialModalApp.password
+                        : '••••••••••••'
+                      : '-'}
+                  </span>
+                  {credentialModalApp.password && (
+                    <div className="flex items-center space-x-1">
+                      <button
+                        type="button"
+                        onClick={() => setIsCredentialPasswordRevealed(!isCredentialPasswordRevealed)}
+                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-slate-800 cursor-pointer"
+                        title={isCredentialPasswordRevealed ? 'Sembunyikan' : 'Lihat'}
+                      >
+                        {isCredentialPasswordRevealed ? (
+                          <EyeOff className="w-3.5 h-3.5" />
+                        ) : (
+                          <Eye className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleCopy(credentialModalApp.password || '', `modal-pass`)}
+                        className="p-1 hover:bg-slate-100 rounded text-slate-500 hover:text-[#004B87] cursor-pointer"
+                        title="Salin Password"
+                      >
+                        {copiedKey === 'modal-pass' ? (
+                          <Check className="w-3.5 h-3.5 text-emerald-600" />
+                        ) : (
+                          <Copy className="w-3.5 h-3.5" />
+                        )}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex items-center justify-between gap-2 pt-1">
+              <a
+                href={
+                  credentialModalApp.url_aplikasi.startsWith('http')
+                    ? credentialModalApp.url_aplikasi
+                    : `https://${credentialModalApp.url_aplikasi}`
+                }
+                target="_blank"
+                rel="noreferrer"
+                className="flex-1 inline-flex items-center justify-center space-x-1.5 bg-[#004B87] hover:bg-[#003663] text-white text-xs font-heading font-bold py-2.5 rounded-xl shadow-xs transition-all"
+              >
+                <span>Buka Portal Sekarang</span>
+                <ExternalLink className="w-3.5 h-3.5" />
+              </a>
+              <button
+                type="button"
+                onClick={() => setCredentialModalApp(null)}
+                className="px-3 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-heading font-semibold rounded-xl cursor-pointer"
+              >
+                Tutup
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* MODAL: Tambah / Edit Aplikasi */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4 overflow-y-auto">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl border border-[#E2E8F0] overflow-hidden my-8 animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 overflow-y-auto animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-xl border border-slate-200 overflow-hidden my-8 animate-in zoom-in-95 duration-150">
             {/* Modal Header */}
             <div className="px-6 py-4 bg-[#004B87] text-white flex items-center justify-between">
               <div className="flex items-center space-x-2.5">
@@ -848,7 +1047,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
               <button
                 type="button"
                 onClick={() => setIsModalOpen(false)}
-                className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors"
+                className="p-1 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -857,7 +1056,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
             {/* Modal Body / Form */}
             <form onSubmit={handleSubmitForm} className="p-6 space-y-4 text-xs font-body">
               {/* Live Preview Box */}
-              <div className="p-3.5 bg-slate-50 rounded-xl border border-[#E2E8F0] flex items-center space-x-3.5">
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 flex items-center space-x-3.5">
                 <AppLogoImage
                   url={formData.url_aplikasi}
                   customLogo={formData.custom_logo_url}
@@ -866,17 +1065,17 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                 />
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center space-x-2">
-                    <span className="text-[10px] font-heading font-bold text-[#64748B] uppercase">
+                    <span className="text-[10px] font-heading font-bold text-slate-500 uppercase">
                       Pratinjau Otomatis Logo:
                     </span>
                     <span className="text-[10px] text-[#00A3AD] bg-teal-50 px-2 py-0.5 rounded font-semibold border border-teal-200">
                       Otomatis Terdeteksi
                     </span>
                   </div>
-                  <div className="font-heading font-bold text-sm text-[#1E293B] truncate mt-0.5">
+                  <div className="font-heading font-bold text-sm text-slate-900 truncate mt-0.5">
                     {formData.nama_aplikasi || 'Nama Aplikasi'}
                   </div>
-                  <div className="text-[11px] text-[#64748B] truncate">
+                  <div className="text-[11px] text-slate-500 truncate">
                     {formData.url_aplikasi
                       ? extractDomain(formData.url_aplikasi)
                       : 'Ketik URL di bawah untuk melihat logo otomatis'}
@@ -887,8 +1086,8 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Nama Aplikasi */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="font-heading font-bold text-[#1E293B]">
-                    Nama Aplikasi <span className="text-red-500">*</span>
+                  <label className="font-heading font-bold text-slate-900">
+                    Nama Aplikasi <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="text"
@@ -898,14 +1097,14 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                     onChange={(e) =>
                       setFormData({ ...formData, nama_aplikasi: e.target.value })
                     }
-                    className="w-full p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-xl font-medium focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
                   />
                 </div>
 
                 {/* URL Aplikasi */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="font-heading font-bold text-[#1E293B]">
-                    URL / Link Web Aplikasi <span className="text-red-500">*</span>
+                  <label className="font-heading font-bold text-slate-900">
+                    URL / Link Web Aplikasi <span className="text-rose-500">*</span>
                   </label>
                   <input
                     type="url"
@@ -915,16 +1114,16 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                     onChange={(e) =>
                       setFormData({ ...formData, url_aplikasi: e.target.value })
                     }
-                    className="w-full p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-xl font-mono focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
                   />
-                  <p className="text-[11px] text-[#64748B]">
+                  <p className="text-[11px] text-slate-500">
                     Logo akan diambil otomatis dari favicon resmi website/domain di atas.
                   </p>
                 </div>
 
                 {/* Kategori */}
                 <div className="space-y-1.5">
-                  <label className="font-heading font-bold text-[#1E293B]">
+                  <label className="font-heading font-bold text-slate-900">
                     Kategori / Lingkup Portal
                   </label>
                   <select
@@ -935,7 +1134,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                         kategori: e.target.value as KategoriAplikasi,
                       })
                     }
-                    className="w-full p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-xl font-medium focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
                   >
                     {KATEGORI_OPTIONS.map((k) => (
                       <option key={k} value={k}>
@@ -947,7 +1146,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
 
                 {/* Unit Kerja */}
                 <div className="space-y-1.5">
-                  <label className="font-heading font-bold text-[#1E293B]">
+                  <label className="font-heading font-bold text-slate-900">
                     Lingkup Unit Kerja
                   </label>
                   <select
@@ -955,7 +1154,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                     onChange={(e) =>
                       setFormData({ ...formData, unit_kerja: e.target.value })
                     }
-                    className="w-full p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-xl font-medium focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
                   >
                     <option value="Semua Unit">Semua Unit Kerja</option>
                     <option value="Dinas Kesehatan Kab. Lombok Barat">
@@ -971,7 +1170,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
 
                 {/* Username */}
                 <div className="space-y-1.5">
-                  <label className="font-heading font-bold text-[#1E293B]">
+                  <label className="font-heading font-bold text-slate-900">
                     Username / NIP / Akun Login
                   </label>
                   <input
@@ -981,13 +1180,13 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                     onChange={(e) =>
                       setFormData({ ...formData, username: e.target.value })
                     }
-                    className="w-full p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-xl font-mono focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
                   />
                 </div>
 
                 {/* Password */}
                 <div className="space-y-1.5">
-                  <label className="font-heading font-bold text-[#1E293B]">
+                  <label className="font-heading font-bold text-slate-900">
                     Password / Kode Akses
                   </label>
                   <div className="relative">
@@ -998,12 +1197,12 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                       onChange={(e) =>
                         setFormData({ ...formData, password: e.target.value })
                       }
-                      className="w-full p-2.5 pr-9 bg-slate-50 border border-[#E2E8F0] rounded-xl font-mono focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
+                      className="w-full p-2.5 pr-9 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
                     />
                     <button
                       type="button"
                       onClick={() => setFormShowPassword(!formShowPassword)}
-                      className="absolute right-2.5 top-2.5 text-[#64748B] hover:text-[#1E293B]"
+                      className="absolute right-2.5 top-2.5 text-slate-500 hover:text-slate-800 cursor-pointer"
                     >
                       {formShowPassword ? (
                         <EyeOff className="w-4 h-4" />
@@ -1016,7 +1215,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
 
                 {/* Custom Logo URL (Optional) */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="font-heading font-bold text-[#1E293B]">
+                  <label className="font-heading font-bold text-slate-900">
                     Kustom URL Logo (Opsional)
                   </label>
                   <input
@@ -1026,13 +1225,13 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                     onChange={(e) =>
                       setFormData({ ...formData, custom_logo_url: e.target.value })
                     }
-                    className="w-full p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-xl font-mono focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-mono focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
                   />
                 </div>
 
                 {/* Deskripsi */}
                 <div className="space-y-1.5 md:col-span-2">
-                  <label className="font-heading font-bold text-[#1E293B]">
+                  <label className="font-heading font-bold text-slate-900">
                     Deskripsi / Catatan Singkat
                   </label>
                   <textarea
@@ -1042,24 +1241,24 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                     onChange={(e) =>
                       setFormData({ ...formData, deskripsi: e.target.value })
                     }
-                    className="w-full p-2.5 bg-slate-50 border border-[#E2E8F0] rounded-xl font-medium focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-medium focus:ring-2 focus:ring-[#004B87] focus:bg-white outline-none"
                   />
                 </div>
               </div>
 
               {/* Modal Actions */}
-              <div className="flex justify-end space-x-2 pt-3 border-t border-[#E2E8F0]">
+              <div className="flex justify-end space-x-2 pt-3 border-t border-slate-200">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#1E293B] rounded-lg font-heading font-semibold text-xs transition-colors"
+                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-heading font-semibold text-xs transition-colors cursor-pointer"
                 >
                   Batal
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="btn-success text-xs px-5 py-2 flex items-center space-x-1.5"
+                  className="inline-flex items-center space-x-1.5 bg-[#82BE00] hover:bg-[#6ea000] text-white text-xs font-heading font-bold px-5 py-2 rounded-xl shadow-xs transition-all cursor-pointer disabled:opacity-50"
                 >
                   <CheckCircle2 className="w-4 h-4" />
                   <span>
@@ -1078,25 +1277,25 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
 
       {/* CONFIRM DELETE MODAL */}
       {deleteTarget && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4">
-          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-[#E2E8F0] p-6 text-center space-y-4 animate-in fade-in zoom-in-95">
-            <div className="w-12 h-12 rounded-full bg-red-100 text-red-600 flex items-center justify-center mx-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4 animate-in fade-in duration-150">
+          <div className="bg-white rounded-2xl shadow-xl w-full max-w-md border border-slate-200 p-6 text-center space-y-4 animate-in zoom-in-95 duration-150">
+            <div className="w-12 h-12 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center mx-auto">
               <AlertTriangle className="w-6 h-6" />
             </div>
             <div className="space-y-1">
-              <h3 className="font-heading font-bold text-base text-[#1E293B]">
+              <h3 className="font-heading font-bold text-base text-slate-900">
                 Hapus Aplikasi Kepegawaian?
               </h3>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-slate-500">
                 Anda yakin ingin menghapus{' '}
-                <strong className="text-[#1E293B]">{deleteTarget.nama_aplikasi}</strong> dari direktori? Data tautan dan kredensial yang tersimpan akan dihapus.
+                <strong className="text-slate-900">{deleteTarget.nama_aplikasi}</strong> dari direktori? Data tautan dan kredensial yang tersimpan akan dihapus permanen.
               </p>
             </div>
             <div className="flex justify-center space-x-2 pt-2">
               <button
                 type="button"
                 onClick={() => setDeleteTarget(null)}
-                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#1E293B] rounded-lg font-heading font-semibold text-xs transition-colors"
+                className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-heading font-semibold text-xs transition-colors cursor-pointer"
               >
                 Batal
               </button>
@@ -1104,7 +1303,7 @@ export const AplikasiKepegawaianView: React.FC<AplikasiKepegawaianViewProps> = (
                 type="button"
                 disabled={isDeleting}
                 onClick={handleConfirmDelete}
-                className="px-4 py-2 bg-red-600 hover:bg-red-700 text-white rounded-lg font-heading font-semibold text-xs transition-colors"
+                className="px-4 py-2 bg-rose-600 hover:bg-rose-700 text-white rounded-xl font-heading font-bold text-xs transition-colors cursor-pointer disabled:opacity-50"
               >
                 {isDeleting ? 'Menghapus...' : 'Ya, Hapus Aplikasi'}
               </button>
