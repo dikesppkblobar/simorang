@@ -37,6 +37,7 @@ import {
 import { UserAccount, UnitKerjaItem, Pegawai, RoleUser } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { apiClient } from '../services/apiClient';
+import { isDinasCategory } from '../services/dateCalculator';
 
 interface UserAndUnitManagementViewProps {
   usersList: UserAccount[];
@@ -324,17 +325,23 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
       u.nama_unit.toLowerCase().includes(unitSearch.toLowerCase()) ||
       u.kode_unit.toLowerCase().includes(unitSearch.toLowerCase()) ||
       (u.kepala_unit && u.kepala_unit.toLowerCase().includes(unitSearch.toLowerCase()));
-    const matchKat = kategoriFilter === 'Semua' || u.kategori === kategoriFilter;
+    const matchKat =
+      kategoriFilter === 'Semua' ||
+      (kategoriFilter === 'Dinas'
+        ? isDinasCategory(u.kategori)
+        : u.kategori === kategoriFilter);
     return matchSearch && matchKat;
   });
 
   // Calculate live pegawai count per unit
   const getPegawaiCountForUnit = (unitName: string) => {
+    const uLower = unitName.toLowerCase().trim();
     return pegawaiList.filter(
       (p) =>
         !p.is_deleted &&
-        (p.unit_kerja.toLowerCase().includes(unitName.toLowerCase()) ||
-          unitName.toLowerCase().includes(p.unit_kerja.toLowerCase()))
+        (p.unit_kerja.toLowerCase().trim() === uLower ||
+          p.unit_kerja.toLowerCase().includes(uLower) ||
+          uLower.includes(p.unit_kerja.toLowerCase().trim()))
     ).length;
   };
 
@@ -665,6 +672,18 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
             <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
               <div>
+                <div className="text-xs font-bold text-slate-500">Dinas Kesehatan & Bidang</div>
+                <div className="text-2xl font-black text-purple-900 mt-0.5">
+                  {unitsList.filter((u) => isDinasCategory(u.kategori)).length}
+                </div>
+              </div>
+              <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
+                <Building2 className="w-5 h-5" />
+              </div>
+            </div>
+
+            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+              <div>
                 <div className="text-xs font-bold text-slate-500">Puskesmas</div>
                 <div className="text-2xl font-black text-emerald-900 mt-0.5">
                   {unitsList.filter((u) => u.kategori === 'Puskesmas').length}
@@ -724,6 +743,7 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                 <option value="Puskesmas">Puskesmas</option>
                 <option value="Rumah Sakit">Rumah Sakit</option>
                 <option value="Lab / UPTD">Lab / UPTD</option>
+                <option value="KB / PPKB">Balai Penyuluhan KB / PPKB</option>
               </select>
             </div>
 
@@ -773,7 +793,7 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                           <td className="p-4">
                             <span
                               className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                                unit.kategori === 'Dinas'
+                                isDinasCategory(unit.kategori)
                                   ? 'bg-purple-100 text-purple-900 border border-purple-200'
                                   : unit.kategori === 'Puskesmas'
                                   ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
@@ -782,7 +802,7 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                                   : 'bg-amber-100 text-amber-900 border border-amber-200'
                               }`}
                             >
-                              {unit.kategori}
+                              {isDinasCategory(unit.kategori) ? 'Dinas Kesehatan' : unit.kategori}
                             </span>
                           </td>
                           <td className="p-4">
@@ -1181,9 +1201,19 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                     <option value="Puskesmas">Puskesmas</option>
                     <option value="Rumah Sakit">Rumah Sakit</option>
                     <option value="Lab / UPTD">Lab / UPTD</option>
+                    <option value="KB / PPKB">Balai Penyuluhan KB / PPKB</option>
                   </select>
                 </div>
               </div>
+
+              {isDinasCategory(unitFormData.kategori) && (
+                <div className="bg-purple-50 border border-purple-200 p-3 rounded-xl text-[11px] text-purple-900 flex items-start space-x-2">
+                  <Sparkles className="w-4 h-4 text-purple-600 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-extrabold">Cakupan Otomatis Dinas Kesehatan:</span> Semua data pegawai yang ditempatkan pada unit ini (apapun nama unitnya seperti Bidang, Seksi, Subbag, dll) akan otomatis tampil dan terkelola secara utuh di bawah user / akun <strong>Dinas Kesehatan</strong>.
+                  </div>
+                </div>
+              )}
 
               <div>
                 <label className="block text-xs font-extrabold text-slate-700 mb-1">
