@@ -18,6 +18,7 @@ import { UserAccount, Pegawai, RiwayatSK } from '../types';
 import { LoginBackground } from './LoginBackground';
 import { CelebrationGreetingsCard } from './CelebrationGreetingsCard';
 import { apiClient } from '../services/apiClient';
+import { dbStore } from '../services/dbStore';
 
 interface LoginViewProps {
   usersList: UserAccount[];
@@ -77,7 +78,8 @@ export const LoginView: React.FC<LoginViewProps> = ({
 
     setTimeout(async () => {
       // Find matching user in database by username, email, or nip
-      const matchedUser = usersList.find((u) => {
+      const sourceList = (usersList && usersList.length > 0) ? usersList : dbStore.getAllUsers();
+      const matchedUser = sourceList.find((u) => {
         const uUsername = (u.username || '').toLowerCase().trim();
         const uEmail = (u.email || '').toLowerCase().trim();
         const uNip = (u.nip || '').trim();
