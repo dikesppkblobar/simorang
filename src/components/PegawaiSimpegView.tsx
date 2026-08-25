@@ -2069,7 +2069,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                     onChange={(e) =>
                       setFormData({ ...formData, nama_lengkap: e.target.value.toUpperCase() })
                     }
-                    placeholder="AHMAD SYAMSUL"
+                    placeholder="NAMA LENGKAP PEGAWAI"
                     className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-bold uppercase outline-none"
                     required
                   />
