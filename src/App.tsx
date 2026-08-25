@@ -27,6 +27,8 @@ import {
   calculatePangkatAlerts,
   calculatePensiunAlerts,
   calculateKp4AnakAlerts,
+  isDinasCategory,
+  isDinasScope,
 } from './services/dateCalculator';
 import { Navbar } from './components/Navbar';
 import { LogoLombokBarat } from './components/LogoLombokBarat';
@@ -166,11 +168,45 @@ export default function App() {
     }
   };
 
+  // Helper to determine if a Pegawai belongs to Dinas Kesehatan category
+  const isPegawaiInDinasCategory = (p: Pegawai, units: UnitKerjaItem[]) => {
+    const pUnit = (p.unit_kerja || '').toLowerCase().trim();
+    if (!pUnit) return false;
+
+    // 1. Direct keyword check
+    if (
+      pUnit.includes('dinas kesehatan') ||
+      pUnit.includes('dikes') ||
+      pUnit.includes('dinkes') ||
+      pUnit.includes('dinas')
+    ) {
+      return true;
+    }
+
+    // 2. Unit category lookup in master units list
+    const dinasUnits = units.filter((u) => isDinasCategory(u.kategori));
+    for (const u of dinasUnits) {
+      const uName = (u.nama_unit || '').toLowerCase().trim();
+      if (uName && (pUnit === uName || pUnit.includes(uName) || uName.includes(pUnit))) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   // Scoped Pegawai Calculation based on selectedUnitScope
+  // When scope is Dinas Kesehatan (default for Admin Dinkes), ALL data from units categorized as Dinas Kesehatan are included
   const scopedPegawaiList = pegawaiList.filter((p) => {
     if (selectedUnitScope === 'SEMUA_UNIT') return true;
+
+    // If current scope is Dinas Kesehatan (or user is Admin Dinkes on Dinas scope)
+    if (isDinasScope(selectedUnitScope)) {
+      return isPegawaiInDinasCategory(p, unitsList);
+    }
+
     const target = selectedUnitScope.toLowerCase().trim();
-    const pUnit = p.unit_kerja.toLowerCase().trim();
+    const pUnit = (p.unit_kerja || '').toLowerCase().trim();
     return pUnit.includes(target) || target.includes(pUnit);
   });
 
