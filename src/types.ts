@@ -38,6 +38,7 @@ export interface Pegawai {
   sisa_cuti_tahunan?: number; // default 12
   is_deleted: boolean;
   created_at: string;
+  updated_at?: string;
 
   // Modul Pemantauan ASN Tambahan (PermenPANRB 1/2023, Per BKN 3/2023)
   jenjang_jabatan?: string; // Ahli Pertama, Ahli Muda, Ahli Madya, Ahli Utama, Penyelia, Mahir, Terampil
@@ -55,6 +56,7 @@ export interface Pegawai {
   progres_semester?: string;
   akreditasi_pt?: string;
   tmt_kgb_terakhir?: string;
+  no_sk_kgb?: string;
   tmt_pangkat_terakhir?: string;
 
   // PNS Atribut Spesifik
@@ -86,15 +88,6 @@ export interface Pegawai {
   no_sk_kontrak?: string;
   masa_kerja_non_asn?: string;
   sumber_pembiayaan?: SumberPembiayaan;
-
-  // Legalitas STR & SIP (Jafung Kesehatan / Profesi SDMK)
-  no_str?: string;
-  tgl_terbit_str?: string;
-  tgl_akhir_str?: string;
-  is_str_seumur_hidup?: boolean;
-  no_sip?: string;
-  tgl_berlaku_sip_mulai?: string;
-  tgl_berlaku_sip_akhir?: string;
 }
 
 export interface RiwayatSK {
