@@ -80,13 +80,9 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
       return a.birthDay - b.birthDay;
     });
 
-  // 2. Process Promotions (Kenaikan Pangkat): Current Running Month OR Recently Updated in App
+  // 2. Process Promotions (Kenaikan Pangkat): STRICTLY for the CURRENT RUNNING MONTH or Updated in Pemantauan this month
   const promotionCelebrants = pegawaiList
-    .filter(
-      (p) =>
-        !p.is_deleted &&
-        (p.golongan_pangkat || p.status_kepegawaian === 'PNS' || p.tmt_pangkat_terakhir || p.tmt_golongan)
-    )
+    .filter((p) => !p.is_deleted)
     .map((p) => {
       // Find matching promotion SK in database
       const skPangkat = skList.find(
@@ -108,18 +104,29 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
         formattedTmt = `${tmtDay} ${BULAN_INDONESIA[tmtMonth - 1] || ''} ${tmtYear || ''}`;
       }
 
-      // Check if promotion is in the current running month
+      // Check if TMT is in the current running month
       const isThisMonth = tmtMonth === currentMonth;
 
-      // Check if recently updated in the app (has SK record or recent update)
-      const hasSk = !!skPangkat;
-      const isAppUpdated = hasSk || !!p.no_sk_pangkat || !!p.tgl_sk_pangkat;
+      // Check if SK Pangkat or Pegawai was updated in current running month
+      let isUpdatedThisMonth = false;
+      if (skPangkat?.created_at) {
+        const skDate = new Date(skPangkat.created_at);
+        if (skDate.getMonth() + 1 === currentMonth && skDate.getFullYear() === currentYear) {
+          isUpdatedThisMonth = true;
+        }
+      }
+      if (p.updated_at) {
+        const pDate = new Date(p.updated_at);
+        if (pDate.getMonth() + 1 === currentMonth && pDate.getFullYear() === currentYear && (p.no_sk_pangkat || p.tmt_pangkat_terakhir)) {
+          isUpdatedThisMonth = true;
+        }
+      }
 
-      let statusBadge = `Periode ${BULAN_INDONESIA[tmtMonth - 1] || 'Pangkat'}`;
-      if (isThisMonth) {
-        statusBadge = `🎉 Kenaikan Pangkat Bulan Ini (${currentMonthName})`;
-      } else if (isAppUpdated) {
-        statusBadge = `⚡ Pangkat Diperbarui di App`;
+      const isEligible = isThisMonth || isUpdatedThisMonth;
+
+      let statusBadge = `🎉 Kenaikan Pangkat Bulan Ini (${currentMonthName})`;
+      if (isUpdatedThisMonth && !isThisMonth) {
+        statusBadge = `⚡ Pangkat Diperbarui di Pemantauan (${currentMonthName})`;
       }
 
       return {
@@ -132,19 +139,20 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
         tmt_year: tmtYear,
         no_sk: skPangkat?.nomor_sk || p.no_sk_pangkat || '-',
         isThisMonth,
-        isAppUpdated,
+        isUpdatedThisMonth,
+        isEligible,
         statusBadge,
         skCreatedAt: skPangkat?.created_at || p.created_at || '',
       };
     })
-    .filter((p) => p.isThisMonth || p.isAppUpdated || p.golongan_pangkat)
+    .filter((p) => p.isEligible)
     .sort((a, b) => {
       // 1. Promotions in current month first
       if (a.isThisMonth && !b.isThisMonth) return -1;
       if (!a.isThisMonth && b.isThisMonth) return 1;
-      // 2. Promotions with SK uploaded / updated in app
-      if (a.isAppUpdated && !b.isAppUpdated) return -1;
-      if (!a.isAppUpdated && b.isAppUpdated) return 1;
+      // 2. Promotions updated in current month
+      if (a.isUpdatedThisMonth && !b.isUpdatedThisMonth) return -1;
+      if (!a.isUpdatedThisMonth && b.isUpdatedThisMonth) return 1;
       // 3. Newest TMT
       return (b.raw_tmt || '').localeCompare(a.raw_tmt || '');
     });
@@ -609,9 +617,9 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
                                 <span className="px-1 py-0.1 rounded-full bg-teal-600 text-white text-[8px] font-extrabold">
                                   BULAN INI
                                 </span>
-                              ) : (p as any).isAppUpdated ? (
+                              ) : (p as any).isUpdatedThisMonth ? (
                                 <span className="px-1 py-0.1 rounded-full bg-blue-600 text-white text-[8px] font-extrabold">
-                                  UPDATE APP
+                                  UPDATE PEMANTAUAN
                                 </span>
                               ) : null}
                             </div>
