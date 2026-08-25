@@ -548,47 +548,76 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
         </div>
       )}
 
-      {/* Horizontal Scrollable Navigation Bar */}
-      <div className="bg-white p-3.5 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-2">
-        <div className="flex items-center justify-between px-1 text-xs">
-          <div className="flex items-center space-x-2 text-[#1E293B] font-heading font-bold">
-            <span className="w-2.5 h-2.5 rounded-full bg-[#004B87] animate-pulse"></span>
-            <span>Navigasi Horizontal Modul Pemantauan (Geser Kiri/Kanan)</span>
+      {/* Horizontal & Mobile Navigation Bar */}
+      <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-2.5">
+        {/* Mobile View: Quick Dropdown Selector */}
+        <div className="block sm:hidden space-y-1.5">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-heading font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
+              <span className="w-2 h-2 rounded-full bg-[#004B87] animate-pulse" />
+              Pilih Modul Pemantauan:
+            </span>
+            <span className="text-[10px] bg-blue-50 text-[#004B87] font-extrabold px-2 py-0.5 rounded-full border border-blue-200">
+              11 Modul
+            </span>
           </div>
-          <span className="text-[11px] text-[#64748B] font-medium hidden sm:inline">
-            Pilih modul untuk membuka data detail
-          </span>
+          <div className="relative">
+            <select
+              value={activeSubTab}
+              onChange={(e) => setActiveSubTab(e.target.value as SubTabType)}
+              className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 font-heading font-bold text-xs rounded-xl px-3.5 py-2.5 pr-9 focus:ring-2 focus:ring-[#004B87] focus:border-[#004B87] outline-none shadow-xs"
+            >
+              {monitoringCards.map((card) => (
+                <option key={card.id} value={card.id}>
+                  {card.title} ({card.count})
+                </option>
+              ))}
+            </select>
+            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-3 pointer-events-none" />
+          </div>
         </div>
 
-        {/* Horizontal Scroll Container */}
-        <div className="flex items-center space-x-2 overflow-x-auto pb-1 pt-1 scroll-smooth no-scrollbar">
-          {monitoringCards.map((card) => {
-            const isActive = activeSubTab === card.id;
+        {/* Tablet & Desktop View: Horizontal Scrollable Tabs */}
+        <div className="hidden sm:block space-y-2">
+          <div className="flex items-center justify-between px-1 text-xs">
+            <div className="flex items-center space-x-2 text-[#1E293B] font-heading font-bold">
+              <span className="w-2.5 h-2.5 rounded-full bg-[#004B87] animate-pulse"></span>
+              <span>Navigasi Horizontal Modul Pemantauan (Geser Kiri/Kanan)</span>
+            </div>
+            <span className="text-[11px] text-[#64748B] font-medium hidden sm:inline">
+              Pilih modul untuk membuka data detail
+            </span>
+          </div>
 
-            return (
-              <button
-                key={card.id}
-                type="button"
-                onClick={() => setActiveSubTab(card.id)}
-                className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-heading font-bold transition-all flex items-center space-x-2 border shrink-0 ${
-                  isActive
-                    ? 'bg-[#004B87] text-white border-[#004B87] shadow-sm ring-2 ring-blue-200'
-                    : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-[#E2E8F0] hover:border-slate-300'
-                }`}
-              >
-                <span>{card.title}</span>
-                <span
-                  className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
+          <div className="flex items-center space-x-2 overflow-x-auto pb-1 pt-1 scroll-smooth no-scrollbar">
+            {monitoringCards.map((card) => {
+              const isActive = activeSubTab === card.id;
+
+              return (
+                <button
+                  key={card.id}
+                  type="button"
+                  onClick={() => setActiveSubTab(card.id)}
+                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-heading font-bold transition-all flex items-center space-x-2 border shrink-0 cursor-pointer ${
                     isActive
-                      ? 'bg-white/20 text-white'
-                      : 'bg-white text-slate-800 border border-slate-200'
+                      ? 'bg-[#004B87] text-white border-[#004B87] shadow-sm ring-2 ring-blue-200'
+                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-[#E2E8F0] hover:border-slate-300'
                   }`}
                 >
-                  {card.count}
-                </span>
-              </button>
-            );
-          })}
+                  <span>{card.title}</span>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
+                      isActive
+                        ? 'bg-white/20 text-white'
+                        : 'bg-white text-slate-800 border border-slate-200'
+                    }`}
+                  >
+                    {card.count}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
         </div>
       </div>
 
@@ -597,117 +626,192 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
 
       {/* SUB-TAB 1: KENAIKAN PANGKAT */}
       {activeSubTab === 'pangkat' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-6">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-4 sm:p-6">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200 pb-4 gap-2">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <Award className="w-5 h-5 text-blue-600" />
+                <Award className="w-5 h-5 text-blue-600 shrink-0" />
                 <span>Pemantauan Kenaikan Pangkat / Golongan ASN (Siklus 4 Tahun)</span>
               </h3>
               <p className="text-xs text-[#64748B] mt-1">
                 Berdasarkan Peraturan BKN Terbaru dengan 6 Periode Kenaikan Pangkat Per Tahun (Februari, April, Juni, Agustus, Oktober, Desember).
               </p>
             </div>
-            <span className="bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-full">
+            <span className="bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
               {pangkatAlerts.length} Usulan Pangkat Mendekati
             </span>
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
-                  <th className="p-3.5">Pegawai</th>
-                  <th className="p-3.5">Golongan & TMT Pangkat</th>
-                  <th className="p-3.5">Periode BKN Terdekat</th>
-                  <th className="p-3.5">Status Syarat UKOM</th>
-                  <th className="p-3.5">Status Alert</th>
-                  <th className="p-3.5 text-right">Aksi Admin</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredPangkatAlerts.length === 0 ? (
-                  <tr>
-                    <td colSpan={6} className="p-8 text-center text-slate-500">
-                      <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                      Semua pegawai berada dalam masa berlaku pangkat normal.
-                    </td>
-                  </tr>
-                ) : (
-                  filteredPangkatAlerts.map((item) => (
-                    <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="p-3.5">
-                        <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
-                        <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
-                        <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
-                      </td>
-                      <td className="p-3.5 font-medium text-[#334155]">
-                        <div className="font-bold text-blue-900">{formatDateIndonesian(item.tmt_pangkat_terakhir)}</div>
-                        <div className="text-[11px] text-slate-500">Target Jatuh Tempo: {formatDateIndonesian(item.tanggal_jatuh_tempo)}</div>
-                      </td>
-                      <td className="p-3.5 font-bold text-indigo-900 bg-indigo-50/50 rounded-lg">
-                        {item.periode_bkn_terdekat}
-                      </td>
-                      <td className="p-3.5">
-                        {item.status_ukom ? (
-                          <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                            Lulus UKOM
-                          </span>
-                        ) : (
-                          <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                            Perlu UKOM / Syarat
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3.5">
-                        <span className="inline-flex items-center bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
-                          <span>Mendekati H-3 Bln</span>
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          {isSuperAdmin ? (
-                            <>
-                              {activePegawai.find((p) => p.nip === item.nip) && (
-                                <button
-                                  onClick={() => {
-                                    const peg = activePegawai.find((p) => p.nip === item.nip);
-                                    if (peg) handleOpenActionModal(peg, 'pangkat');
-                                  }}
-                                  className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
-                                >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                  <span>Update</span>
-                                </button>
-                              )}
-                              <button
-                                onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
-                                className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors"
-                              >
-                                <FileUp className="w-3.5 h-3.5" />
-                                <span>SK Pangkat</span>
-                              </button>
-                            </>
+          {filteredPangkatAlerts.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">
+              <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+              Semua pegawai berada dalam masa berlaku pangkat normal.
+            </div>
+          ) : (
+            <>
+              {/* Desktop Table */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
+                      <th className="p-3.5">Pegawai</th>
+                      <th className="p-3.5">Golongan & TMT Pangkat</th>
+                      <th className="p-3.5">Periode BKN Terdekat</th>
+                      <th className="p-3.5">Status Syarat UKOM</th>
+                      <th className="p-3.5">Status Alert</th>
+                      <th className="p-3.5 text-right">Aksi Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredPangkatAlerts.map((item) => (
+                      <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="p-3.5">
+                          <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
+                          <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
+                          <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
+                        </td>
+                        <td className="p-3.5 font-medium text-[#334155]">
+                          <div className="font-bold text-blue-900">{formatDateIndonesian(item.tmt_pangkat_terakhir)}</div>
+                          <div className="text-[11px] text-slate-500">Target Jatuh Tempo: {formatDateIndonesian(item.tanggal_jatuh_tempo)}</div>
+                        </td>
+                        <td className="p-3.5 font-bold text-indigo-900 bg-indigo-50/50 rounded-lg">
+                          {item.periode_bkn_terdekat}
+                        </td>
+                        <td className="p-3.5">
+                          {item.status_ukom ? (
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                              Lulus UKOM
+                            </span>
                           ) : (
+                            <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                              Perlu UKOM / Syarat
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="inline-flex items-center bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
+                            <span>Mendekati H-3 Bln</span>
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end space-x-1.5">
+                            {isSuperAdmin ? (
+                              <>
+                                {activePegawai.find((p) => p.nip === item.nip) && (
+                                  <button
+                                    onClick={() => {
+                                      const peg = activePegawai.find((p) => p.nip === item.nip);
+                                      if (peg) handleOpenActionModal(peg, 'pangkat');
+                                    }}
+                                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <span>Update</span>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
+                                  className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors"
+                                >
+                                  <FileUp className="w-3.5 h-3.5" />
+                                  <span>SK Pangkat</span>
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  const peg = activePegawai.find((p) => p.nip === item.nip);
+                                  if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
+                                }}
+                                className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Kirim Pemberitahuan</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card List */}
+              <div className="md:hidden space-y-3">
+                {filteredPangkatAlerts.map((item) => (
+                  <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {item.nama_lengkap}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
+                        <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
+                      </div>
+                      <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                        H-3 Bln
+                      </span>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Periode BKN</span>
+                        <span className="font-bold text-indigo-700">{item.periode_bkn_terdekat}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Status UKOM</span>
+                        <span className={`text-[11px] font-bold ${item.status_ukom ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {item.status_ukom ? 'Lulus UKOM' : 'Perlu UKOM'}
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo Pangkat</span>
+                        <span className="font-semibold text-slate-800 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-1 flex items-center justify-end gap-1.5">
+                      {isSuperAdmin ? (
+                        <>
+                          {activePegawai.find((p) => p.nip === item.nip) && (
                             <button
                               onClick={() => {
                                 const peg = activePegawai.find((p) => p.nip === item.nip);
-                                if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
+                                if (peg) handleOpenActionModal(peg, 'pangkat');
                               }}
-                              className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                              className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
                             >
-                              <Send className="w-3.5 h-3.5" />
-                              <span>Kirim Pemberitahuan</span>
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Update</span>
                             </button>
                           )}
-                        </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
+                          <button
+                            onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
+                            className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                          >
+                            <FileUp className="w-3.5 h-3.5" />
+                            <span>SK Pangkat</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const peg = activePegawai.find((p) => p.nip === item.nip);
+                            if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
+                          }}
+                          className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -715,10 +819,10 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       {activeSubTab === 'jafung' && (
         <div className="space-y-4">
           {/* Table of Functional Staff */}
-          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
+          <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
               <h4 className="font-bold text-slate-900 text-sm flex items-center space-x-2">
-                <Briefcase className="w-4 h-4 text-blue-600" />
+                <Briefcase className="w-4 h-4 text-blue-600 shrink-0" />
                 <span>Daftar Pemantauan Jabatan Fungsional Kesehatan & SDMK PNS ({jafungPnsCount} Pegawai PNS)</span>
               </h4>
               <span className="text-xs text-slate-500 font-semibold">
@@ -726,7 +830,8 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </span>
             </div>
 
-            <div className="overflow-x-auto">
+            {/* Desktop Table View */}
+            <div className="hidden md:block overflow-x-auto">
               <table className="w-full text-left border-collapse text-xs">
                 <thead>
                   <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -823,17 +928,93 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                 </tbody>
               </table>
             </div>
+
+            {/* Mobile Card List View */}
+            <div className="md:hidden space-y-3">
+              {filteredPegawai
+                .filter((p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS')
+                .map((pegawai) => {
+                  const isMadya = pegawai.jabatan_spesifik.toLowerCase().includes('madya');
+                  const isMuda = pegawai.jabatan_spesifik.toLowerCase().includes('muda');
+                  const isPertama = pegawai.jabatan_spesifik.toLowerCase().includes('pertama');
+
+                  const currentJenjang = pegawai.jenjang_jabatan || (isMadya ? 'Ahli Madya' : isMuda ? 'Ahli Muda' : isPertama ? 'Ahli Pertama' : 'Kategori Keterampilan');
+                  const targetJenjang = currentJenjang === 'Ahli Madya' ? 'Ahli Utama' : currentJenjang === 'Ahli Muda' ? 'Ahli Madya' : currentJenjang === 'Ahli Pertama' ? 'Ahli Muda' : 'Alih Kategori / Penyelia';
+                  const estAngkaKredit = pegawai.total_ak_kumulatif ?? (isMadya ? 187.5 : isMuda ? 125.0 : 87.5);
+                  const targetAk = currentJenjang === 'Ahli Madya' ? 225 : currentJenjang === 'Ahli Muda' ? 150 : 100;
+                  const akKonversi = pegawai.ak_konversi_skp ?? (pegawai.status_kepegawaian === 'Non-ASN' ? 0 : 12.5);
+
+                  return (
+                    <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                            {pegawai.nama_lengkap}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                          <div className="text-[11px] text-blue-700 font-semibold">{pegawai.jabatan_spesifik}</div>
+                          <div className="text-[10px] text-slate-500">{pegawai.unit_kerja}</div>
+                        </div>
+                        <span className="font-bold text-slate-800 bg-white border border-slate-200 px-2 py-0.5 rounded text-[10px] shrink-0">
+                          {currentJenjang}
+                        </span>
+                      </div>
+
+                      <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1.5 text-xs">
+                        <div className="flex items-center justify-between">
+                          <span className="text-slate-500 text-[11px]">Angka Kredit Kumulatif:</span>
+                          <span className="font-extrabold text-blue-900">{estAngkaKredit} / {targetAk} AK</span>
+                        </div>
+                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-blue-600 h-2 rounded-full"
+                            style={{ width: `${Math.min(100, (estAngkaKredit / targetAk) * 100)}%` }}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between text-[11px] pt-0.5">
+                          <span className="text-slate-500">Target Promosi:</span>
+                          <span className="font-bold text-indigo-700">{targetJenjang}</span>
+                        </div>
+                        <div className="flex items-center justify-between text-[11px]">
+                          <span className="text-slate-500">Konversi Tahun Ini:</span>
+                          <span className="font-bold text-emerald-700">+{akKonversi} AK</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-1">
+                        {isSuperAdmin ? (
+                          <button
+                            onClick={() => handleOpenActionModal(pegawai, 'pak_jafung')}
+                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                          >
+                            <FileCheck className="w-3.5 h-3.5" />
+                            <span>PAK & SKP Konversi</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenSendNotification(pegawai, 'Jabatan Fungsional & PAK', `Pemberitahuan evaluasi Angka Kredit (AK) Konversi SKP & Jenjang ${pegawai.jenjang_jabatan || 'Jafung'}.`)}
+                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Kirim Pemberitahuan</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+            </div>
           </div>
         </div>
       )}
 
       {/* SUB-TAB 3: UJI KOMPETENSI FUNGSIONAL (UKKJ) */}
       {activeSubTab === 'ukom' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200 pb-3 gap-2">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <BadgeCheck className="w-5 h-5 text-indigo-600" />
+                <BadgeCheck className="w-5 h-5 text-indigo-600 shrink-0" />
                 <span>Pemantauan Uji Kompetensi Kenaikan Jenjang Jabatan Fungsional PNS (UKKJ)</span>
               </h3>
               <p className="text-xs text-[#64748B] mt-1">
@@ -842,7 +1023,8 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -921,28 +1103,88 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {filteredPegawai
+              .filter((p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS')
+              .map((pegawai) => {
+                const statusUkomText = pegawai.status_ukkj || (pegawai.status_ukom ? 'Lulus UKKJ' : 'Belum UKKJ');
+                return (
+                  <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {pegawai.nama_lengkap}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                        <div className="text-[11px] text-blue-700 font-semibold">{pegawai.jabatan_spesifik}</div>
+                      </div>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
+                        statusUkomText.toLowerCase().includes('lulus') ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {statusUkomText.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
+                      <div className="text-slate-500 text-[11px]">
+                        Jenjang: <strong className="text-slate-800">{pegawai.jenjang_jabatan || pegawai.jabatan_spesifik}</strong>
+                      </div>
+                      <div className="text-[11px] text-indigo-700 font-semibold">
+                        Target: Promosi Kenaikan Jenjang
+                      </div>
+                      <div className="text-[10px] text-emerald-700 font-semibold">
+                        ✓ Memenuhi Syarat AK Kumulatif
+                      </div>
+                    </div>
+
+                    <div className="pt-1">
+                      {isSuperAdmin ? (
+                        <button
+                          onClick={() => handleOpenActionModal(pegawai, 'ukom')}
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <BadgeCheck className="w-3.5 h-3.5" />
+                          <span>Update Hasil UKKJ</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenSendNotification(pegawai, 'Uji Kompetensi / UKKJ', 'Pemberitahuan kelengkapan syarat rekomendasi UKKJ Kenaikan Jenjang Jabatan Fungsional.')}
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         </div>
       )}
 
       {/* SUB-TAB 4: UJIAN DINAS BAGI PELAKSANA */}
       {activeSubTab === 'ujian_dinas' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200 pb-3 gap-2">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <FileText className="w-5 h-5 text-blue-600" />
+                <FileText className="w-5 h-5 text-blue-600 shrink-0" />
                 <span>Pemantauan Ujian Dinas Bagi Pegawai Jabatan Pelaksana PNS</span>
               </h3>
               <p className="text-xs text-[#64748B] mt-1">
                 Ujian Dinas Tingkat I (Pengatur Gol. II/d ke III/a) & Tingkat II (Penata I Gol. III/d ke IV/a) bagi pelaksana PNS yang belum Penyesuaian Ijazah S-1.
               </p>
             </div>
-            <span className="bg-blue-100 text-blue-900 text-xs font-bold px-3 py-1.5 rounded-full">
+            <span className="bg-blue-100 text-blue-900 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
               {pelaksanaPnsCount} Pegawai Pelaksana PNS
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -1015,26 +1257,90 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {filteredPegawai
+              .filter((p) => p.jenis_jabatan === 'Pelaksana' && p.status_kepegawaian === 'PNS')
+              .map((pegawai) => {
+                const isGol2d = pegawai.golongan_pangkat === 'II/d';
+                const isGol3d = pegawai.golongan_pangkat === 'III/d';
+                const kategori = isGol2d ? 'Ujian Dinas Tk. I (II/d -> III/a)' : isGol3d ? 'Ujian Dinas Tk. II (III/d -> IV/a)' : 'Ujian Penyesuaian Ijazah';
+                const statusUd = pegawai.status_ujian_dinas || (pegawai.status_kepegawaian === 'PNS' ? 'Belum Ujian Dinas' : 'Bukan Pelaksana PNS');
+
+                return (
+                  <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {pegawai.nama_lengkap}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                        <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
+                      </div>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
+                        statusUd.toLowerCase().includes('lulus') ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {statusUd.toUpperCase()}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
+                      <div className="text-slate-500 text-[11px]">
+                        Golongan: <strong className="text-blue-900 font-bold">{pegawai.golongan_pangkat || 'II/c'}</strong> ({pegawai.nama_pangkat || 'Pengatur'})
+                      </div>
+                      <div className="text-[11px] text-indigo-800 font-semibold">
+                        Kategori: {kategori}
+                      </div>
+                      <div className="text-[11px] text-slate-600 font-mono">
+                        STLUD: {statusUd.toLowerCase().includes('lulus') ? 'STLUD/2025/BKN/09812' : '-'}
+                      </div>
+                    </div>
+
+                    <div className="pt-1">
+                      {isSuperAdmin ? (
+                        <button
+                          onClick={() => handleOpenActionModal(pegawai, 'ujian_dinas')}
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <FileCheck className="w-3.5 h-3.5" />
+                          <span>Input STLUD</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenSendNotification(pegawai, 'Ujian Dinas Pelaksana', 'Pemberitahuan pemutakhiran sertifikat STLUD / pendaftaran Ujian Dinas Tingkat I & II.')}
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+          </div>
         </div>
       )}
 
       {/* SUB-TAB 5: KGB */}
       {activeSubTab === 'kgb' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-3 gap-2">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <Clock className="w-5 h-5 text-blue-600" />
+                <Clock className="w-5 h-5 text-blue-600 shrink-0" />
                 <span>Daftar Pegawai Jatuh Tempo KGB (Kenaikan Gaji Berkala)</span>
               </h3>
               <p className="text-xs text-[#64748B]">Siklus 2 Tahun (24 Bulan) | Terhitung H-3 Bulan</p>
             </div>
-            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full">
+            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full shrink-0">
               {kgbAlerts.length} Perlu Diproses
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -1122,16 +1428,93 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {kgbAlerts.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                Semua pegawai aktif memiliki TMT KGB yang masih berlaku.
+              </div>
+            ) : (
+              kgbAlerts.map((item) => (
+                <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                        {item.nama_lengkap}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
+                      <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
+                    </div>
+                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
+                      item.status_alert === 'Bahaya' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                    }`}>
+                      {item.status_alert === 'Bahaya' ? 'Jatuh Tempo' : `${item.sisa_bulan} Bln Lagi`}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-semibold block">TMT KGB Lama</span>
+                      <span className="font-medium text-slate-800 text-[11px]">{formatDateIndonesian(item.tmt_kgb_terakhir)}</span>
+                    </div>
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo KGB Baru</span>
+                      <span className="font-bold text-emerald-700 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-1 flex items-center justify-end gap-1.5">
+                    {isSuperAdmin ? (
+                      <>
+                        {activePegawai.find((p) => p.nip === item.nip) && (
+                          <button
+                            onClick={() => {
+                              const peg = activePegawai.find((p) => p.nip === item.nip);
+                              if (peg) handleOpenActionModal(peg, 'kgb');
+                            }}
+                            className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Update</span>
+                          </button>
+                        )}
+                        <button
+                          onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
+                          className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                        >
+                          <FileUp className="w-3.5 h-3.5" />
+                          <span>SK KGB</span>
+                        </button>
+                      </>
+                    ) : (
+                      <button
+                        onClick={() => {
+                          const peg = activePegawai.find((p) => p.nip === item.nip);
+                          if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
+                        }}
+                        className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Kirim Pemberitahuan</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
         </div>
       )}
 
       {/* SUB-TAB 6: SISA CUTI TAHUNAN */}
       {activeSubTab === 'cuti' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
           <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200 pb-3 gap-2">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <Calendar className="w-5 h-5 text-emerald-600" />
+                <Calendar className="w-5 h-5 text-emerald-600 shrink-0" />
                 <span>Pemantauan Hak Cuti Tahunan & Sisa Cuti Pegawai ASN</span>
               </h3>
               <p className="text-xs text-[#64748B] mt-1">
@@ -1140,7 +1523,8 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -1202,28 +1586,82 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {filteredPegawai.map((pegawai) => {
+              const sisaCuti = pegawai.sisa_cuti_tahunan ?? 12;
+              const isLow = sisaCuti <= 3;
+              return (
+                <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                        {pegawai.nama_lengkap}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                      <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
+                    </div>
+                    <span
+                      className={`text-xs font-extrabold px-2.5 py-1 rounded-full shrink-0 ${
+                        isLow ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
+                      }`}
+                    >
+                      {sisaCuti} Hari Sisa
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs flex items-center justify-between">
+                    <span className="text-slate-500">Hak Tahunan: <strong>12 Hari</strong></span>
+                    <span className="text-slate-700 font-medium">Status: Pengajuan Aktif</span>
+                  </div>
+
+                  <div className="pt-1">
+                    {isSuperAdmin ? (
+                      <button
+                        onClick={() => handleOpenActionModal(pegawai, 'cuti')}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <Plus className="w-3.5 h-3.5" />
+                        <span>Input Pengajuan Cuti</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenSendNotification(pegawai, 'Pengajuan Cuti Tahunan', `Sisa cuti tahunan saat ini: ${pegawai.sisa_cuti_tahunan ?? 12} Hari Kerja. Imbauan verifikasi pengajuan cuti.`)}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Kirim Pemberitahuan</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* SUB-TAB 7: PENSIUN BUP & HABIS MASA KONTRAK */}
       {activeSubTab === 'pensiun' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-3 gap-2">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <AlertTriangle className="w-5 h-5 text-rose-600" />
+                <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
                 <span>Pemantauan Batas Usia Pensiun (BUP) PNS & Habis Masa Kontrak (PPPK / Non-ASN)</span>
               </h3>
               <p className="text-xs text-[#64748B]">
                 BUP PNS (58/60/65 Thn), Akhir Kontrak Perjanjian Kerja PPPK (5 Thn) & Akhir Masa SK Non-ASN (1 Thn)
               </p>
             </div>
-            <span className="bg-rose-100 text-rose-900 text-xs font-bold px-3 py-1.5 rounded-full">
+            <span className="bg-rose-100 text-rose-900 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
               {filteredPensiunAlerts.length} Mendekati BUP / Habis Kontrak
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -1248,7 +1686,6 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                     const statusKeg = item.status_kepegawaian || 'PNS';
                     const isPns = statusKeg === 'PNS';
                     const isPppk = statusKeg.includes('PPPK');
-                    const isNonAsn = statusKeg === 'Non-ASN';
 
                     return (
                       <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
@@ -1331,26 +1768,94 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {filteredPensiunAlerts.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                Tidak ada pegawai yang mendekati BUP atau habis masa kontrak dalam 18 bulan ke depan.
+              </div>
+            ) : (
+              filteredPensiunAlerts.map((item) => {
+                const statusKeg = item.status_kepegawaian || 'PNS';
+                const isPns = statusKeg === 'PNS';
+                const isPppk = statusKeg.includes('PPPK');
+
+                return (
+                  <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {item.nama_lengkap}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">
+                          {isPns ? 'NIP: ' : isPppk ? 'NI PPPK: ' : 'NIK: '}{item.nip}
+                        </div>
+                        <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
+                      </div>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
+                        isPns ? 'bg-blue-100 text-blue-800' : isPppk ? 'bg-purple-100 text-purple-800' : 'bg-slate-200 text-slate-800'
+                      }`}>
+                        {statusKeg}
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Usia Saat Ini</span>
+                        <span className="font-bold text-slate-800 text-[11px]">{item.umur_saat_ini} Tahun</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">TMT BUP / Selesai Kontrak</span>
+                        <span className="font-bold text-red-800 text-[11px]">{formatDateIndonesian(item.tanggal_pensiun)}</span>
+                      </div>
+                    </div>
+
+                    <div className="pt-1">
+                      {isSuperAdmin ? (
+                        <div className="bg-rose-50 text-rose-800 text-xs font-bold p-2 rounded-lg text-center border border-rose-200">
+                          Proses BUP Dinkes ({item.sisa_bulan} Bulan Lagi)
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const peg = activePegawai.find((p) => p.nip === item.nip);
+                            if (peg) handleOpenSendNotification(peg, 'Pensiun BUP / Masa Kontrak', `Jatuh tempo BUP/Kontrak pada ${formatDateIndonesian(item.tanggal_pensiun)}. Imbauan pengurusan berkas pensiun/kontrak.`);
+                          }}
+                          className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
         </div>
       )}
 
       {/* SUB-TAB 8: IZIN & TUGAS BELAJAR */}
       {activeSubTab === 'izin_belajar' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-3 gap-2">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <BookOpen className="w-5 h-5 text-indigo-600" />
+                <BookOpen className="w-5 h-5 text-indigo-600 shrink-0" />
                 <span>Pemantauan Pegawai Izin Belajar & Tugas Belajar</span>
               </h3>
               <p className="text-xs text-[#64748B]">Sesuai SE MenPANRB No. 28 Tahun 2021 tentang Pengembangan Kompetensi Pegawai ASN.</p>
             </div>
-            <span className="bg-indigo-100 text-indigo-900 text-xs font-bold px-3 py-1.5 rounded-full">
+            <span className="bg-indigo-100 text-indigo-900 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
               {izinBelajarCount} Pegawai Aktif Belajar
             </span>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -1413,23 +1918,76 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {filteredPegawai.map((pegawai) => (
+              <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                      {pegawai.nama_lengkap}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                    <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
+                  </div>
+                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
+                    pegawai.status_izin_belajar ? 'bg-indigo-100 text-indigo-900' : 'bg-slate-100 text-slate-600'
+                  }`}>
+                    {pegawai.status_izin_belajar ? 'AKTIF' : 'BELUM'}
+                  </span>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
+                  <div className="font-bold text-indigo-900">
+                    {pegawai.program_studi || (pegawai.status_izin_belajar ? 'S-2 Magister Kesehatan Masyarakat' : 'S-1 Keperawatan')}
+                  </div>
+                  <div className="text-[11px] text-slate-500">{pegawai.nama_universitas_pt || 'Universitas Mataram'}</div>
+                  <div className="text-[11px] text-slate-700 font-semibold pt-0.5">
+                    Progres: {pegawai.progres_semester || (pegawai.status_izin_belajar ? 'Semester 4' : 'Pendidikan Selesai')}
+                  </div>
+                </div>
+
+                <div className="pt-1">
+                  {isSuperAdmin ? (
+                    <button
+                      onClick={() => handleOpenActionModal(pegawai, 'izin_belajar')}
+                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                    >
+                      <Edit3 className="w-3.5 h-3.5" />
+                      <span>Update Progres</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenSendNotification(pegawai, 'Izin / Tugas Belajar', 'Pemberitahuan pemutakhiran Laporan Progres Semester Pendidikan Bangkom.')}
+                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Kirim Pemberitahuan</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* SUB-TAB 9: PENCANTUMAN GELAR */}
       {activeSubTab === 'pencantuman_gelar' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <GraduationCap className="w-5 h-5 text-blue-600" />
+                <GraduationCap className="w-5 h-5 text-blue-600 shrink-0" />
                 <span>Pemantauan Usulan Pencantuman Gelar Akademik di BKN</span>
               </h3>
               <p className="text-xs text-[#64748B]">Verifikasi Validasi Ijazah & Akreditasi Perguruan Tinggi Terdaftar BKN.</p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -1490,23 +2048,78 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {filteredPegawai.map((pegawai) => {
+              const statusGelar = pegawai.status_pencantuman_gelar || 'Terverifikasi BKN';
+              const gelarDisplay = [pegawai.gelar_depan, pegawai.gelar_belakang].filter(Boolean).join(' ') || 'Belum Ada';
+
+              return (
+                <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                        {pegawai.nama_lengkap}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                    </div>
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                      {statusGelar.toUpperCase()}
+                    </span>
+                  </div>
+
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-semibold block">Gelar Diusulkan</span>
+                      <span className="font-bold text-blue-900">{gelarDisplay}</span>
+                    </div>
+                    <div className="text-[11px] text-emerald-900 font-semibold">
+                      {pegawai.akreditasi_pt || 'BAN-PT Akreditasi A (Unggul)'} - {pegawai.nama_universitas_pt || 'Universitas Mataram'}
+                    </div>
+                  </div>
+
+                  <div className="pt-1">
+                    {isSuperAdmin ? (
+                      <button
+                        onClick={() => handleOpenActionModal(pegawai, 'gelar')}
+                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <FileCheck className="w-3.5 h-3.5" />
+                        <span>Input Pertek Gelar</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenSendNotification(pegawai, 'Pencantuman Gelar', 'Pemberitahuan verifikasi Ijazah & Surat Keterangan Verval BKN.')}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Kirim Pemberitahuan</span>
+                      </button>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
       )}
 
       {/* SUB-TAB 10: MUTASI KEPEGAWAIAN */}
       {activeSubTab === 'mutasi' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
           <div className="flex items-center justify-between border-b border-slate-200 pb-3">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <Layers className="w-5 h-5 text-[#2563EB]" />
+                <Layers className="w-5 h-5 text-[#2563EB] shrink-0" />
                 <span>Pemantauan Usulan Mutasi & Rotasi Unit Kerja</span>
               </h3>
               <p className="text-xs text-[#64748B]">Mutasi Internal Puskesmas/RSUD, Rotasi Jabatan, dan Penyesuaian ABK Dikes.</p>
             </div>
           </div>
 
-          <div className="overflow-x-auto">
+          {/* Desktop Table View */}
+          <div className="hidden md:block overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
                 <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
@@ -1570,23 +2183,81 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </tbody>
             </table>
           </div>
+
+          {/* Mobile Card List View */}
+          <div className="md:hidden space-y-3">
+            {filteredPegawai.map((pegawai) => (
+              <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                <div className="flex items-start justify-between gap-2">
+                  <div>
+                    <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                      {pegawai.nama_lengkap}
+                    </div>
+                    <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                  </div>
+                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                    SELESAI / AKTIF
+                  </span>
+                </div>
+
+                <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
+                  <div>
+                    <span className="text-[10px] text-slate-400 font-semibold block">Unit Penempatan</span>
+                    <span className="font-bold text-slate-800">{pegawai.unit_kerja}</span>
+                  </div>
+                  <div className="text-[11px] text-indigo-900 font-semibold">
+                    {pegawai.jenis_mutasi || 'Mutasi Internal / Rotasi Jabatan'}
+                  </div>
+                </div>
+
+                <div className="pt-1 flex items-center justify-end gap-1.5">
+                  {isSuperAdmin ? (
+                    <>
+                      <button
+                        onClick={() => handleOpenActionModal(pegawai, 'mutasi')}
+                        className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Update Unit</span>
+                      </button>
+                      <button
+                        onClick={() => onOpenUploadSkModal(pegawai.nip, 'Mutasi')}
+                        className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                      >
+                        <FileUp className="w-3.5 h-3.5" />
+                        <span>SK Mutasi</span>
+                      </button>
+                    </>
+                  ) : (
+                    <button
+                      onClick={() => handleOpenSendNotification(pegawai, 'Mutasi / Rotasi Unit', `Laporan usulan mutasi/rotasi unit kerja saat ini (${pegawai.unit_kerja}).`)}
+                      className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                    >
+                      <Send className="w-3.5 h-3.5" />
+                      <span>Kirim Pemberitahuan</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            ))}
+          </div>
         </div>
       )}
 
       {/* SUB-TAB 11: KP4 ANAK */}
       {activeSubTab === 'kp4' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-slate-200 pb-3">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between border-b border-slate-200 pb-3 gap-3">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <Baby className="w-5 h-5 text-red-600" />
+                <Baby className="w-5 h-5 text-red-600 shrink-0" />
                 <span>Peringatan Batas Usia Anak KP4 (Tunjangan Keluarga)</span>
               </h3>
-              <p className="text-xs text-[#64748B]">
+              <p className="text-xs text-[#64748B] mt-0.5">
                 Pencegahan Temuan BPK: Batas 21 thn (wajib Surat Ket Kuliah) & Batas Maksimal 25 thn.
               </p>
             </div>
-            <div className="flex items-center space-x-2">
+            <div className="flex flex-wrap items-center gap-2">
               <button
                 onClick={() => setIsAddKp4ModalOpen(true)}
                 className="bg-red-600 hover:bg-red-700 text-white text-xs font-bold px-3.5 py-1.5 rounded-lg shadow-sm flex items-center space-x-1.5 transition-colors"
@@ -1594,7 +2265,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                 <Plus className="w-3.5 h-3.5" />
                 <span>+ Tambah Data Keluarga KP4</span>
               </button>
-              <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1.5 rounded-full">
+              <span className="bg-red-100 text-red-800 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
                 {filteredKp4Alerts.length} Perlu Cek Berkas
               </span>
             </div>
@@ -1608,9 +2279,9 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
           ) : (
             <div className="divide-y divide-slate-100">
               {filteredKp4Alerts.map((item) => (
-                <div key={item.id} className="p-4 hover:bg-slate-50/60 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-                  <div className="space-y-1 max-w-2xl">
-                    <div className="flex items-center space-x-2">
+                <div key={item.id} className="p-3.5 sm:p-4 hover:bg-slate-50/60 transition-colors flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+                  <div className="space-y-1 max-w-2xl w-full">
+                    <div className="flex flex-wrap items-center gap-2">
                       <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full uppercase">
                         {item.kategori_alert}
                       </span>
@@ -1628,11 +2299,11 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                     </p>
                   </div>
 
-                  <div className="shrink-0">
+                  <div className="w-full md:w-auto shrink-0">
                     {isSuperAdmin ? (
                       <button
                         onClick={() => onUpdateKp4Tanggungan(item.id, false)}
-                        className="bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow-sm flex items-center justify-center space-x-1.5"
+                        className="w-full md:w-auto bg-[#2563EB] hover:bg-blue-700 text-white text-xs font-semibold px-3.5 py-2 rounded-lg transition-colors shadow-sm flex items-center justify-center space-x-1.5"
                       >
                         <UserCheck className="w-3.5 h-3.5" />
                         <span>Keluarkan Dari Tanggungan</span>
@@ -1643,7 +2314,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                           const peg = activePegawai.find((p) => p.nip === item.nip_pegawai);
                           if (peg) handleOpenSendNotification(peg, 'KP4 Tunjangan Anak', `Anak a.n ${item.nama_anak} (${item.umur_tahun} Thn). ${item.rekomendasi_aksi}`);
                         }}
-                        className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                        className="w-full md:w-auto inline-flex items-center justify-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3.5 py-2 rounded-lg font-bold text-xs shadow-xs transition-colors"
                       >
                         <Send className="w-3.5 h-3.5" />
                         <span>Kirim Pemberitahuan</span>
