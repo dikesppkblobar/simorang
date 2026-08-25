@@ -335,7 +335,16 @@ export default function App() {
 
   const handleUpdateUser = async (id: string, updates: any) => {
     try {
-      await apiClient.updateUser(id, updates, currentUser.email);
+      const updated = await apiClient.updateUser(id, updates, currentUser.email);
+      if (currentUser.id === id || (currentUser.username && updates.username && currentUser.username.toLowerCase() === updates.username.toLowerCase())) {
+        setCurrentUser((prev) => {
+          const next = { ...prev, ...updates, ...(updated || {}) };
+          if (typeof window !== 'undefined') {
+            window.localStorage.setItem('sipatuh_current_user', JSON.stringify(next));
+          }
+          return next;
+        });
+      }
       await refreshData();
       return true;
     } catch (err: any) {
