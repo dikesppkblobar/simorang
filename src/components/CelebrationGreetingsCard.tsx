@@ -79,51 +79,7 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
       return a.birthDay - b.birthDay;
     });
 
-  // Fallback demo celebrants if database is in initial empty state
-  const defaultBirthdays = [
-    {
-      nip: '198808242011012005',
-      nama_lengkap: 'Ns. Baiq Rahmawati, S.Kep',
-      jabatan_spesifik: 'Perawat Ahli Muda',
-      unit_kerja: 'Dinas Kesehatan Kab. Lombok Barat',
-      age: 38,
-      isToday: true,
-      formattedBirthDate: '24 Agustus 1988',
-      jenis_kepegawaian: 'PNS',
-    },
-    {
-      nip: '199208152019031002',
-      nama_lengkap: 'dr. I Putu Agus Wiradana, Sp.A',
-      jabatan_spesifik: 'Dokter Spesialis Anak',
-      unit_kerja: 'RSUD Tripat Gerung',
-      age: 34,
-      isToday: false,
-      formattedBirthDate: '15 Agustus 1992',
-      jenis_kepegawaian: 'PNS',
-    },
-    {
-      nip: '199508202022032008',
-      nama_lengkap: 'Nurul Hidayati, S.Tr.Keb',
-      jabatan_spesifik: 'Bidan Mahir',
-      unit_kerja: 'Puskesmas Narmada',
-      age: 31,
-      isToday: false,
-      formattedBirthDate: '20 Agustus 1995',
-      jenis_kepegawaian: 'PPPK Penuh Waktu',
-    },
-    {
-      nip: '198908272014032001',
-      nama_lengkap: 'apt. Dewi Lestari, S.Farm',
-      jabatan_spesifik: 'Apoteker Pertama',
-      unit_kerja: 'Puskesmas Gunungsari',
-      age: 37,
-      isToday: false,
-      formattedBirthDate: '27 Agustus 1989',
-      jenis_kepegawaian: 'PNS',
-    },
-  ];
-
-  const birthdayCelebrants = realBirthdays.length > 0 ? realBirthdays : defaultBirthdays;
+  const birthdayCelebrants = realBirthdays;
 
   // 2. Process Promotions (Kenaikan Pangkat) from Real Pegawai & SK History Database
   const realPromotions = pegawaiList
@@ -140,9 +96,9 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
           (s.jenis_sk?.toLowerCase().includes('pangkat') || s.jenis_sk === 'Pangkat')
       );
 
-      const rawTmt = skPangkat?.tmt_sk || p.tmt_pangkat_terakhir || p.tmt_golongan || '2026-04-01';
+      const rawTmt = skPangkat?.tmt_berlaku || p.tmt_pangkat_terakhir || p.tmt_golongan || '';
       let formattedTmt = rawTmt;
-      if (rawTmt.includes('-')) {
+      if (rawTmt && rawTmt.includes('-')) {
         const parts = rawTmt.split('-');
         const tmtYear = parts[0];
         const tmtMonth = parseInt(parts[1] || '1', 10);
@@ -152,57 +108,14 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
 
       return {
         ...p,
-        pangkat_baru: p.nama_pangkat || 'Penata Tk. I',
-        golongan_baru: p.golongan_pangkat || 'III/d',
-        tmt_pangkat: formattedTmt,
-        no_sk: skPangkat?.nomor_sk || p.no_sk_pangkat || '823.3/BKD-PSDM/2026',
+        pangkat_baru: p.nama_pangkat || 'Penata',
+        golongan_baru: p.golongan_pangkat || 'III/c',
+        tmt_pangkat: formattedTmt || '-',
+        no_sk: skPangkat?.nomor_sk || p.no_sk_pangkat || '-',
       };
     });
 
-  const defaultPromotions = [
-    {
-      nip: '198503142010011008',
-      nama_lengkap: 'H. Lalu Suhardi, S.Kep., M.M.',
-      jabatan_spesifik: 'Kepala Bidang Pelayanan Kesehatan',
-      unit_kerja: 'Dinas Kesehatan Kab. Lombok Barat',
-      pangkat_baru: 'Pembina Tk. I',
-      golongan_baru: 'IV/b',
-      tmt_pangkat: '01 April 2026',
-      no_sk: '823.4/245/BKD-PSDM/2026',
-    },
-    {
-      nip: '199011052014022004',
-      nama_lengkap: 'dr. Siti Fatimah Azzahra',
-      jabatan_spesifik: 'Dokter Ahli Madya',
-      unit_kerja: 'Puskesmas Gerung',
-      pangkat_baru: 'Pembina',
-      golongan_baru: 'IV/a',
-      tmt_pangkat: '01 April 2026',
-      no_sk: '823.4/189/BKD-PSDM/2026',
-    },
-    {
-      nip: '199305122019031003',
-      nama_lengkap: 'Ahmad Fauzi, S.Farm., Apt.',
-      jabatan_spesifik: 'Apoteker Ahli Muda',
-      unit_kerja: 'Puskesmas Meninting',
-      pangkat_baru: 'Penata',
-      golongan_baru: 'III/c',
-      tmt_pangkat: '01 April 2026',
-      no_sk: '823.3/302/BKD-PSDM/2026',
-    },
-    {
-      nip: '198706192011012010',
-      nama_lengkap: 'Sri Wahyuningsih, S.ST',
-      jabatan_spesifik: 'Sanitarian Ahli Madya',
-      unit_kerja: 'Puskesmas Kediri',
-      pangkat_baru: 'Pembina',
-      golongan_baru: 'IV/a',
-      tmt_pangkat: '01 April 2026',
-      no_sk: '823.4/210/BKD-PSDM/2026',
-    },
-  ];
-
-  const promotionCelebrants = realPromotions.length > 0 ? realPromotions : defaultPromotions;
+  const promotionCelebrants = realPromotions;
 
   // Auto-play timer
   useEffect(() => {
@@ -366,162 +279,182 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
         {/* Dynamic Greeting Card with Motion Transitions */}
         <AnimatePresence mode="wait">
           {activeTab === 'birthday' ? (
-            <motion.div
-              key={`bday-card-${birthdayIndex}`}
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.98 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="space-y-2"
-            >
-              {/* Header Badge */}
-              <div className="flex items-center justify-between">
-                <div className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-heading font-bold shadow-2xs">
-                  <Sparkles className="w-3 h-3 text-amber-600 animate-pulse" />
-                  <span>
-                    {(currentBirthday as any).isToday
-                      ? '🎉 HARI INI BERULANG TAHUN!'
-                      : '🎂 BULAN INI BERULANG TAHUN'}
+            birthdayCelebrants.length > 0 && currentBirthday ? (
+              <motion.div
+                key={`bday-card-${birthdayIndex}`}
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="space-y-2"
+              >
+                {/* Header Badge */}
+                <div className="flex items-center justify-between">
+                  <div className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-900 border border-amber-300 text-[10px] font-heading font-bold shadow-2xs">
+                    <Sparkles className="w-3 h-3 text-amber-600 animate-pulse" />
+                    <span>
+                      {(currentBirthday as any).isToday
+                        ? '🎉 HARI INI BERULANG TAHUN!'
+                        : '🎂 BULAN INI BERULANG TAHUN'}
+                    </span>
+                  </div>
+                  <span className="text-[10px] text-amber-800 font-semibold flex items-center gap-1">
+                    <MousePointerClick className="w-3 h-3" />
+                    <span>Klik baris tabel di bawah</span>
                   </span>
                 </div>
-                <span className="text-[10px] text-amber-800 font-semibold flex items-center gap-1">
-                  <MousePointerClick className="w-3 h-3" />
-                  <span>Klik baris tabel di bawah</span>
-                </span>
-              </div>
 
-              {/* Celebrant Main Card */}
-              <div className="bg-gradient-to-br from-amber-50/90 via-white to-rose-50/90 rounded-xl p-3 border border-amber-200/90 shadow-xs flex flex-col sm:flex-row items-center sm:items-start gap-2.5 text-center sm:text-left">
-                {/* Avatar / Photo with Glowing Ribbon */}
-                <div className="relative shrink-0">
-                  <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-tr from-amber-400 via-rose-400 to-amber-200 p-0.5 shadow-sm flex items-center justify-center">
-                    <div className="w-full h-full rounded-lg bg-white flex items-center justify-center font-heading font-extrabold text-base sm:text-lg text-amber-700 overflow-hidden">
-                      {currentBirthday.nama_lengkap
-                        .split(' ')
-                        .filter((w) => !w.includes('.') && w.length > 2)
-                        .slice(0, 2)
-                        .map((n) => n[0])
-                        .join('') || 'ASN'}
+                {/* Celebrant Main Card */}
+                <div className="bg-gradient-to-br from-amber-50/90 via-white to-rose-50/90 rounded-xl p-3 border border-amber-200/90 shadow-xs flex flex-col sm:flex-row items-center sm:items-start gap-2.5 text-center sm:text-left">
+                  {/* Avatar / Photo with Glowing Ribbon */}
+                  <div className="relative shrink-0">
+                    <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-tr from-amber-400 via-rose-400 to-amber-200 p-0.5 shadow-sm flex items-center justify-center">
+                      <div className="w-full h-full rounded-lg bg-white flex items-center justify-center font-heading font-extrabold text-base sm:text-lg text-amber-700 overflow-hidden">
+                        {currentBirthday.nama_lengkap
+                          .split(' ')
+                          .filter((w) => !w.includes('.') && w.length > 2)
+                          .slice(0, 2)
+                          .map((n) => n[0])
+                          .join('') || 'ASN'}
+                      </div>
+                    </div>
+                    <motion.div
+                      animate={{ rotate: [0, -10, 10, 0] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-xs"
+                    >
+                      <Gift className="w-3 h-3" />
+                    </motion.div>
+                  </div>
+
+                  {/* Information */}
+                  <div className="space-y-0.5 flex-1 min-w-0">
+                    <div className="text-sm font-heading font-extrabold text-slate-900 leading-tight truncate">
+                      {currentBirthday.nama_lengkap}
+                    </div>
+                    <div className="text-[10.5px] font-medium text-slate-500">
+                      NIP. {currentBirthday.nip}
+                    </div>
+                    <div className="text-[10px] font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.2 rounded-md inline-block">
+                      {currentBirthday.jabatan_spesifik || 'Tenaga Kesehatan'}
+                    </div>
+
+                    <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[10.5px] text-slate-600">
+                      <span className="flex items-center gap-1">
+                        <Building2 className="w-3 h-3 text-[#004B87] shrink-0" />
+                        <span className="truncate max-w-[160px]">{currentBirthday.unit_kerja}</span>
+                      </span>
+                      <span className="flex items-center gap-1 font-semibold text-slate-700">
+                        <Calendar className="w-3 h-3 text-rose-500 shrink-0" />
+                        <span>{(currentBirthday as any).formattedBirthDate} ({(currentBirthday as any).age} Th)</span>
+                      </span>
                     </div>
                   </div>
-                  <motion.div
-                    animate={{ rotate: [0, -10, 10, 0] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-amber-500 rounded-full flex items-center justify-center text-white shadow-xs"
-                  >
-                    <Gift className="w-3 h-3" />
-                  </motion.div>
                 </div>
 
-                {/* Information */}
-                <div className="space-y-0.5 flex-1 min-w-0">
-                  <div className="text-sm font-heading font-extrabold text-slate-900 leading-tight truncate">
-                    {currentBirthday.nama_lengkap}
-                  </div>
-                  <div className="text-[10.5px] font-medium text-slate-500">
-                    NIP. {currentBirthday.nip}
-                  </div>
-                  <div className="text-[10px] font-semibold text-amber-800 bg-amber-100/80 px-2 py-0.2 rounded-md inline-block">
-                    {currentBirthday.jabatan_spesifik || 'Tenaga Kesehatan'}
-                  </div>
-
-                  <div className="flex flex-wrap items-center gap-2 pt-0.5 text-[10.5px] text-slate-600">
-                    <span className="flex items-center gap-1">
-                      <Building2 className="w-3 h-3 text-[#004B87] shrink-0" />
-                      <span className="truncate max-w-[160px]">{currentBirthday.unit_kerja}</span>
-                    </span>
-                    <span className="flex items-center gap-1 font-semibold text-slate-700">
-                      <Calendar className="w-3 h-3 text-rose-500 shrink-0" />
-                      <span>{(currentBirthday as any).formattedBirthDate} ({(currentBirthday as any).age} Th)</span>
-                    </span>
-                  </div>
+                {/* Heartfelt Congratulations Message */}
+                <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-300/60 text-[11px] text-amber-950 flex items-start space-x-2">
+                  <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
+                  <p className="italic leading-relaxed font-medium">
+                    "Selamat Ulang Tahun! Semoga senantiasa dianugerahi kesehatan, keberkahan usia, dan kelancaran dalam memberikan pengabdian terbaik."
+                  </p>
                 </div>
-              </div>
-
-              {/* Heartfelt Congratulations Message */}
-              <div className="p-2.5 rounded-lg bg-amber-500/10 border border-amber-300/60 text-[11px] text-amber-950 flex items-start space-x-2">
-                <Heart className="w-3.5 h-3.5 text-rose-500 shrink-0 mt-0.5" />
-                <p className="italic leading-relaxed font-medium">
-                  "Selamat Ulang Tahun! Semoga senantiasa dianugerahi kesehatan, keberkahan usia, dan kelancaran dalam memberikan pengabdian terbaik."
+              </motion.div>
+            ) : (
+              <div className="p-6 text-center rounded-xl bg-amber-50/60 border border-amber-200/60 text-slate-600 space-y-2">
+                <Cake className="w-8 h-8 text-amber-500 mx-auto" />
+                <div className="font-heading font-bold text-sm text-slate-800">Tidak Ada Ulang Tahun Bulan Ini</div>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Belum ada data pegawai yang tercatat berulang tahun pada bulan ini di database.
                 </p>
               </div>
-            </motion.div>
+            )
           ) : (
-            <motion.div
-              key={`prom-card-${promotionIndex}`}
-              initial={{ opacity: 0, y: 10, scale: 0.98 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: -10, scale: 0.98 }}
-              transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="space-y-2"
-            >
-              {/* Header Badge */}
-              <div className="flex items-center justify-between">
-                <div className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-blue-100 text-[#004B87] border border-blue-300 text-[10px] font-heading font-bold shadow-2xs">
-                  <Award className="w-3 h-3 text-[#004B87]" />
-                  <span>APRESIASI KENAIKAN PANGKAT ASN</span>
+            promotionCelebrants.length > 0 && currentPromotion ? (
+              <motion.div
+                key={`prom-card-${promotionIndex}`}
+                initial={{ opacity: 0, y: 10, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.98 }}
+                transition={{ duration: 0.25, ease: 'easeOut' }}
+                className="space-y-2"
+              >
+                {/* Header Badge */}
+                <div className="flex items-center justify-between">
+                  <div className="inline-flex items-center space-x-1 px-2 py-0.5 rounded-full bg-blue-100 text-[#004B87] border border-blue-300 text-[10px] font-heading font-bold shadow-2xs">
+                    <Award className="w-3 h-3 text-[#004B87]" />
+                    <span>APRESIASI KENAIKAN PANGKAT ASN</span>
+                  </div>
+                  <span className="text-[10px] text-[#004B87] font-semibold flex items-center gap-1">
+                    <MousePointerClick className="w-3 h-3" />
+                    <span>Klik baris tabel di bawah</span>
+                  </span>
                 </div>
-                <span className="text-[10px] text-[#004B87] font-semibold flex items-center gap-1">
-                  <MousePointerClick className="w-3 h-3" />
-                  <span>Klik baris tabel di bawah</span>
-                </span>
-              </div>
 
-              {/* Celebrant Main Card */}
-              <div className="bg-gradient-to-br from-blue-50/90 via-white to-teal-50/90 rounded-xl p-3 border border-blue-200/90 shadow-xs flex flex-col sm:flex-row items-center sm:items-start gap-2.5 text-center sm:text-left">
-                {/* Avatar / Photo with Glowing Crown */}
-                <div className="relative shrink-0">
-                  <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-tr from-[#004B87] via-[#00A3AD] to-blue-300 p-0.5 shadow-sm flex items-center justify-center">
-                    <div className="w-full h-full rounded-lg bg-white flex items-center justify-center font-heading font-extrabold text-base sm:text-lg text-[#004B87] overflow-hidden">
-                      {currentPromotion.nama_lengkap
-                        .split(' ')
-                        .filter((w) => !w.includes('.') && w.length > 2)
-                        .slice(0, 2)
-                        .map((n) => n[0])
-                        .join('') || 'ASN'}
+                {/* Celebrant Main Card */}
+                <div className="bg-gradient-to-br from-blue-50/90 via-white to-teal-50/90 rounded-xl p-3 border border-blue-200/90 shadow-xs flex flex-col sm:flex-row items-center sm:items-start gap-2.5 text-center sm:text-left">
+                  {/* Avatar / Photo with Glowing Crown */}
+                  <div className="relative shrink-0">
+                    <div className="w-13 h-13 sm:w-14 sm:h-14 rounded-xl bg-gradient-to-tr from-[#004B87] via-[#00A3AD] to-blue-300 p-0.5 shadow-sm flex items-center justify-center">
+                      <div className="w-full h-full rounded-lg bg-white flex items-center justify-center font-heading font-extrabold text-base sm:text-lg text-[#004B87] overflow-hidden">
+                        {currentPromotion.nama_lengkap
+                          .split(' ')
+                          .filter((w) => !w.includes('.') && w.length > 2)
+                          .slice(0, 2)
+                          .map((n) => n[0])
+                          .join('') || 'ASN'}
+                      </div>
+                    </div>
+                    <motion.div
+                      animate={{ scale: [1, 1.2, 1] }}
+                      transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                      className="absolute -top-1 -right-1 w-5 h-5 bg-[#00A3AD] rounded-full flex items-center justify-center text-white shadow-xs"
+                    >
+                      <Star className="w-3 h-3 fill-white" />
+                    </motion.div>
+                  </div>
+
+                  {/* Information */}
+                  <div className="space-y-0.5 flex-1 min-w-0">
+                    <div className="text-sm font-heading font-extrabold text-slate-900 leading-tight truncate">
+                      {currentPromotion.nama_lengkap}
+                    </div>
+                    <div className="text-[10.5px] font-medium text-slate-500">
+                      NIP. {currentPromotion.nip}
+                    </div>
+                    <div className="flex flex-wrap items-center gap-1 pt-0.5">
+                      <span className="text-[10px] font-bold text-white bg-[#004B87] px-1.5 py-0.2 rounded-md shadow-2xs">
+                        {(currentPromotion as any).pangkat_baru} ({(currentPromotion as any).golongan_baru})
+                      </span>
+                      <span className="text-[9.5px] font-semibold text-teal-800 bg-teal-100 px-1.5 py-0.2 rounded-md">
+                        TMT: {(currentPromotion as any).tmt_pangkat}
+                      </span>
+                    </div>
+
+                    <div className="flex items-center gap-1.5 pt-0.5 text-[10.5px] text-slate-600">
+                      <Building2 className="w-3 h-3 text-[#004B87] shrink-0" />
+                      <span className="truncate">{currentPromotion.unit_kerja}</span>
                     </div>
                   </div>
-                  <motion.div
-                    animate={{ scale: [1, 1.2, 1] }}
-                    transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-                    className="absolute -top-1 -right-1 w-5 h-5 bg-[#00A3AD] rounded-full flex items-center justify-center text-white shadow-xs"
-                  >
-                    <Star className="w-3 h-3 fill-white" />
-                  </motion.div>
                 </div>
 
-                {/* Information */}
-                <div className="space-y-0.5 flex-1 min-w-0">
-                  <div className="text-sm font-heading font-extrabold text-slate-900 leading-tight truncate">
-                    {currentPromotion.nama_lengkap}
-                  </div>
-                  <div className="text-[10.5px] font-medium text-slate-500">
-                    NIP. {currentPromotion.nip}
-                  </div>
-                  <div className="flex flex-wrap items-center gap-1 pt-0.5">
-                    <span className="text-[10px] font-bold text-white bg-[#004B87] px-1.5 py-0.2 rounded-md shadow-2xs">
-                      {(currentPromotion as any).pangkat_baru} ({(currentPromotion as any).golongan_baru})
-                    </span>
-                    <span className="text-[9.5px] font-semibold text-teal-800 bg-teal-100 px-1.5 py-0.2 rounded-md">
-                      TMT: {(currentPromotion as any).tmt_pangkat}
-                    </span>
-                  </div>
-
-                  <div className="flex items-center gap-1.5 pt-0.5 text-[10.5px] text-slate-600">
-                    <Building2 className="w-3 h-3 text-[#004B87] shrink-0" />
-                    <span className="truncate">{currentPromotion.unit_kerja}</span>
-                  </div>
+                {/* Heartfelt Congratulations Message */}
+                <div className="p-2.5 rounded-lg bg-blue-500/10 border border-blue-300/60 text-[11px] text-blue-950 flex items-start space-x-2">
+                  <TrendingUp className="w-3.5 h-3.5 text-[#004B87] shrink-0 mt-0.5" />
+                  <p className="italic leading-relaxed font-medium">
+                    "Selamat dan sukses atas Kenaikan Pangkat Setingkat Lebih Tinggi! Semoga amanah dan senantiasa berprestasi bagi Lombok Barat."
+                  </p>
                 </div>
-              </div>
-
-              {/* Heartfelt Congratulations Message */}
-              <div className="p-2.5 rounded-lg bg-blue-500/10 border border-blue-300/60 text-[11px] text-blue-950 flex items-start space-x-2">
-                <TrendingUp className="w-3.5 h-3.5 text-[#004B87] shrink-0 mt-0.5" />
-                <p className="italic leading-relaxed font-medium">
-                  "Selamat dan sukses atas Kenaikan Pangkat Setingkat Lebih Tinggi! Semoga amanah dan senantiasa berprestasi bagi Lombok Barat."
+              </motion.div>
+            ) : (
+              <div className="p-6 text-center rounded-xl bg-blue-50/60 border border-blue-200/60 text-slate-600 space-y-2">
+                <Award className="w-8 h-8 text-[#004B87] mx-auto" />
+                <div className="font-heading font-bold text-sm text-slate-800">Tidak Ada Riwayat Kenaikan Pangkat</div>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Belum ada data riwayat SK kenaikan pangkat pada periode ini di database.
                 </p>
               </div>
-            </motion.div>
+            )
           )}
         </AnimatePresence>
 
@@ -545,108 +478,120 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
           <div className="rounded-xl border border-slate-200 overflow-hidden shadow-2xs bg-white">
             <div className="max-h-28 overflow-y-auto divide-y divide-slate-100 text-xs">
               {activeTab === 'birthday' ? (
-                birthdayCelebrants.map((b, idx) => {
-                  const isSelected = idx === birthdayIndex;
-                  return (
-                    <button
-                      key={b.nip}
-                      type="button"
-                      onClick={() => handleSelectBirthday(idx)}
-                      className={`w-full text-left p-1.5 sm:p-2 flex items-center justify-between gap-2 transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-amber-100/90 text-amber-950 font-medium ring-1 ring-inset ring-amber-400'
-                          : 'hover:bg-amber-50/60 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2 min-w-0 flex-1">
-                        <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold ${
+                birthdayCelebrants.length === 0 ? (
+                  <div className="p-3 text-center text-[11px] text-slate-400 italic">
+                    Tidak ada ASN berulang tahun pada bulan ini
+                  </div>
+                ) : (
+                  birthdayCelebrants.map((b, idx) => {
+                    const isSelected = idx === birthdayIndex;
+                    return (
+                      <button
+                        key={b.nip}
+                        type="button"
+                        onClick={() => handleSelectBirthday(idx)}
+                        className={`w-full text-left p-1.5 sm:p-2 flex items-center justify-between gap-2 transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-amber-500 text-white shadow-2xs'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          {idx + 1}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-heading font-bold text-slate-900 text-[11px] truncate flex items-center gap-1">
-                            <span>{b.nama_lengkap}</span>
-                            {(b as any).isToday && (
-                              <span className="px-1 py-0.1 rounded-full bg-rose-500 text-white text-[8px] font-extrabold animate-pulse">
-                                HARI INI
-                              </span>
-                            )}
+                            ? 'bg-amber-100/90 text-amber-950 font-medium ring-1 ring-inset ring-amber-400'
+                            : 'hover:bg-amber-50/60 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2 min-w-0 flex-1">
+                          <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold ${
+                            isSelected
+                              ? 'bg-amber-500 text-white shadow-2xs'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {idx + 1}
                           </div>
-                          <div className="text-[9.5px] text-slate-500 truncate">
-                            {b.unit_kerja.replace('Puskesmas ', 'PKM ')} • {b.nip}
+                          <div className="min-w-0 flex-1">
+                            <div className="font-heading font-bold text-slate-900 text-[11px] truncate flex items-center gap-1">
+                              <span>{b.nama_lengkap}</span>
+                              {(b as any).isToday && (
+                                <span className="px-1 py-0.1 rounded-full bg-rose-500 text-white text-[8px] font-extrabold animate-pulse">
+                                  HARI INI
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[9.5px] text-slate-500 truncate">
+                              {b.unit_kerja.replace('Puskesmas ', 'PKM ')} • {b.nip}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="text-right shrink-0">
-                        <div className="text-[10px] font-semibold text-rose-600">
-                          {(b as any).formattedBirthDate}
+                        <div className="text-right shrink-0">
+                          <div className="text-[10px] font-semibold text-rose-600">
+                            {(b as any).formattedBirthDate}
+                          </div>
+                          <div className="text-[9px] text-slate-500">
+                            {(b as any).age} Th
+                          </div>
                         </div>
-                        <div className="text-[9px] text-slate-500">
-                          {(b as any).age} Th
-                        </div>
-                      </div>
 
-                      {isSelected && (
-                        <div className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
-                          <Check className="w-2.5 h-2.5 stroke-[3]" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-amber-500 text-white flex items-center justify-center shrink-0 shadow-2xs">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })
+                )
               ) : (
-                promotionCelebrants.map((p, idx) => {
-                  const isSelected = idx === promotionIndex;
-                  return (
-                    <button
-                      key={p.nip}
-                      type="button"
-                      onClick={() => handleSelectPromotion(idx)}
-                      className={`w-full text-left p-1.5 sm:p-2 flex items-center justify-between gap-2 transition-all cursor-pointer ${
-                        isSelected
-                          ? 'bg-blue-100/90 text-blue-950 font-medium ring-1 ring-inset ring-[#004B87]/40'
-                          : 'hover:bg-blue-50/60 text-slate-700'
-                      }`}
-                    >
-                      <div className="flex items-center space-x-2 min-w-0 flex-1">
-                        <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold ${
+                promotionCelebrants.length === 0 ? (
+                  <div className="p-3 text-center text-[11px] text-slate-400 italic">
+                    Tidak ada riwayat kenaikan pangkat pada periode ini
+                  </div>
+                ) : (
+                  promotionCelebrants.map((p, idx) => {
+                    const isSelected = idx === promotionIndex;
+                    return (
+                      <button
+                        key={p.nip}
+                        type="button"
+                        onClick={() => handleSelectPromotion(idx)}
+                        className={`w-full text-left p-1.5 sm:p-2 flex items-center justify-between gap-2 transition-all cursor-pointer ${
                           isSelected
-                            ? 'bg-[#004B87] text-white shadow-2xs'
-                            : 'bg-slate-100 text-slate-600'
-                        }`}>
-                          {idx + 1}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="font-heading font-bold text-slate-900 text-[11px] truncate">
-                            {p.nama_lengkap}
+                            ? 'bg-blue-100/90 text-blue-950 font-medium ring-1 ring-inset ring-[#004B87]/40'
+                            : 'hover:bg-blue-50/60 text-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-2 min-w-0 flex-1">
+                          <div className={`w-5 h-5 rounded-md flex items-center justify-center shrink-0 text-[10px] font-bold ${
+                            isSelected
+                              ? 'bg-[#004B87] text-white shadow-2xs'
+                              : 'bg-slate-100 text-slate-600'
+                          }`}>
+                            {idx + 1}
                           </div>
-                          <div className="text-[9.5px] text-slate-500 truncate">
-                            {p.unit_kerja.replace('Puskesmas ', 'PKM ')} • {p.nip}
+                          <div className="min-w-0 flex-1">
+                            <div className="font-heading font-bold text-slate-900 text-[11px] truncate">
+                              {p.nama_lengkap}
+                            </div>
+                            <div className="text-[9.5px] text-slate-500 truncate">
+                              {p.unit_kerja.replace('Puskesmas ', 'PKM ')} • {p.nip}
+                            </div>
                           </div>
                         </div>
-                      </div>
 
-                      <div className="text-right shrink-0">
-                        <div className="text-[10px] font-bold text-[#004B87]">
-                          {(p as any).pangkat_baru} ({(p as any).golongan_baru})
+                        <div className="text-right shrink-0">
+                          <div className="text-[10px] font-bold text-[#004B87]">
+                            {(p as any).pangkat_baru} ({(p as any).golongan_baru})
+                          </div>
+                          <div className="text-[9px] text-slate-500">
+                            TMT: {(p as any).tmt_pangkat}
+                          </div>
                         </div>
-                        <div className="text-[9px] text-slate-500">
-                          TMT: {(p as any).tmt_pangkat}
-                        </div>
-                      </div>
 
-                      {isSelected && (
-                        <div className="w-4 h-4 rounded-full bg-[#004B87] text-white flex items-center justify-center shrink-0 shadow-2xs">
-                          <Check className="w-2.5 h-2.5 stroke-[3]" />
-                        </div>
-                      )}
-                    </button>
-                  );
-                })
+                        {isSelected && (
+                          <div className="w-4 h-4 rounded-full bg-[#004B87] text-white flex items-center justify-center shrink-0 shadow-2xs">
+                            <Check className="w-2.5 h-2.5 stroke-[3]" />
+                          </div>
+                        )}
+                      </button>
+                    );
+                  })
+                )
               )}
             </div>
           </div>
