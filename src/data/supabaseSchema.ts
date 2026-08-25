@@ -225,48 +225,5 @@ ALTER TABLE sk_history DISABLE ROW LEVEL SECURITY;
 ALTER TABLE keluarga_kp4 DISABLE ROW LEVEL SECURITY;
 ALTER TABLE aplikasi_kepegawaian DISABLE ROW LEVEL SECURITY;
 ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
-
--- ------------------------------------------------------------------------------
--- 9. DATA AWAL MASTER UNIT KERJA LOMBOK BARAT (REAL MASTER DATA)
--- ------------------------------------------------------------------------------
-INSERT INTO units (id, kode_unit, nama_unit, kategori, alamat, telepon, kepala_unit, status)
-VALUES
-  ('unit-001', 'DINAS-01', 'Dinas Kesehatan Kab. Lombok Barat', 'Dinas', 'Jl. Soekarno-Hatta No. 1, Gerung', '(0370) 681234', 'Kepala Dinas Kesehatan', 'Aktif'),
-  ('unit-002', 'PKM-01', 'Puskesmas Gerung', 'Puskesmas', 'Jl. Gatot Subroto, Gerung', '(0370) 682334', 'Kepala Puskesmas Gerung', 'Aktif'),
-  ('unit-003', 'PKM-02', 'Puskesmas Narmada', 'Puskesmas', 'Jl. Raya Narmada, Kec. Narmada', '(0370) 671112', 'Kepala Puskesmas Narmada', 'Aktif'),
-  ('unit-004', 'PKM-03', 'Puskesmas Meninting', 'Puskesmas', 'Jl. Raya Senggigi, Batu Layar', '(0370) 692223', 'Kepala Puskesmas Meninting', 'Aktif'),
-  ('unit-005', 'PKM-04', 'Puskesmas Labuapi', 'Puskesmas', 'Jl. TGH. Lopan, Labuapi', '(0370) 672556', 'Kepala Puskesmas Labuapi', 'Aktif'),
-  ('unit-006', 'PKM-05', 'Puskesmas Gunungsari', 'Puskesmas', 'Jl. Pariwisata Gunungsari', '(0370) 673441', 'Kepala Puskesmas Gunungsari', 'Aktif'),
-  ('unit-007', 'PKM-06', 'Puskesmas Sekotong', 'Puskesmas', 'Jl. Raya Sekotong, Sekotong Barat', '(0370) 683445', 'Kepala Puskesmas Sekotong', 'Aktif'),
-  ('unit-008', 'PKM-07', 'Puskesmas Kediri', 'Puskesmas', 'Jl. TGH. Abdul Karim, Kediri', '(0370) 671882', 'Kepala Puskesmas Kediri', 'Aktif'),
-  ('unit-009', 'PKM-08', 'Puskesmas Lingsar', 'Puskesmas', 'Jl. Raya Lingsar, Kec. Lingsar', '(0370) 672110', 'Kepala Puskesmas Lingsar', 'Aktif'),
-  ('unit-010', 'PKM-09', 'Puskesmas Suranadi', 'Puskesmas', 'Jl. Wisata Suranadi, Narmada', '(0370) 674550', 'Kepala Puskesmas Suranadi', 'Aktif'),
-  ('unit-011', 'PKM-10', 'Puskesmas Penimbung', 'Puskesmas', 'Jl. Raya Penimbung, Gunungsari', '(0370) 675001', 'Kepala Puskesmas Penimbung', 'Aktif'),
-  ('unit-012', 'PKM-11', 'Puskesmas Lembar', 'Puskesmas', 'Jl. Pelabuhan Lembar, Kec. Lembar', '(0370) 681900', 'Kepala Puskesmas Lembar', 'Aktif'),
-  ('unit-013', 'PKM-12', 'Puskesmas Eyat Mayang', 'Puskesmas', 'Jl. Raya Eyat Mayang, Lembar', '(0370) 681912', 'Kepala Puskesmas Eyat Mayang', 'Aktif'),
-  ('unit-014', 'PKM-13', 'Puskesmas Jembatan Kembar', 'Puskesmas', 'Jl. Raya Lembar, Jembatan Kembar', '(0370) 681925', 'Kepala Puskesmas Jembatan Kembar', 'Aktif'),
-  ('unit-015', 'PKM-14', 'Puskesmas Kuripan', 'Puskesmas', 'Jl. TGH. Lalu Panji, Kuripan', '(0370) 684110', 'Kepala Puskesmas Kuripan', 'Aktif'),
-  ('unit-016', 'PKM-15', 'Puskesmas Sigerongan', 'Puskesmas', 'Jl. Raya Sigerongan, Lingsar', '(0370) 672440', 'Kepala Puskesmas Sigerongan', 'Aktif'),
-  ('unit-017', 'PKM-16', 'Puskesmas Pelangan', 'Puskesmas', 'Jl. Pariwisata Pelangan, Sekotong', '(0370) 683990', 'Kepala Puskesmas Pelangan', 'Aktif'),
-  ('unit-018', 'PKM-17', 'Puskesmas Sedau', 'Puskesmas', 'Jl. Raya Sedau, Narmada', '(0370) 674992', 'Kepala Puskesmas Sedau', 'Aktif'),
-  ('unit-019', 'PKM-18', 'Puskesmas Banyumulek', 'Puskesmas', 'Jl. Wisata Banyumulek, Kediri', '(0370) 671550', 'Kepala Puskesmas Banyumulek', 'Aktif'),
-  ('unit-020', 'PKM-19', 'Puskesmas Parampuan', 'Puskesmas', 'Jl. Raya Labuapi, Parampuan', '(0370) 672901', 'Kepala Puskesmas Parampuan', 'Aktif'),
-  ('unit-021', 'RSUD-01', 'RSUD Tripat Gerung', 'Rumah Sakit', 'Jl. H. Lalang Seta, Gerung Utara', '(0370) 681122', 'Direktur RSUD Tripat', 'Aktif'),
-  ('unit-022', 'RSUD-02', 'RSUD Awet Muda Narmada', 'Rumah Sakit', 'Jl. Ahmad Yani No. 1, Narmada', '(0370) 671800', 'Direktur RSUD Awet Muda', 'Aktif'),
-  ('unit-023', 'LAB-01', 'Labkesda Lombok Barat', 'Lab / UPTD', 'Jl. Pendidikan No. 5, Gerung', '(0370) 682990', 'Kepala Labkesda', 'Aktif'),
-  ('unit-024', 'KB-01', 'Balai Penyuluhan KB Kec. Gerung', 'KB / PPKB', 'Jl. Gatot Subroto, Gerung', '(0370) 682500', 'Koordinator KB Gerung', 'Aktif'),
-  ('unit-025', 'KB-02', 'Balai Penyuluhan KB Kec. Narmada', 'KB / PPKB', 'Jl. Raya Narmada, Narmada', '(0370) 671400', 'Koordinator KB Narmada', 'Aktif'),
-  ('unit-026', 'KB-03', 'Balai Penyuluhan KB Kec. Gunungsari', 'KB / PPKB', 'Jl. Pariwisata Gunungsari', '(0370) 673100', 'Koordinator KB Gunungsari', 'Aktif')
-ON CONFLICT (id) DO NOTHING;
-
--- ------------------------------------------------------------------------------
--- 10. DATA AWAL AKUN ADMINISTRATOR UTAMA
--- ------------------------------------------------------------------------------
-INSERT INTO users (id, username, nama_lengkap, email, role, unit_kerja, no_hp, status)
-VALUES
-  ('usr-001', 'admin.dinkes', 'Administrator DINKES-PPKB (Admin Utama)', 'admin.dikes@lombokbaratkab.go.id', 'Admin Dinkes', 'Dinas Kesehatan Kab. Lombok Barat', '081234567890', 'Aktif'),
-  ('usr-002', 'admin.gerung', 'Admin Puskesmas Gerung', 'admin.gerung@pkm.go.id', 'Admin Unit Kerja', 'Puskesmas Gerung', '081987654321', 'Aktif'),
-  ('usr-003', 'admin.narmada', 'Admin Puskesmas Narmada', 'admin.narmada@pkm.go.id', 'Admin Unit Kerja', 'Puskesmas Narmada', '081765432109', 'Aktif'),
-  ('usr-004', 'admin.tripat', 'Admin RSUD Tripat Gerung', 'admin.tripat@rsud.go.id', 'Admin Unit Kerja', 'RSUD Tripat Gerung', '085234567891', 'Aktif')
-ON CONFLICT (id) DO NOTHING;
 `;
+
