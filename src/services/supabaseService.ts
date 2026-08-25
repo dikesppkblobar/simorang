@@ -309,13 +309,23 @@ export const supabaseService = {
 
   async upsertUser(user: UserAccount): Promise<boolean> {
     try {
+      // First attempt with full user object (including password if table supports it)
       const { error } = await supabase.from('users').upsert(user, { onConflict: 'id' });
-      if (error) {
-        console.error('Supabase upsertUser error:', error.message);
+      if (!error) {
+        return true;
+      }
+      console.warn('Supabase upsertUser full attempt error:', error.message, 'Trying sanitized upsert...');
+
+      // Fallback: sanitized user without password column in case table lacks column
+      const { password, ...sanitizedUser } = user;
+      const { error: fbErr } = await supabase.from('users').upsert(sanitizedUser, { onConflict: 'id' });
+      if (fbErr) {
+        console.error('Supabase fallback upsertUser error:', fbErr.message);
         return false;
       }
       return true;
-    } catch (err) {
+    } catch (err: any) {
+      console.error('Supabase upsertUser exception:', err.message);
       return false;
     }
   },
@@ -415,7 +425,14 @@ export const supabaseService = {
       }
       if (payload.users.length > 0) {
         const { error: usrErr } = await supabase.from('users').upsert(payload.users, { onConflict: 'id' });
-        if (!usrErr) syncedCount += payload.users.length;
+        if (usrErr) {
+          console.warn('Supabase syncBulkToSupabase users with password failed, trying sanitized:', usrErr.message);
+          const sanitizedUsers = payload.users.map(({ password, ...u }) => u);
+          const { error: fbUsrErr } = await supabase.from('users').upsert(sanitizedUsers, { onConflict: 'id' });
+          if (!fbUsrErr) syncedCount += payload.users.length;
+        } else {
+          syncedCount += payload.users.length;
+        }
       }
       if (payload.aplikasi && payload.aplikasi.length > 0) {
         const { error: appErr } = await supabase.from('aplikasi_kepegawaian').upsert(payload.aplikasi, { onConflict: 'id' });
