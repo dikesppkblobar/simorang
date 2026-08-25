@@ -52,6 +52,7 @@ interface UserAndUnitManagementViewProps {
   onUpdateUnit: (id: string, unit: Partial<UnitKerjaItem>) => Promise<boolean>;
   onDeleteUnit: (id: string) => Promise<boolean>;
   onSwitchUser: (user: UserAccount) => void;
+  defaultSubTab?: 'users' | 'units' | 'database';
 }
 
 export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps> = ({
@@ -66,8 +67,15 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
   onUpdateUnit,
   onDeleteUnit,
   onSwitchUser,
+  defaultSubTab = 'users',
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'users' | 'units' | 'database'>('users');
+  const [activeSubTab, setActiveSubTab] = useState<'users' | 'units' | 'database'>(defaultSubTab);
+
+  useEffect(() => {
+    if (defaultSubTab) {
+      setActiveSubTab(defaultSubTab);
+    }
+  }, [defaultSubTab]);
 
   // Supabase Integration States
   const [supabaseStatus, setSupabaseStatus] = useState<{ connected: boolean; message: string; url?: string }>({
