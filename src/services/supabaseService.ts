@@ -9,6 +9,30 @@ import {
   AplikasiKepegawaian,
 } from '../types';
 
+// Helper to sanitize UserAccount for Supabase tables
+function cleanUserForSupabase(user: UserAccount, withPassword = true): Record<string, any> {
+  const clean: Record<string, any> = {
+    id: user.id,
+    username: user.username,
+    nama_lengkap: user.nama_lengkap,
+    email: user.email || null,
+    role: user.role || 'Admin Unit Kerja',
+    unit_kerja: user.unit_kerja || 'Dinas Kesehatan Kab. Lombok Barat',
+    status: user.status || 'Aktif',
+    created_at: user.created_at || new Date().toISOString(),
+  };
+
+  if (user.nip) clean.nip = user.nip;
+  if (user.no_hp) clean.no_hp = user.no_hp;
+  if ((user as any).avatar_url) clean.avatar_url = (user as any).avatar_url;
+  if (user.terakhir_login) clean.terakhir_login = user.terakhir_login;
+  if (withPassword && user.password) {
+    clean.password = user.password;
+  }
+
+  return clean;
+}
+
 export const supabaseService = {
   // Test connection and health
   async checkConnection(): Promise<{ connected: boolean; message: string }> {
@@ -309,23 +333,39 @@ export const supabaseService = {
 
   async upsertUser(user: UserAccount): Promise<boolean> {
     try {
-      // First attempt with full user object (including password if table supports it)
-      const { error } = await supabase.from('users').upsert(user, { onConflict: 'id' });
-      if (!error) {
+      // 1. Try with password (sanitized object matching standard DDL, without extra fields like updated_at)
+      const payloadWithPass = cleanUserForSupabase(user, true);
+      const { error: err1 } = await supabase.from('users').upsert(payloadWithPass, { onConflict: 'id' });
+      if (!err1) {
         return true;
       }
-      console.warn('Supabase upsertUser full attempt error:', error.message, 'Trying sanitized upsert...');
 
-      // Fallback: sanitized user without password column in case table lacks column
-      const { password, ...sanitizedUser } = user;
-      const { error: fbErr } = await supabase.from('users').upsert(sanitizedUser, { onConflict: 'id' });
-      if (fbErr) {
-        console.error('Supabase fallback upsertUser error:', fbErr.message);
-        return false;
+      // 2. If password column doesn't exist in user's Supabase schema cache, try sanitized payload without password
+      const payloadNoPass = cleanUserForSupabase(user, false);
+      const { error: err2 } = await supabase.from('users').upsert(payloadNoPass, { onConflict: 'id' });
+      if (!err2) {
+        return true;
       }
-      return true;
+
+      // 3. Fallback: ultra-safe minimal columns
+      const minimalPayload: Record<string, any> = {
+        id: user.id,
+        username: user.username,
+        nama_lengkap: user.nama_lengkap,
+        role: user.role,
+        unit_kerja: user.unit_kerja,
+        status: user.status || 'Aktif',
+      };
+      if (user.email) minimalPayload.email = user.email;
+      const { error: err3 } = await supabase.from('users').upsert(minimalPayload, { onConflict: 'id' });
+      if (!err3) {
+        return true;
+      }
+
+      console.warn('Supabase upsertUser all attempts warning:', err3.message);
+      return false;
     } catch (err: any) {
-      console.error('Supabase upsertUser exception:', err.message);
+      console.error('Supabase upsertUser exception:', err?.message || err);
       return false;
     }
   },
@@ -424,11 +464,11 @@ export const supabaseService = {
         if (!uErr) syncedCount += payload.units.length;
       }
       if (payload.users.length > 0) {
-        const { error: usrErr } = await supabase.from('users').upsert(payload.users, { onConflict: 'id' });
+        const cleanedUsersWithPass = payload.users.map((u) => cleanUserForSupabase(u, true));
+        const { error: usrErr } = await supabase.from('users').upsert(cleanedUsersWithPass, { onConflict: 'id' });
         if (usrErr) {
-          console.warn('Supabase syncBulkToSupabase users with password failed, trying sanitized:', usrErr.message);
-          const sanitizedUsers = payload.users.map(({ password, ...u }) => u);
-          const { error: fbUsrErr } = await supabase.from('users').upsert(sanitizedUsers, { onConflict: 'id' });
+          const cleanedUsersNoPass = payload.users.map((u) => cleanUserForSupabase(u, false));
+          const { error: fbUsrErr } = await supabase.from('users').upsert(cleanedUsersNoPass, { onConflict: 'id' });
           if (!fbUsrErr) syncedCount += payload.users.length;
         } else {
           syncedCount += payload.users.length;
