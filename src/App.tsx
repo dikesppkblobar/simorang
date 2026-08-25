@@ -500,6 +500,20 @@ export default function App() {
     }
   };
 
+  const handleDeleteSk = async (id: string) => {
+    try {
+      const success = await apiClient.deleteSk(id, currentUser.email);
+      if (success) {
+        await refreshData();
+        return true;
+      }
+      return false;
+    } catch (err: any) {
+      alert(err.message || 'Gagal menghapus berkas arsip SK.');
+      return false;
+    }
+  };
+
   // Handlers for Aplikasi Kepegawaian
   const handleAddAplikasi = async (data: Omit<AplikasiKepegawaian, 'id' | 'created_at'>) => {
     try {
@@ -777,6 +791,7 @@ export default function App() {
                   pegawaiList={activePegawai}
                   unitsList={unitsList}
                   onOpenUploadSkModal={handleOpenUploadSkModal}
+                  onDeleteSk={handleDeleteSk}
                 />
               )}
 
