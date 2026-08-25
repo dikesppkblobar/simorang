@@ -71,12 +71,21 @@ export default function App() {
 
   // Current Logged-in User Account
   const [currentUser, setCurrentUser] = useState<UserAccount>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = window.localStorage.getItem('sipatuh_current_user');
+      if (saved) {
+        try {
+          const parsed = JSON.parse(saved);
+          if (parsed && parsed.nama_lengkap) return parsed;
+        } catch (_) {}
+      }
+    }
     const allUsers = dbStore.getAllUsers();
     return (
       allUsers[0] || {
         id: 'usr-001',
         username: 'admin.dinkes',
-        nama_lengkap: 'dr. H. AHMAD SYAMSUL (Admin Utama)',
+        nama_lengkap: 'Administrator DINKES-PPKB (Admin Utama)',
         email: 'admin.dikes@lombokbaratkab.go.id',
         role: 'Admin Dinkes',
         unit_kerja: 'Dinas Kesehatan Kab. Lombok Barat',
@@ -124,6 +133,24 @@ export default function App() {
       setUsersList(usr);
       setUnitsList(unit);
       setAplikasiList(apps);
+
+      // Keep active currentUser state in sync with latest user record
+      if (Array.isArray(usr) && usr.length > 0) {
+        setCurrentUser((prev) => {
+          const match = usr.find(
+            (u) =>
+              u.id === prev.id ||
+              (u.username && prev.username && u.username.toLowerCase() === prev.username.toLowerCase())
+          );
+          if (match) {
+            if (typeof window !== 'undefined') {
+              window.localStorage.setItem('sipatuh_current_user', JSON.stringify(match));
+            }
+            return match;
+          }
+          return prev;
+        });
+      }
     } catch (err) {
       console.error('Error refreshing data from API:', err);
       // Fallback
@@ -131,9 +158,27 @@ export default function App() {
       setSkList([...dbStore.getAllSk()]);
       setKeluargaList([...dbStore.getAllKeluarga()]);
       setAuditLogs([...dbStore.getAuditLogs()]);
-      setUsersList([...dbStore.getAllUsers()]);
+      const localUsers = dbStore.getAllUsers();
+      setUsersList([...localUsers]);
       setUnitsList([...dbStore.getAllUnits()]);
       setAplikasiList([...dbStore.getAllAplikasi()]);
+
+      if (localUsers.length > 0) {
+        setCurrentUser((prev) => {
+          const match = localUsers.find(
+            (u) =>
+              u.id === prev.id ||
+              (u.username && prev.username && u.username.toLowerCase() === prev.username.toLowerCase())
+          );
+          if (match) {
+            if (typeof window !== 'undefined') {
+              window.localStorage.setItem('sipatuh_current_user', JSON.stringify(match));
+            }
+            return match;
+          }
+          return prev;
+        });
+      }
     }
   };
 
@@ -144,6 +189,9 @@ export default function App() {
   // Handle Switching User
   const handleSwitchUser = (user: UserAccount) => {
     setCurrentUser(user);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem('sipatuh_current_user', JSON.stringify(user));
+    }
     if (user.role === 'Admin Unit Kerja') {
       setSelectedUnitScope(user.unit_kerja);
     } else {
