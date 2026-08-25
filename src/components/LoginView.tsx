@@ -1,18 +1,14 @@
 import React, { useState } from 'react';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   User,
   Lock,
   Eye,
   EyeOff,
   LogIn,
-  ShieldCheck,
-  Building,
-  KeyRound,
-  CheckCircle2,
   AlertCircle,
-  HelpCircle,
-  Sparkles,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { UserAccount, Pegawai, RiwayatSK } from '../types';
 import { LoginBackground } from './LoginBackground';
@@ -37,6 +33,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
+  const [isDemoOpen, setIsDemoOpen] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
 
@@ -154,55 +151,44 @@ export const LoginView: React.FC<LoginViewProps> = ({
   };
 
   return (
-    <div className="relative min-h-screen w-screen flex flex-col justify-between overflow-x-hidden font-body select-none">
-      {/* Dynamic Canva Giri Menang Background */}
+    <div className="relative min-h-[100dvh] w-screen flex flex-col justify-between overflow-x-hidden overflow-y-auto font-body select-none">
+      {/* Dynamic Background with Dark Overlay & Medical Grid */}
       <LoginBackground />
 
-      {/* MAIN SECTION: Asymmetric Dual Card Layout (60% Form Login : 40% Information Greetings) */}
-      <main className="relative z-20 flex-1 flex items-center justify-center p-3 sm:p-4 md:p-6 py-6">
-        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-5 sm:gap-6 items-stretch my-auto">
+      {/* MAIN SECTION: Dual Card Layout with Compact, Elevated Cards */}
+      <main className="relative z-20 flex-1 flex items-center justify-center p-3 sm:p-5 md:p-6 py-6 sm:py-8">
+        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch my-auto">
           
-          {/* CARD 1: FORM LOGIN (60% Width on Desktop - Primary Focus with Higher Elevation) */}
+          {/* CARD 1: FORM LOGIN (Primary Focus - Clean Header & Collapsible Demo) */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="lg:col-span-7 bg-white/95 backdrop-blur-md rounded-2xl border border-white shadow-2xl shadow-slate-900/20 ring-1 ring-slate-900/5 p-5 sm:p-6 flex flex-col justify-between relative z-10"
+            className="lg:col-span-7 bg-white/95 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl shadow-slate-950/25 ring-1 ring-slate-900/5 p-4 sm:p-6 md:p-7 flex flex-col justify-between relative z-10"
           >
             <div>
-              {/* BRANDING HEADER INSIDE CARD: Lombok Barat Logo & SI MORANG Title */}
-              <div className="flex items-center space-x-3.5 pb-4 mb-4 border-b border-slate-100">
-                {/* Logo Lombok Barat */}
+              {/* BRANDING HEADER: Compact Logo + Nama Aplikasi Ringkas */}
+              <div className="flex items-center space-x-3 pb-3 mb-3 sm:mb-4 border-b border-slate-100">
                 <img
                   src="/logo-lombok-barat.jpeg"
                   alt="Logo Lombok Barat"
-                  className="w-11 h-13 object-contain drop-shadow-sm shrink-0"
+                  className="w-10 h-12 object-contain drop-shadow-sm shrink-0"
                 />
-                <div className="border-l border-slate-200 pl-3.5">
-                  <h1 className="text-base sm:text-lg font-heading font-extrabold text-[#004B87] tracking-tight leading-none">
-                    SI MORANG DINKES-PPKB
+                <div className="min-w-0">
+                  <h1 className="text-base sm:text-lg font-heading font-extrabold text-[#004B87] tracking-tight leading-tight">
+                    SIMORANG DINKES-PPKB
                   </h1>
-                  <p className="text-[11px] font-semibold text-slate-700 leading-tight mt-1">
-                    Dinas Kesehatan & Pengendalian Penduduk KB
-                  </p>
-                  <p className="text-[10px] text-slate-500 font-medium leading-tight">
-                    Kabupaten Lombok Barat • Provinsi NTB
+                  <p className="text-[11px] text-slate-500 font-medium leading-tight">
+                    Kabupaten Lombok Barat
                   </p>
                 </div>
               </div>
 
-              {/* Title & Description */}
-              <div className="mb-4">
-                <div className="inline-flex items-center space-x-1.5 px-2.5 py-1 rounded-full bg-teal-50 border border-teal-200 text-[#008A93] text-[11px] font-heading font-bold mb-2 shadow-2xs">
-                  <KeyRound className="w-3.5 h-3.5 text-[#00A3AD]" />
-                  <span>Portal Masuk Petugas Kepegawaian</span>
-                </div>
+              {/* Title: Direct & Focused "Selamat Datang" */}
+              <div className="mb-3.5 sm:mb-4">
                 <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 tracking-tight">
                   Selamat Datang
                 </h2>
-                <p className="text-xs text-slate-500 mt-1 leading-relaxed">
-                  Silakan masuk menggunakan akun resmi untuk mengelola data ASN dan arsip kepegawaian.
-                </p>
               </div>
 
               {/* Error Notification */}
@@ -210,10 +196,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 <motion.div
                   initial={{ opacity: 0, y: -8 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="mb-3.5 p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start space-x-2.5 shadow-2xs"
+                  className="mb-3 p-2.5 sm:p-3 rounded-xl bg-rose-50 border border-rose-200 text-rose-800 text-xs flex items-start space-x-2.5 shadow-2xs"
                 >
                   <AlertCircle className="w-4 h-4 text-rose-600 shrink-0 mt-0.5" />
-                  <span className="font-medium text-xs">{errorMessage}</span>
+                  <span className="font-medium text-xs leading-relaxed">{errorMessage}</span>
                 </motion.div>
               )}
 
@@ -278,55 +264,83 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   </label>
                 </div>
 
-                {/* Submit Button - Focused CTA with Kemenkes Turquoise #00A3AD / Lobar Deep Blue solid styling */}
+                {/* Submit Button */}
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full py-3 px-4 rounded-xl bg-[#00A3AD] hover:bg-[#008C94] active:bg-[#00757C] text-white font-heading font-extrabold text-xs sm:text-sm tracking-wide shadow-lg shadow-[#00A3AD]/25 hover:shadow-xl hover:shadow-[#00A3AD]/30 transition-all flex items-center justify-center space-x-2.5 cursor-pointer disabled:opacity-70 mt-2"
+                  className="w-full py-2.5 sm:py-3 px-4 rounded-xl bg-[#00A3AD] hover:bg-[#008C94] active:bg-[#00757C] text-white font-heading font-extrabold text-xs sm:text-sm tracking-wide shadow-lg shadow-[#00A3AD]/25 hover:shadow-xl hover:shadow-[#00A3AD]/30 transition-all flex items-center justify-center space-x-2 cursor-pointer disabled:opacity-70 mt-2"
                 >
                   {isLoading ? (
                     <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   ) : (
                     <>
                       <LogIn className="w-4 h-4" />
-                      <span>Masuk ke Sistem SI MORANG</span>
+                      <span>Masuk ke Sistem SIMORANG</span>
                     </>
                   )}
                 </button>
               </form>
             </div>
 
-            {/* Quick One-Click Demo Role Switcher */}
-            <div className="pt-3.5 mt-4 border-t border-slate-100">
-              <div className="text-[10.5px] font-heading font-bold text-slate-500 uppercase tracking-wider mb-2 flex items-center justify-between">
-                <span className="flex items-center space-x-1">
-                  <span className="text-amber-500">⚡</span>
-                  <span>Akses Cepat Demo:</span>
-                </span>
-                <span className="text-[10px] text-[#00A3AD] font-bold">1-Klik Otomatis Masuk</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2">
-                {usersList.slice(0, 4).map((u) => (
-                  <button
-                    key={u.id}
-                    type="button"
-                    onClick={() => handleQuickLogin(u)}
-                    className="p-2 rounded-xl bg-slate-50 hover:bg-teal-50/70 border border-slate-200 hover:border-teal-300 text-left transition-all group cursor-pointer"
+            {/* Collapsible Demo Mode Accordion (Saves vertical space on mobile) */}
+            <div className="pt-3 mt-3.5 border-t border-slate-100">
+              <button
+                type="button"
+                onClick={() => setIsDemoOpen(!isDemoOpen)}
+                className="w-full py-2 px-3 rounded-xl bg-slate-50 hover:bg-slate-100 border border-slate-200/80 flex items-center justify-between text-left transition-all group cursor-pointer"
+              >
+                <div className="flex items-center space-x-2">
+                  <span className="text-amber-500 font-bold">⚡</span>
+                  <span className="text-xs font-heading font-bold text-slate-700 group-hover:text-slate-900">
+                    Akses Cepat Demo (1-Klik Masuk)
+                  </span>
+                </div>
+                <div className="flex items-center space-x-1.5 text-slate-400 group-hover:text-slate-600">
+                  <span className="text-[10px] font-semibold text-[#008A93] bg-teal-50 px-2 py-0.5 rounded-full border border-teal-100">
+                    4 Akun
+                  </span>
+                  {isDemoOpen ? (
+                    <ChevronUp className="w-4 h-4 text-slate-600 transition-transform" />
+                  ) : (
+                    <ChevronDown className="w-4 h-4 text-slate-600 transition-transform" />
+                  )}
+                </div>
+              </button>
+
+              <AnimatePresence>
+                {isDemoOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, height: 0 }}
+                    animate={{ opacity: 1, height: 'auto' }}
+                    exit={{ opacity: 0, height: 0 }}
+                    transition={{ duration: 0.2 }}
+                    className="overflow-hidden"
                   >
-                    <div className="text-xs font-heading font-bold text-slate-800 group-hover:text-[#008A93] truncate">
-                      {u.nama_lengkap.split(' ')[0]} {u.nama_lengkap.split(' ')[1] || ''}
+                    <div className="grid grid-cols-2 gap-2 pt-2.5">
+                      {usersList.slice(0, 4).map((u) => (
+                        <button
+                          key={u.id}
+                          type="button"
+                          onClick={() => handleQuickLogin(u)}
+                          className="p-2 sm:p-2.5 rounded-xl bg-slate-50 hover:bg-teal-50/80 border border-slate-200 hover:border-teal-300 text-left transition-all group cursor-pointer shadow-2xs"
+                        >
+                          <div className="text-xs font-heading font-bold text-slate-800 group-hover:text-[#008A93] truncate">
+                            {u.nama_lengkap.split(' ')[0]} {u.nama_lengkap.split(' ')[1] || ''}
+                          </div>
+                          <div className="text-[10.5px] text-slate-500 truncate flex items-center space-x-1.5 mt-0.5">
+                            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
+                            <span>{u.role === 'Admin Dinkes' ? 'Admin Utama' : u.unit_kerja.replace('Puskesmas ', 'PKM ')}</span>
+                          </div>
+                        </button>
+                      ))}
                     </div>
-                    <div className="text-[10px] text-slate-500 truncate flex items-center space-x-1.5 mt-0.5">
-                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 shrink-0" />
-                      <span>{u.role === 'Admin Dinkes' ? 'Admin Utama' : u.unit_kerja.replace('Puskesmas ', 'PKM ')}</span>
-                    </div>
-                  </button>
-                ))}
-              </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           </motion.div>
 
-          {/* CARD 2: CELEBRATION GREETINGS CARD (40% Width on Desktop - Informative Complement) */}
+          {/* CARD 2: CELEBRATION GREETINGS CARD (Informative Complement Card) */}
           <motion.div
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
@@ -342,9 +356,9 @@ export const LoginView: React.FC<LoginViewProps> = ({
         </div>
       </main>
 
-      {/* SOLID DARK FOOTER BAR: Clean visual separation from busy background */}
-      <footer className="relative z-20 w-full py-3 px-4 text-center bg-[#1E293B] border-t border-slate-700/80 shadow-2xl">
-        <p className="text-xs font-medium text-slate-200 tracking-normal">
+      {/* FOOTER BAR: Clean visual separation */}
+      <footer className="relative z-20 w-full py-2.5 sm:py-3 px-4 text-center bg-[#1E293B]/90 backdrop-blur-md border-t border-slate-700/80 shadow-2xl">
+        <p className="text-[11px] sm:text-xs font-medium text-slate-200 tracking-normal">
           © 2026 Dinas Kesehatan & Pengendalian Penduduk KB Kabupaten Lombok Barat. Seluruh Hak Cipta Dilindungi.
         </p>
       </footer>
