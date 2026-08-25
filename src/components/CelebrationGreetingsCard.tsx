@@ -160,7 +160,7 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
   };
 
   return (
-    <div className="relative w-full h-full flex flex-col justify-between rounded-2xl bg-white/95 backdrop-blur-md border border-white/90 shadow-xl shadow-slate-900/10 p-5 sm:p-6 overflow-hidden text-slate-800">
+    <div className="relative w-full h-full flex flex-col justify-between rounded-2xl bg-white/95 backdrop-blur-xl border border-white/80 shadow-2xl shadow-slate-950/25 ring-1 ring-slate-900/5 p-4 sm:p-6 md:p-7 overflow-hidden text-slate-800">
       {/* Decorative Gradient Background Aura */}
       <div
         className={`absolute -top-24 -right-24 w-80 h-80 rounded-full blur-3xl opacity-30 transition-all duration-700 pointer-events-none ${
