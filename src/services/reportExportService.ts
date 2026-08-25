@@ -74,6 +74,8 @@ export interface EmployeeExportRow {
 
   // Pendidikan & STR / SIP
   pendidikanTerakhir: string;
+  namaUniversitas: string;
+  programStudi: string;
   noWhatsapp: string;
   legalitasStrSip: string;
 }
@@ -385,6 +387,8 @@ export function buildComprehensivePegawaiReport(
 
         // Tambahan
         pendidikanTerakhir: p.pendidikan_terakhir || '-',
+        namaUniversitas: p.nama_universitas_pt || '-',
+        programStudi: p.program_studi || '-',
         noWhatsapp: p.no_whatsapp || '-',
         legalitasStrSip,
       };
