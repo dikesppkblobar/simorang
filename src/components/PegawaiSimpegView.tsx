@@ -825,195 +825,335 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
             </p>
           </div>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs font-body">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] uppercase tracking-wider font-heading font-bold text-[11px]">
-                  <th className="p-3 text-center w-10">NO</th>
-                  <th className="p-3">NAMA PEGAWAI / IDENTITAS</th>
-                  <th className="p-3">GOLONGAN STATUS</th>
-                  <th className="p-3">GENDER</th>
-                  <th className="p-3">JABATAN RUMPUN</th>
-                  <th className="p-3">UNIT PENEMPATAN</th>
-                  <th className="p-3">TMT GOLONGAN / PANGKAT</th>
-                  <th className="p-3">TMT JABATAN (JAFUNG)</th>
-                  <th className="p-3">TMT GAJI BERKALA (KGB)</th>
-                  <th className="p-3">SISA CUTI TAHUNAN</th>
-                  <th className="p-3 text-right">AKSI</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {paginatedPegawai.map((p, index) => {
-                  const globalIndex = startIndex + index + 1;
+          <>
+            {/* Desktop / Laptop Table View (Hidden on Mobile) */}
+            <div className="hidden lg:block overflow-x-auto">
+              <table className="w-full text-left border-collapse text-xs font-body">
+                <thead>
+                  <tr className="bg-[#F8FAFC] border-b border-[#E2E8F0] text-[#64748B] uppercase tracking-wider font-heading font-bold text-[11px]">
+                    <th className="p-3 text-center w-10">NO</th>
+                    <th className="p-3">NAMA PEGAWAI / IDENTITAS</th>
+                    <th className="p-3">GOLONGAN STATUS</th>
+                    <th className="p-3">GENDER</th>
+                    <th className="p-3">JABATAN RUMPUN</th>
+                    <th className="p-3">UNIT PENEMPATAN</th>
+                    <th className="p-3">TMT GOLONGAN / PANGKAT</th>
+                    <th className="p-3">TMT JABATAN (JAFUNG)</th>
+                    <th className="p-3">TMT GAJI BERKALA (KGB)</th>
+                    <th className="p-3">SISA CUTI TAHUNAN</th>
+                    <th className="p-3 text-right">AKSI</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100">
+                  {paginatedPegawai.map((p, index) => {
+                    const globalIndex = startIndex + index + 1;
 
-                  // TMT Golongan / Pangkat Calculation (Lama & Baru: +4 Tahun)
-                  const basePangkatDateStr = p.tmt_golongan || p.tmt_cpns || p.tmt_perjanjian_mulai;
-                  let tmtPangkatDisplay = <span className="text-slate-400">-</span>;
-                  if (p.status_kepegawaian !== 'Non-ASN' && basePangkatDateStr) {
-                    const dLama = parseDate(basePangkatDateStr);
-                    if (!isNaN(dLama.getTime())) {
-                      const dBaru = new Date(dLama);
-                      dBaru.setFullYear(dBaru.getFullYear() + 4);
-                      tmtPangkatDisplay = (
-                        <div className="space-y-0.5 text-[11px] leading-tight">
-                          <div>
-                            <span className="text-slate-400 font-normal">Lama: </span>
-                            <span className="font-medium text-slate-800">{formatDateIndonesian(basePangkatDateStr)}</span>
+                    // TMT Golongan / Pangkat Calculation (Lama & Baru: +4 Tahun)
+                    const basePangkatDateStr = p.tmt_golongan || p.tmt_cpns || p.tmt_perjanjian_mulai;
+                    let tmtPangkatDisplay = <span className="text-slate-400">-</span>;
+                    if (p.status_kepegawaian !== 'Non-ASN' && basePangkatDateStr) {
+                      const dLama = parseDate(basePangkatDateStr);
+                      if (!isNaN(dLama.getTime())) {
+                        const dBaru = new Date(dLama);
+                        dBaru.setFullYear(dBaru.getFullYear() + 4);
+                        tmtPangkatDisplay = (
+                          <div className="space-y-0.5 text-[11px] leading-tight">
+                            <div>
+                              <span className="text-slate-400 font-normal">Lama: </span>
+                              <span className="font-medium text-slate-800">{formatDateIndonesian(basePangkatDateStr)}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 font-normal">Baru: </span>
+                              <span className="font-semibold text-blue-700">{formatDateIndonesian(formatDate(dBaru))}</span>
+                            </div>
                           </div>
-                          <div>
-                            <span className="text-slate-400 font-normal">Baru: </span>
-                            <span className="font-semibold text-blue-700">{formatDateIndonesian(formatDate(dBaru))}</span>
+                        );
+                      }
+                    }
+
+                    // TMT KGB Calculation (Lama & Baru: +2 Tahun)
+                    const baseKgbDateStr = p.tmt_cpns || p.tmt_golongan || p.tmt_perjanjian_mulai;
+                    let tmtKgbDisplay = <span className="text-slate-400">-</span>;
+                    if (p.status_kepegawaian !== 'Non-ASN' && baseKgbDateStr) {
+                      const dLama = parseDate(baseKgbDateStr);
+                      if (!isNaN(dLama.getTime())) {
+                        const dBaru = new Date(dLama);
+                        dBaru.setFullYear(dBaru.getFullYear() + 2);
+                        tmtKgbDisplay = (
+                          <div className="space-y-0.5 text-[11px] leading-tight">
+                            <div>
+                              <span className="text-slate-400 font-normal">Lama: </span>
+                              <span className="font-medium text-slate-800">{formatDateIndonesian(baseKgbDateStr)}</span>
+                            </div>
+                            <div>
+                              <span className="text-slate-400 font-normal">Baru: </span>
+                              <span className="font-semibold text-emerald-700">{formatDateIndonesian(formatDate(dBaru))}</span>
+                            </div>
                           </div>
-                        </div>
+                        );
+                      }
+                    }
+
+                    // TMT Jabatan (Jafung)
+                    let tmtJabatanDisplay = <span className="text-slate-400">-</span>;
+                    const tmtJabatanVal = p.tmt_jabatan_pns || p.tmt_golongan || p.tmt_cpns;
+                    if (tmtJabatanVal && (p.jenis_jabatan === 'Fungsional' || p.tmt_jabatan_pns)) {
+                      tmtJabatanDisplay = (
+                        <span className="font-medium text-slate-800 text-[11px]">
+                          {formatDateIndonesian(tmtJabatanVal)}
+                        </span>
                       );
                     }
-                  }
 
-                  // TMT KGB Calculation (Lama & Baru: +2 Tahun)
-                  const baseKgbDateStr = p.tmt_cpns || p.tmt_golongan || p.tmt_perjanjian_mulai;
-                  let tmtKgbDisplay = <span className="text-slate-400">-</span>;
-                  if (p.status_kepegawaian !== 'Non-ASN' && baseKgbDateStr) {
-                    const dLama = parseDate(baseKgbDateStr);
-                    if (!isNaN(dLama.getTime())) {
-                      const dBaru = new Date(dLama);
-                      dBaru.setFullYear(dBaru.getFullYear() + 2);
-                      tmtKgbDisplay = (
-                        <div className="space-y-0.5 text-[11px] leading-tight">
-                          <div>
-                            <span className="text-slate-400 font-normal">Lama: </span>
-                            <span className="font-medium text-slate-800">{formatDateIndonesian(baseKgbDateStr)}</span>
-                          </div>
-                          <div>
-                            <span className="text-slate-400 font-normal">Baru: </span>
-                            <span className="font-semibold text-emerald-700">{formatDateIndonesian(formatDate(dBaru))}</span>
-                          </div>
-                        </div>
-                      );
-                    }
-                  }
+                    // Golongan Text
+                    const golonganText =
+                      p.status_kepegawaian === 'PNS'
+                        ? p.golongan_pangkat || '-'
+                        : p.status_kepegawaian?.startsWith('PPPK')
+                        ? p.golongan_pppk || 'PPPK'
+                        : 'PKWT';
 
-                  // TMT Jabatan (Jafung)
-                  let tmtJabatanDisplay = <span className="text-slate-400">-</span>;
-                  const tmtJabatanVal = p.tmt_jabatan_pns || p.tmt_golongan || p.tmt_cpns;
-                  if (tmtJabatanVal && (p.jenis_jabatan === 'Fungsional' || p.tmt_jabatan_pns)) {
-                    tmtJabatanDisplay = (
-                      <span className="font-medium text-slate-800 text-[11px]">
-                        {formatDateIndonesian(tmtJabatanVal)}
-                      </span>
+                    return (
+                      <tr key={p.nip} className="hover:bg-slate-50/60 transition-colors">
+                        {/* 1. NO */}
+                        <td className="p-3 text-center font-bold text-slate-500">{globalIndex}</td>
+
+                        {/* 2. NAMA PEGAWAI / IDENTITAS */}
+                        <td className="p-3">
+                          <button
+                            onClick={() => handleOpenDetail(p.nip)}
+                            className="font-bold text-[#1E293B] hover:text-blue-600 hover:underline text-left block"
+                          >
+                            {p.gelar_depan ? `${p.gelar_depan} ` : ''}
+                            {p.nama_lengkap}
+                            {p.gelar_belakang ? `, ${p.gelar_belakang}` : ''}
+                          </button>
+                          <div className="text-[11px] text-[#64748B] font-mono mt-0.5">
+                            {p.status_kepegawaian === 'Non-ASN' ? `NIK ${p.nik}` : `NIP ${p.nip}`}
+                          </div>
+                        </td>
+
+                        {/* 3. GOLONGAN STATUS */}
+                        <td className="p-3">
+                          <div className="font-bold text-[#1E293B]">{golonganText}</div>
+                          <div className="text-[11px] font-semibold text-blue-700">
+                            {p.status_kepegawaian || 'PNS'}
+                          </div>
+                        </td>
+
+                        {/* 4. GENDER */}
+                        <td className="p-3 font-medium text-slate-700">
+                          {p.jenis_kelamin === 'L' ? 'Laki-Laki' : 'Perempuan'}
+                        </td>
+
+                        {/* 5. JABATAN RUMPUN */}
+                        <td className="p-3">
+                          <div className="font-semibold text-slate-800">
+                            {p.profesi_sdmk || p.jabatan_spesifik || 'Staf Umum'}
+                          </div>
+                          <div className="text-[11px] text-slate-500">
+                            {p.jenis_jabatan === 'Struktural' ? 'Struktural/Staf' : p.jenis_jabatan}
+                          </div>
+                        </td>
+
+                        {/* 6. UNIT PENEMPATAN */}
+                        <td className="p-3 font-medium text-slate-800">{p.unit_kerja}</td>
+
+                        {/* 7. TMT GOLONGAN / PANGKAT */}
+                        <td className="p-3">{tmtPangkatDisplay}</td>
+
+                        {/* 8. TMT JABATAN (JAFUNG) */}
+                        <td className="p-3">{tmtJabatanDisplay}</td>
+
+                        {/* 9. TMT GAJI BERKALA (KGB) */}
+                        <td className="p-3">{tmtKgbDisplay}</td>
+
+                        {/* 10. SISA CUTI TAHUNAN */}
+                        <td className="p-3 font-bold text-slate-800">
+                          {p.sisa_cuti_tahunan ?? 12} Hari
+                        </td>
+
+                        {/* 11. AKSI */}
+                        <td className="p-3 text-right space-x-1 whitespace-nowrap">
+                          <button
+                            onClick={() => handleOpenDetail(p.nip)}
+                            className="p-1.5 bg-slate-100 hover:bg-slate-200 text-[#334155] rounded-lg transition-colors"
+                            title="Lihat Detail Profil"
+                          >
+                            <Eye className="w-3.5 h-3.5" />
+                          </button>
+
+                          {!p.is_deleted ? (
+                            <>
+                              <button
+                                onClick={() => handleOpenEdit(p)}
+                                className="p-1.5 bg-blue-50 hover:bg-blue-100 text-[#2563EB] rounded-lg transition-colors"
+                                title="Edit Data Pegawai"
+                              >
+                                <Edit className="w-3.5 h-3.5" />
+                              </button>
+                              <button
+                                onClick={() => setPegawaiToDelete(p)}
+                                className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors cursor-pointer"
+                                title="Soft Delete / Nonaktifkan"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </>
+                          ) : (
+                            <button
+                              onClick={() => onRestorePegawai(p.nip)}
+                              className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors"
+                              title="Aktifkan Kembali"
+                            >
+                              <RotateCcw className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </td>
+                      </tr>
                     );
+                  })}
+                </tbody>
+              </table>
+            </div>
+
+            {/* Mobile / Tablet Responsive Card List View (Visible below lg breakpoint) */}
+            <div className="lg:hidden divide-y divide-slate-100">
+              {paginatedPegawai.map((p, index) => {
+                const globalIndex = startIndex + index + 1;
+                const basePangkatDateStr = p.tmt_golongan || p.tmt_cpns || p.tmt_perjanjian_mulai;
+                let nextPangkatStr = '-';
+                if (p.status_kepegawaian !== 'Non-ASN' && basePangkatDateStr) {
+                  const d = parseDate(basePangkatDateStr);
+                  if (!isNaN(d.getTime())) {
+                    const dBaru = new Date(d);
+                    dBaru.setFullYear(dBaru.getFullYear() + 4);
+                    nextPangkatStr = formatDateIndonesian(formatDate(dBaru));
                   }
+                }
 
-                  // Golongan Text
-                  const golonganText =
-                    p.status_kepegawaian === 'PNS'
-                      ? p.golongan_pangkat || '-'
-                      : p.status_kepegawaian?.startsWith('PPPK')
-                      ? p.golongan_pppk || 'PPPK'
-                      : 'PKWT';
+                const baseKgbDateStr = p.tmt_cpns || p.tmt_golongan || p.tmt_perjanjian_mulai;
+                let nextKgbStr = '-';
+                if (p.status_kepegawaian !== 'Non-ASN' && baseKgbDateStr) {
+                  const d = parseDate(baseKgbDateStr);
+                  if (!isNaN(d.getTime())) {
+                    const dBaru = new Date(d);
+                    dBaru.setFullYear(dBaru.getFullYear() + 2);
+                    nextKgbStr = formatDateIndonesian(formatDate(dBaru));
+                  }
+                }
 
-                  return (
-                    <tr key={p.nip} className="hover:bg-slate-50/60 transition-colors">
-                      {/* 1. NO */}
-                      <td className="p-3 text-center font-bold text-slate-500">{globalIndex}</td>
+                const statusBadgeBg =
+                  p.status_kepegawaian === 'PNS'
+                    ? 'bg-blue-100 text-blue-800'
+                    : p.status_kepegawaian?.startsWith('PPPK')
+                    ? 'bg-purple-100 text-purple-800'
+                    : 'bg-slate-100 text-slate-800';
 
-                      {/* 2. NAMA PEGAWAI / IDENTITAS */}
-                      <td className="p-3">
+                return (
+                  <div key={p.nip} className="p-4 space-y-3 hover:bg-slate-50/70 transition-colors">
+                    {/* Header: Number, Name, Status Badge */}
+                    <div className="flex items-start justify-between gap-2">
+                      <div className="flex items-start space-x-2.5">
+                        <span className="w-6 h-6 rounded-md bg-slate-100 text-slate-600 font-bold text-xs flex items-center justify-center shrink-0 mt-0.5">
+                          {globalIndex}
+                        </span>
+                        <div>
+                          <button
+                            type="button"
+                            onClick={() => handleOpenDetail(p.nip)}
+                            className="font-heading font-bold text-sm text-[#1E293B] hover:text-[#004B87] text-left leading-tight"
+                          >
+                            {p.gelar_depan ? `${p.gelar_depan} ` : ''}
+                            {p.nama_lengkap}
+                            {p.gelar_belakang ? `, ${p.gelar_belakang}` : ''}
+                          </button>
+                          <div className="text-[11px] text-slate-500 font-mono mt-0.5">
+                            {p.status_kepegawaian === 'Non-ASN' ? `NIK: ${p.nik}` : `NIP: ${p.nip}`}
+                          </div>
+                        </div>
+                      </div>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-md shrink-0 ${statusBadgeBg}`}>
+                        {p.status_kepegawaian || 'PNS'}
+                      </span>
+                    </div>
+
+                    {/* Metadata Grid */}
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-slate-50/80 p-2.5 rounded-xl border border-slate-200/60">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Jabatan / Profesi</span>
+                        <span className="font-semibold text-slate-800 truncate block">
+                          {p.profesi_sdmk || p.jabatan_spesifik || 'Staf'}
+                        </span>
+                        <span className="text-[10px] text-slate-500">{p.jenis_jabatan}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Unit Penempatan</span>
+                        <span className="font-semibold text-slate-800 truncate block">
+                          {p.unit_kerja}
+                        </span>
+                        <span className="text-[10px] text-slate-500">{p.jenis_kelamin === 'L' ? 'Laki-Laki' : 'Perempuan'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">TMT Pangkat Baru (+4 Thn)</span>
+                        <span className="font-semibold text-blue-700 text-[11px]">{nextPangkatStr}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">TMT KGB Baru (+2 Thn)</span>
+                        <span className="font-semibold text-emerald-700 text-[11px]">{nextKgbStr}</span>
+                      </div>
+                    </div>
+
+                    {/* Footer / Actions */}
+                    <div className="flex items-center justify-between pt-1">
+                      <div className="text-xs text-slate-600 font-medium">
+                        Sisa Cuti: <strong className="text-emerald-700 font-bold">{p.sisa_cuti_tahunan ?? 12} Hari</strong>
+                      </div>
+                      <div className="flex items-center space-x-1.5">
                         <button
+                          type="button"
                           onClick={() => handleOpenDetail(p.nip)}
-                          className="font-bold text-[#1E293B] hover:text-blue-600 hover:underline text-left block"
-                        >
-                          {p.gelar_depan ? `${p.gelar_depan} ` : ''}
-                          {p.nama_lengkap}
-                          {p.gelar_belakang ? `, ${p.gelar_belakang}` : ''}
-                        </button>
-                        <div className="text-[11px] text-[#64748B] font-mono mt-0.5">
-                          {p.status_kepegawaian === 'Non-ASN' ? `NIK ${p.nik}` : `NIP ${p.nip}`}
-                        </div>
-                      </td>
-
-                      {/* 3. GOLONGAN STATUS */}
-                      <td className="p-3">
-                        <div className="font-bold text-[#1E293B]">{golonganText}</div>
-                        <div className="text-[11px] font-semibold text-blue-700">
-                          {p.status_kepegawaian || 'PNS'}
-                        </div>
-                      </td>
-
-                      {/* 4. GENDER */}
-                      <td className="p-3 font-medium text-slate-700">
-                        {p.jenis_kelamin === 'L' ? 'Laki-Laki' : 'Perempuan'}
-                      </td>
-
-                      {/* 5. JABATAN RUMPUN */}
-                      <td className="p-3">
-                        <div className="font-semibold text-slate-800">
-                          {p.profesi_sdmk || p.jabatan_spesifik || 'Staf Umum'}
-                        </div>
-                        <div className="text-[11px] text-slate-500">
-                          {p.jenis_jabatan === 'Struktural' ? 'Struktural/Staf' : p.jenis_jabatan}
-                        </div>
-                      </td>
-
-                      {/* 6. UNIT PENEMPATAN */}
-                      <td className="p-3 font-medium text-slate-800">{p.unit_kerja}</td>
-
-                      {/* 7. TMT GOLONGAN / PANGKAT */}
-                      <td className="p-3">{tmtPangkatDisplay}</td>
-
-                      {/* 8. TMT JABATAN (JAFUNG) */}
-                      <td className="p-3">{tmtJabatanDisplay}</td>
-
-                      {/* 9. TMT GAJI BERKALA (KGB) */}
-                      <td className="p-3">{tmtKgbDisplay}</td>
-
-                      {/* 10. SISA CUTI TAHUNAN */}
-                      <td className="p-3 font-bold text-slate-800">
-                        {p.sisa_cuti_tahunan ?? 12} Hari
-                      </td>
-
-                      {/* 11. AKSI */}
-                      <td className="p-3 text-right space-x-1 whitespace-nowrap">
-                        <button
-                          onClick={() => handleOpenDetail(p.nip)}
-                          className="p-1.5 bg-slate-100 hover:bg-slate-200 text-[#334155] rounded-lg transition-colors"
-                          title="Lihat Detail Profil"
+                          className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-lg flex items-center space-x-1 transition-colors"
                         >
                           <Eye className="w-3.5 h-3.5" />
+                          <span>Detail</span>
                         </button>
-
                         {!p.is_deleted ? (
                           <>
                             <button
+                              type="button"
                               onClick={() => handleOpenEdit(p)}
-                              className="p-1.5 bg-blue-50 hover:bg-blue-100 text-[#2563EB] rounded-lg transition-colors"
-                              title="Edit Data Pegawai"
+                              className="px-2.5 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 text-xs font-bold rounded-lg flex items-center space-x-1 transition-colors"
                             >
                               <Edit className="w-3.5 h-3.5" />
+                              <span>Edit</span>
                             </button>
                             <button
+                              type="button"
                               onClick={() => setPegawaiToDelete(p)}
-                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors cursor-pointer"
-                              title="Soft Delete / Nonaktifkan"
+                              className="p-1.5 bg-red-50 hover:bg-red-100 text-red-700 rounded-lg transition-colors"
+                              title="Hapus"
                             >
                               <Trash2 className="w-3.5 h-3.5" />
                             </button>
                           </>
                         ) : (
                           <button
+                            type="button"
                             onClick={() => onRestorePegawai(p.nip)}
-                            className="p-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 rounded-lg transition-colors"
-                            title="Aktifkan Kembali"
+                            className="px-2.5 py-1.5 bg-emerald-50 hover:bg-emerald-100 text-emerald-700 text-xs font-bold rounded-lg flex items-center space-x-1 transition-colors"
                           >
                             <RotateCcw className="w-3.5 h-3.5" />
+                            <span>Aktifkan</span>
                           </button>
                         )}
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </>
         )}
 
         {/* Pagination Footer */}
