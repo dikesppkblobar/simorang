@@ -220,7 +220,12 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
     (p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS'
   ).length;
   const pelaksanaPnsCount = activePegawai.filter(
-    (p) => p.jenis_jabatan === 'Pelaksana' && p.status_kepegawaian === 'PNS'
+    (p) =>
+      p.jenis_jabatan === 'Pelaksana' &&
+      p.status_kepegawaian === 'PNS' &&
+      p.status_ujian_dinas !== 'Tidak ada' &&
+      p.status_ujian_dinas !== 'Tidak Ada' &&
+      p.status_ujian_dinas !== 'Bukan Pelaksana'
   ).length;
   const izinBelajarCount = activePegawai.filter((p) => p.status_izin_belajar).length;
 
@@ -394,7 +399,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
     no_surat_kuliah: '',
     tgl_surat_kuliah: new Date().toISOString().slice(0, 10),
     semester_kuliah: 'Semester 4',
-    surat_ket_kuliah_url: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
+    surat_ket_kuliah_url: null,
   });
 
   const handleOpenActionModal = (
@@ -424,6 +429,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       tmt_pangkat_terakhir: pegawai.tmt_pangkat_terakhir || new Date().toISOString().split('T')[0],
       golongan_pangkat: pegawai.golongan_pangkat || 'III/a',
       nama_pangkat: pegawai.nama_pangkat || 'Penata Muda',
+      no_sk_pangkat: pegawai.no_sk_pangkat || '',
       unit_kerja: pegawai.unit_kerja || '',
       jenis_mutasi: pegawai.jenis_mutasi || 'Mutasi Out / Pindah Unit Kerja',
       masa_kerja_tahun: pegawai.masa_kerja_tahun || 0,
@@ -475,8 +481,14 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       updatePayload.masa_kerja_bulan = Number.isNaN(Number(modalFormData.masa_kerja_bulan)) ? 0 : Number(modalFormData.masa_kerja_bulan);
     } else if (modalType === 'pangkat') {
       updatePayload.tmt_pangkat_terakhir = modalFormData.tmt_pangkat_terakhir;
+      updatePayload.tmt_golongan = modalFormData.tmt_pangkat_terakhir;
       updatePayload.golongan_pangkat = modalFormData.golongan_pangkat;
       updatePayload.nama_pangkat = modalFormData.nama_pangkat;
+      if (modalFormData.no_sk_pangkat) {
+        updatePayload.no_sk_pangkat = modalFormData.no_sk_pangkat;
+      }
+      updatePayload.tgl_sk_pangkat = modalFormData.tmt_pangkat_terakhir;
+      updatePayload.updated_at = new Date().toISOString();
     } else if (modalType === 'mutasi') {
       updatePayload.unit_kerja = modalFormData.unit_kerja;
       updatePayload.jenis_mutasi = modalFormData.jenis_mutasi || 'Mutasi Out / Pindah Unit Kerja';
@@ -518,11 +530,11 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                 {isSuperAdmin ? 'Super Admin Dinkes (Full Control Update)' : 'Admin Unit Kerja (Mode Pemberitahuan Pemantauan)'}
               </span>
             </div>
-            <p className="text-xs text-blue-100 mt-1 max-w-3xl leading-relaxed">
-              {isSuperAdmin
-                ? 'Sebagai Super Admin Dinkes, Anda memiliki akses penuh untuk memperbarui data pemantauan, verifikasi PAK/UKOM/SK, dan input pemutakhiran langsung ke SIMPEG.'
-                : `Sebagai Admin Unit Kerja (${currentUser?.unit_kerja || 'Unit'}), Anda dapat memantau indikator jatuh tempo dan mengirimkan Pemberitahuan/Imbauan Pemantauan resmi dari semua modul kepada pegawai & Dinkes.`}
-            </p>
+            {!isSuperAdmin && (
+              <p className="text-xs text-blue-100 mt-1 max-w-3xl leading-relaxed">
+                Sebagai Admin Unit Kerja ({currentUser?.unit_kerja || 'Unit'}), Anda dapat memantau indikator jatuh tempo dan mengirimkan Pemberitahuan/Imbauan Pemantauan resmi dari semua modul kepada pegawai & Dinkes.
+              </p>
+            )}
           </div>
         </div>
 
@@ -1206,7 +1218,14 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {filteredPegawai
-                  .filter((p) => p.jenis_jabatan === 'Pelaksana' && p.status_kepegawaian === 'PNS')
+                  .filter(
+                    (p) =>
+                      p.jenis_jabatan === 'Pelaksana' &&
+                      p.status_kepegawaian === 'PNS' &&
+                      p.status_ujian_dinas !== 'Tidak ada' &&
+                      p.status_ujian_dinas !== 'Tidak Ada' &&
+                      p.status_ujian_dinas !== 'Bukan Pelaksana'
+                  )
                   .map((pegawai) => {
                     const isGol2d = pegawai.golongan_pangkat === 'II/d';
                     const isGol3d = pegawai.golongan_pangkat === 'III/d';
@@ -1269,7 +1288,14 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
           {/* Mobile Card List View */}
           <div className="md:hidden space-y-3">
             {filteredPegawai
-              .filter((p) => p.jenis_jabatan === 'Pelaksana' && p.status_kepegawaian === 'PNS')
+              .filter(
+                (p) =>
+                  p.jenis_jabatan === 'Pelaksana' &&
+                  p.status_kepegawaian === 'PNS' &&
+                  p.status_ujian_dinas !== 'Tidak ada' &&
+                  p.status_ujian_dinas !== 'Tidak Ada' &&
+                  p.status_ujian_dinas !== 'Bukan Pelaksana'
+              )
               .map((pegawai) => {
                 const isGol2d = pegawai.golongan_pangkat === 'II/d';
                 const isGol3d = pegawai.golongan_pangkat === 'III/d';
@@ -2679,7 +2705,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               {modalType === 'pangkat' && (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">TMT Pangkat Terakhir</label>
+                    <label className="text-xs font-bold text-slate-700">TMT Pangkat Terakhir:*</label>
                     <input
                       type="date"
                       value={modalFormData.tmt_pangkat_terakhir}
@@ -2690,10 +2716,36 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
 
                   <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Golongan / Pangkat</label>
+                      <label className="text-xs font-bold text-slate-700">Golongan / Ruang:*</label>
                       <select
                         value={modalFormData.golongan_pangkat}
-                        onChange={(e) => setModalFormData({ ...modalFormData, golongan_pangkat: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const mapNama: Record<string, string> = {
+                            'I/a': 'Juru Muda',
+                            'I/b': 'Juru Muda Tk. I',
+                            'I/c': 'Juru',
+                            'I/d': 'Juru Tk. I',
+                            'II/a': 'Pengatur Muda',
+                            'II/b': 'Pengatur Muda Tk. I',
+                            'II/c': 'Pengatur',
+                            'II/d': 'Pengatur Tk. I',
+                            'III/a': 'Penata Muda',
+                            'III/b': 'Penata Muda Tk. I',
+                            'III/c': 'Penata',
+                            'III/d': 'Penata Tk. I',
+                            'IV/a': 'Pembina',
+                            'IV/b': 'Pembina Tk. I',
+                            'IV/c': 'Pembina Utama Muda',
+                            'IV/d': 'Pembina Utama Madya',
+                            'IV/e': 'Pembina Utama',
+                          };
+                          setModalFormData({
+                            ...modalFormData,
+                            golongan_pangkat: val,
+                            nama_pangkat: mapNama[val] || modalFormData.nama_pangkat,
+                          });
+                        }}
                         className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
                       >
                         <option value="I/a">I/a (Juru Muda)</option>
@@ -2717,7 +2769,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                     </div>
 
                     <div className="space-y-1">
-                      <label className="text-xs font-bold text-slate-700">Nama Pangkat</label>
+                      <label className="text-xs font-bold text-slate-700">Nama Pangkat:*</label>
                       <input
                         type="text"
                         value={modalFormData.nama_pangkat}
@@ -2725,6 +2777,17 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                         className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
+                  </div>
+
+                  <div className="space-y-1">
+                    <label className="text-xs font-bold text-slate-700">Nomor SK Kenaikan Pangkat (Opsional / Terbit):</label>
+                    <input
+                      type="text"
+                      placeholder="Contoh: 823/045/BKPSDM/2026"
+                      value={modalFormData.no_sk_pangkat || ''}
+                      onChange={(e) => setModalFormData({ ...modalFormData, no_sk_pangkat: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
                 </div>
               )}
