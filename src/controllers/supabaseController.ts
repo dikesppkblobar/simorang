@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { supabaseService } from '../services/supabaseService';
 import { dbStore } from '../services/dbStore';
-import { SUPABASE_SCHEMA_SQL } from '../data/supabaseSchema';
+import { SUPABASE_SCHEMA_SQL } from '../supabaseSchema';
 
 export async function getSupabaseStatus(req: Request, res: Response) {
   try {
