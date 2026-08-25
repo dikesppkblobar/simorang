@@ -159,57 +159,42 @@ class DBStore {
         supabaseService.fetchAllUsers(),
         supabaseService.fetchAllAplikasi(),
       ]);
-      if (p !== null && Array.isArray(p) && p.length > 0) this.pegawai = p;
-      if (sk !== null && Array.isArray(sk) && sk.length > 0) this.skHistory = sk;
-      if (k !== null && Array.isArray(k) && k.length > 0) this.keluarga = k;
-      if (log !== null && Array.isArray(log) && log.length > 0) this.auditLogs = log;
+      if (p !== null && Array.isArray(p)) this.pegawai = p;
+      if (sk !== null && Array.isArray(sk)) this.skHistory = sk;
+      if (k !== null && Array.isArray(k)) this.keluarga = k;
+      if (log !== null && Array.isArray(log)) this.auditLogs = log;
       if (u !== null && Array.isArray(u) && u.length > 0) this.units = u;
 
       if (usr !== null && Array.isArray(usr) && usr.length > 0) {
         // Smart merge users to ensure password and any local modifications are NEVER lost
-        const mergedUsers = [...this.users];
-        for (const remoteUser of usr) {
-          const idx = mergedUsers.findIndex(
+        const mergedUsers = [...usr];
+        for (let i = 0; i < mergedUsers.length; i++) {
+          const remoteUser = mergedUsers[i];
+          const localMatch = this.users.find(
             (uItem) =>
               uItem.id === remoteUser.id ||
               (uItem.username && remoteUser.username && uItem.username.toLowerCase() === remoteUser.username.toLowerCase())
           );
-          if (idx >= 0) {
-            mergedUsers[idx] = {
-              ...mergedUsers[idx],
+          if (localMatch) {
+            mergedUsers[i] = {
+              ...localMatch,
               ...remoteUser,
-              // Always preserve existing local password if remote is missing/empty
-              password: remoteUser.password || mergedUsers[idx].password || 'admin',
-              nip: remoteUser.nip !== undefined ? remoteUser.nip : mergedUsers[idx].nip,
-              no_hp: remoteUser.no_hp !== undefined ? remoteUser.no_hp : mergedUsers[idx].no_hp,
+              password: remoteUser.password || localMatch.password || 'admin',
+              nip: remoteUser.nip !== undefined ? remoteUser.nip : localMatch.nip,
+              no_hp: remoteUser.no_hp !== undefined ? remoteUser.no_hp : localMatch.no_hp,
             };
           } else {
-            mergedUsers.push({
+            mergedUsers[i] = {
               ...remoteUser,
               password: remoteUser.password || 'admin',
-            });
+            };
           }
         }
         this.users = mergedUsers;
       }
 
       if (app !== null && Array.isArray(app) && app.length > 0) {
-        // Smart merge aplikasi list
-        const mergedApps = [...this.aplikasiList];
-        for (const remoteApp of app) {
-          const idx = mergedApps.findIndex((a) => a.id === remoteApp.id);
-          if (idx >= 0) {
-            mergedApps[idx] = {
-              ...mergedApps[idx],
-              ...remoteApp,
-              username: remoteApp.username !== undefined ? remoteApp.username : mergedApps[idx].username,
-              password: remoteApp.password !== undefined ? remoteApp.password : mergedApps[idx].password,
-            };
-          } else {
-            mergedApps.push(remoteApp);
-          }
-        }
-        this.aplikasiList = mergedApps;
+        this.aplikasiList = app;
       }
 
       this.saveToStorage(false);
