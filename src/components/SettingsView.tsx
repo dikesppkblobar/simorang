@@ -25,6 +25,7 @@ import {
   UserAccount,
   UnitKerjaItem,
 } from '../types';
+import { isDinasScope } from '../services/dateCalculator';
 
 interface SettingsViewProps {
   currentUser: UserAccount;
@@ -84,8 +85,8 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
     if (selectedUnitScope === 'SEMUA_UNIT') {
       return '🌐 Semua Unit Kerja (Gabungan)';
     }
-    if (selectedUnitScope === 'Dinas Kesehatan Kab. Lombok Barat') {
-      return '🏥 Data Dinkes';
+    if (isDinasScope(selectedUnitScope)) {
+      return '🏥 Data Dinas Kesehatan (Semua Unit Kategori Dinas)';
     }
     return selectedUnitScope;
   };
