@@ -33,6 +33,7 @@ import {
   Eye,
   EyeOff,
   Key,
+  MoreVertical,
 } from 'lucide-react';
 import { UserAccount, UnitKerjaItem, Pegawai, RoleUser } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
@@ -118,6 +119,22 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
   // Delete Confirmation States
   const [userToDelete, setUserToDelete] = useState<UserAccount | null>(null);
   const [unitToDelete, setUnitToDelete] = useState<UnitKerjaItem | null>(null);
+
+  // Kebab Action Menu State
+  const [openKebabUserId, setOpenKebabUserId] = useState<string | null>(null);
+  const [openKebabUnitId, setOpenKebabUnitId] = useState<string | null>(null);
+
+  useEffect(() => {
+    const handleOutsideClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement;
+      if (!target.closest('.kebab-menu-container')) {
+        setOpenKebabUserId(null);
+        setOpenKebabUnitId(null);
+      }
+    };
+    document.addEventListener('click', handleOutsideClick);
+    return () => document.removeEventListener('click', handleOutsideClick);
+  }, []);
 
   // Modal States - User
   const [isUserModalOpen, setIsUserModalOpen] = useState(false);
@@ -350,43 +367,46 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
   };
 
   return (
-    <div className="space-y-6 pb-12">
-      {/* Header Title Banner */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white rounded-2xl p-6 shadow-md border border-slate-800">
+    <div className="space-y-5 pb-12 font-body">
+      {/* 1. Header Minimalis & Ramping */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-xs">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <div className="inline-flex items-center space-x-2 bg-blue-500/20 border border-blue-400/30 px-3 py-1 rounded-full text-xs font-bold text-blue-300 mb-2">
-              <KeyRound className="w-3.5 h-3.5" />
-              <span>Multi-Tenant User & Scope Management</span>
-            </div>
-            <h1 className="text-xl md:text-2xl font-black tracking-tight text-white flex items-center space-x-2.5">
-              <span>Manajemen User & Master Unit Kerja</span>
-            </h1>
-            <p className="text-xs text-slate-300 mt-1 max-w-2xl">
-              Atur hak akses admin (Admin Dinkes vs Admin Unit Kerja) serta kelola unit kerja terintegrasi (Puskesmas, RSUD, Dinas Kesehatan).
-            </p>
-          </div>
-
-          <div className="bg-white/10 backdrop-blur-sm border border-white/15 p-3 rounded-xl flex items-center space-x-3">
-            <div className="w-10 h-10 rounded-lg bg-blue-600 flex items-center justify-center font-bold text-white text-sm">
-              {currentUser.role === 'Admin Dinkes' ? 'AD' : 'UK'}
+          <div className="flex items-start space-x-3.5">
+            <div className="p-3 bg-blue-50 border border-blue-200/80 rounded-xl text-[#004B87] shrink-0">
+              <KeyRound className="w-5 h-5" />
             </div>
             <div>
-              <div className="text-xs font-extrabold text-white">{currentUser.nama_lengkap}</div>
-              <div className="text-[11px] text-blue-300 font-semibold">{currentUser.role} &bull; {currentUser.unit_kerja}</div>
+              <h1 className="text-lg md:text-xl font-heading font-extrabold text-[#004B87] tracking-tight">
+                Manajemen User & Master Unit Kerja
+              </h1>
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                Atur otentikasi hak akses akun administrator dan master data unit kerja SIMORANG DINKES-PPKB.
+              </p>
+            </div>
+          </div>
+
+          {/* Sesi Pengguna Aktif Kompak */}
+          <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center space-x-3 shrink-0 self-start md:self-auto">
+            <div className="w-8 h-8 rounded-lg bg-[#004B87] text-white flex items-center justify-center font-heading font-bold text-xs shrink-0">
+              {currentUser.role === 'Admin Dinkes' ? 'AD' : 'UK'}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-heading font-bold text-slate-800 truncate">{currentUser.nama_lengkap}</div>
+              <div className="text-[11px] text-slate-500 truncate">{currentUser.role} &bull; {currentUser.unit_kerja}</div>
             </div>
           </div>
         </div>
 
-        {/* Navigation Sub-Tabs */}
-        <div className="flex items-center space-x-2 mt-6 pt-4 border-t border-slate-800">
+        {/* Sub-Tabs Navigasi Bersih */}
+        <div className="flex items-center space-x-2 mt-5 pt-4 border-t border-slate-100 overflow-x-auto">
           <button
             type="button"
+            id="tab-mgmt-users"
             onClick={() => setActiveSubTab('users')}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSubTab === 'users'
-                ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400/40'
-                : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-[#004B87] text-white shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <Users className="w-4 h-4" />
@@ -395,11 +415,12 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
           <button
             type="button"
+            id="tab-mgmt-units"
             onClick={() => setActiveSubTab('units')}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSubTab === 'units'
-                ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400/40'
-                : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-[#004B87] text-white shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <Building2 className="w-4 h-4" />
@@ -408,15 +429,16 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
           <button
             type="button"
+            id="tab-mgmt-database"
             onClick={() => setActiveSubTab('database')}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-xl text-xs font-extrabold transition-all ${
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
               activeSubTab === 'database'
-                ? 'bg-blue-600 text-white shadow-lg ring-2 ring-blue-400/40'
-                : 'bg-white/5 text-slate-300 hover:bg-white/10 hover:text-white'
+                ? 'bg-[#004B87] text-white shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
             }`}
           >
             <Database className="w-4 h-4" />
-            <span>Database Real & Pembersihan Data Dummy</span>
+            <span>Database & Sinkronisasi Cloud</span>
           </button>
         </div>
       </div>
@@ -424,73 +446,75 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
       {/* SUB-TAB 1: USER MANAGEMENT */}
       {activeSubTab === 'users' && (
         <div className="space-y-4">
-          {/* Top Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+          {/* Ringkasan Statistik Kompak */}
+          <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-500">Total Akun Admin</div>
-                <div className="text-2xl font-black text-slate-900 mt-0.5">{usersList.length}</div>
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Total Akun</div>
+                <div className="text-xl font-heading font-extrabold text-slate-900 mt-0.5">{usersList.length}</div>
               </div>
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                <Users className="w-5 h-5" />
+              <div className="p-2.5 bg-blue-50 text-[#004B87] rounded-lg">
+                <Users className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-500">Admin Dinkes (Super)</div>
-                <div className="text-2xl font-black text-purple-900 mt-0.5">
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Admin Dinkes</div>
+                <div className="text-xl font-heading font-extrabold text-purple-700 mt-0.5">
                   {usersList.filter((u) => u.role === 'Admin Dinkes').length}
                 </div>
               </div>
-              <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-                <ShieldCheck className="w-5 h-5" />
+              <div className="p-2.5 bg-purple-50 text-purple-600 rounded-lg">
+                <ShieldCheck className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-500">Admin Unit Kerja</div>
-                <div className="text-2xl font-black text-blue-900 mt-0.5">
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Admin Unit Kerja</div>
+                <div className="text-xl font-heading font-extrabold text-[#004B87] mt-0.5">
                   {usersList.filter((u) => u.role === 'Admin Unit Kerja').length}
                 </div>
               </div>
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                <Building className="w-5 h-5" />
+              <div className="p-2.5 bg-blue-50 text-[#004B87] rounded-lg">
+                <Building className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-500">Akun Status Aktif</div>
-                <div className="text-2xl font-black text-emerald-900 mt-0.5">
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Akun Aktif</div>
+                <div className="text-xl font-heading font-extrabold text-emerald-700 mt-0.5">
                   {usersList.filter((u) => u.status === 'Aktif').length}
                 </div>
               </div>
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                <UserCheck className="w-5 h-5" />
+              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+                <UserCheck className="w-4 h-4" />
               </div>
             </div>
           </div>
 
           {/* Action & Filter Bar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
               <div className="relative w-full sm:w-72">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
+                  id="input-search-users"
                   placeholder="Cari nama, username, email..."
                   value={userSearch}
                   onChange={(e) => setUserSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#004B87] focus:bg-white"
                 />
               </div>
 
               <select
+                id="select-role-filter"
                 value={roleFilter}
                 onChange={(e) => setRoleFilter(e.target.value)}
-                className="w-full sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#004B87] focus:bg-white"
               >
                 <option value="Semua">Semua Peran (Role)</option>
                 <option value="Admin Dinkes">Admin Dinkes (Super Admin)</option>
@@ -501,33 +525,33 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
             <button
               type="button"
+              id="btn-add-user"
               onClick={handleOpenAddUser}
-              className="w-full md:w-auto flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-sm transition-all"
+              className="w-full md:w-auto flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003866] text-white text-xs font-heading font-extrabold px-4 py-2.5 rounded-xl shadow-2xs transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              <span>Tambah User Pengguna Baru</span>
+              <span>Tambah User Baru</span>
             </button>
           </div>
 
-          {/* User Table */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+          {/* User Table dengan Kebab Menu Rapi */}
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-visible">
+            <div className="overflow-x-auto overflow-y-visible">
+              <table className="w-full text-left border-collapse text-xs font-body">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-extrabold">
-                    <th className="p-4">Pengguna & Kredensial</th>
-                    <th className="p-4">Kontak & Email</th>
-                    <th className="p-4">Peran (Role)</th>
-                    <th className="p-4">Unit Kerja Terikat</th>
-                    <th className="p-4">Terakhir Login</th>
-                    <th className="p-4 text-center">Status</th>
-                    <th className="p-4 text-center">Aksi / Login</th>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-heading font-bold text-[11px]">
+                    <th className="p-3.5 pl-4">Pengguna</th>
+                    <th className="p-3.5">Peran (Role)</th>
+                    <th className="p-3.5">Unit Kerja Terikat</th>
+                    <th className="p-3.5">Kontak</th>
+                    <th className="p-3.5 text-center">Status</th>
+                    <th className="p-3.5 text-center pr-4">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
                   {filteredUsers.length === 0 ? (
                     <tr>
-                      <td colSpan={7} className="p-8 text-center text-slate-400">
+                      <td colSpan={6} className="p-8 text-center text-slate-400">
                         Tidak ada akun pengguna yang sesuai kriteria pencarian.
                       </td>
                     </tr>
@@ -535,33 +559,34 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                     filteredUsers.map((u) => {
                       const isCurrentLoggedIn = currentUser.id === u.id;
                       const isSuperAdmin = u.role === 'Admin Dinkes';
+                      const isMenuOpen = openKebabUserId === u.id;
 
                       return (
                         <tr key={u.id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="p-4">
+                          <td className="p-3.5 pl-4">
                             <div className="flex items-center space-x-3">
                               <div
-                                className={`w-9 h-9 rounded-xl flex items-center justify-center font-black text-xs text-white shadow-sm shrink-0 ${
-                                  isSuperAdmin ? 'bg-purple-600' : 'bg-blue-600'
+                                className={`w-8 h-8 rounded-lg flex items-center justify-center font-heading font-bold text-xs text-white shadow-2xs shrink-0 ${
+                                  isSuperAdmin ? 'bg-purple-600' : 'bg-[#004B87]'
                                 }`}
                               >
                                 {u.nama_lengkap.charAt(0)}
                               </div>
-                              <div>
-                                <div className="font-extrabold text-slate-900 flex items-center space-x-1.5">
+                              <div className="min-w-0">
+                                <div className="font-heading font-bold text-slate-900 flex items-center space-x-1.5 truncate">
                                   <span>{u.nama_lengkap}</span>
                                   {isCurrentLoggedIn && (
-                                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-black px-2 py-0.5 rounded-full border border-emerald-200">
+                                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-heading font-extrabold px-2 py-0.5 rounded-full border border-emerald-200 shrink-0">
                                       Sesi Aktif
                                     </span>
                                   )}
                                 </div>
-                                <div className="flex items-center space-x-2 mt-0.5">
-                                  <span className="text-[11px] font-mono font-semibold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded">
+                                <div className="flex items-center space-x-1.5 mt-0.5 text-[11px] text-slate-500">
+                                  <span className="font-mono text-[#004B87] bg-blue-50 px-1.5 py-0.5 rounded font-semibold">
                                     @{u.username}
                                   </span>
                                   {u.nip && (
-                                    <span className="text-[10px] font-mono text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                                    <span className="font-mono text-slate-500 text-[10px]">
                                       NIP: {u.nip}
                                     </span>
                                   )}
@@ -569,82 +594,113 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                               </div>
                             </div>
                           </td>
-                          <td className="p-4">
-                            <div className="flex items-center space-x-1 text-slate-700 font-medium">
-                              <Mail className="w-3.5 h-3.5 text-slate-400" />
-                              <span>{u.email}</span>
+
+                          <td className="p-3.5">
+                            {isSuperAdmin ? (
+                              <span className="inline-flex items-center space-x-1 bg-purple-50 text-purple-800 border border-purple-200 px-2.5 py-1 rounded-full text-[11px] font-heading font-bold">
+                                <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
+                                <span>Admin Dinkes</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center space-x-1 bg-blue-50 text-[#004B87] border border-blue-200 px-2.5 py-1 rounded-full text-[11px] font-heading font-bold">
+                                <Building className="w-3.5 h-3.5 text-[#004B87]" />
+                                <span>Admin Unit</span>
+                              </span>
+                            )}
+                          </td>
+
+                          <td className="p-3.5 text-slate-800 font-medium max-w-xs truncate">
+                            {u.unit_kerja}
+                          </td>
+
+                          <td className="p-3.5">
+                            <div className="text-slate-700 font-medium flex items-center gap-1.5">
+                              <Mail className="w-3.5 h-3.5 text-slate-400 shrink-0" />
+                              <span className="truncate">{u.email}</span>
                             </div>
                             {u.no_hp && (
-                              <div className="flex items-center space-x-1 text-[11px] text-slate-500 mt-0.5">
-                                <Phone className="w-3.5 h-3.5 text-slate-400" />
+                              <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1.5">
+                                <Phone className="w-3 h-3 text-slate-400 shrink-0" />
                                 <span>{u.no_hp}</span>
                               </div>
                             )}
                           </td>
-                          <td className="p-4">
-                            {isSuperAdmin ? (
-                              <span className="inline-flex items-center space-x-1 bg-purple-100 text-purple-900 border border-purple-200 px-2.5 py-1 rounded-full text-[11px] font-bold">
-                                <ShieldCheck className="w-3.5 h-3.5 text-purple-600" />
-                                <span>Admin Dinkes (Super)</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center space-x-1 bg-blue-100 text-blue-900 border border-blue-200 px-2.5 py-1 rounded-full text-[11px] font-bold">
-                                <Building className="w-3.5 h-3.5 text-blue-600" />
-                                <span>Admin Unit Kerja</span>
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-4 font-bold text-slate-800">
-                            {u.unit_kerja}
-                          </td>
-                          <td className="p-4 text-slate-500 font-medium text-[11px]">
-                            {u.terakhir_login || 'Belum Pernah'}
-                          </td>
-                          <td className="p-4 text-center">
+
+                          <td className="p-3.5 text-center">
                             {u.status === 'Aktif' ? (
-                              <span className="inline-flex items-center space-x-1 bg-emerald-100 text-emerald-900 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
+                              <span className="inline-flex items-center space-x-1 bg-emerald-50 text-emerald-800 border border-emerald-200 px-2 py-0.5 rounded-md text-[10.5px] font-heading font-bold">
                                 <CheckCircle2 className="w-3 h-3 text-emerald-600" />
                                 <span>Aktif</span>
                               </span>
                             ) : (
-                              <span className="inline-flex items-center space-x-1 bg-slate-100 text-slate-600 px-2.5 py-0.5 rounded-full text-[10px] font-extrabold">
+                              <span className="inline-flex items-center space-x-1 bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-md text-[10.5px] font-heading font-bold">
                                 <XCircle className="w-3 h-3 text-slate-400" />
                                 <span>Nonaktif</span>
                               </span>
                             )}
                           </td>
-                          <td className="p-4">
-                            <div className="flex items-center justify-center space-x-1.5">
-                              {!isCurrentLoggedIn && (
-                                <button
-                                  type="button"
-                                  onClick={() => onSwitchUser(u)}
-                                  className="flex items-center space-x-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 px-2.5 py-1 rounded-lg text-[11px] font-extrabold transition-colors shadow-xs"
-                                  title="Simulasi Login Sebagai Akun Ini"
-                                >
-                                  <LogIn className="w-3.5 h-3.5 text-blue-600" />
-                                  <span>Ganti Akun</span>
-                                </button>
-                              )}
 
+                          {/* Kebab Action Menu Column */}
+                          <td className="p-3.5 text-center pr-4 relative">
+                            <div className="inline-block text-left kebab-menu-container">
                               <button
                                 type="button"
-                                onClick={() => handleOpenEditUser(u)}
-                                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
-                                title="Edit Akun"
+                                id={`kebab-user-${u.id}`}
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setOpenKebabUserId(isMenuOpen ? null : u.id);
+                                }}
+                                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-500 hover:text-slate-800 transition-colors cursor-pointer"
+                                title="Menu Aksi Pengguna"
                               >
-                                <Edit2 className="w-4 h-4" />
+                                <MoreVertical className="w-4 h-4" />
                               </button>
 
-                              {!isCurrentLoggedIn && (
-                                <button
-                                  type="button"
-                                  onClick={() => setUserToDelete(u)}
-                                  className="p-1.5 hover:bg-rose-50 rounded-lg text-slate-400 hover:text-rose-600 transition-colors cursor-pointer"
-                                  title="Hapus Akun"
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </button>
+                              {/* Dropdown Popover */}
+                              {isMenuOpen && (
+                                <div className="absolute right-4 mt-1 w-44 bg-white rounded-xl shadow-lg border border-slate-200/90 py-1.5 z-40 animate-in fade-in zoom-in-95 duration-150">
+                                  {!isCurrentLoggedIn && (
+                                    <button
+                                      type="button"
+                                      onClick={() => {
+                                        setOpenKebabUserId(null);
+                                        onSwitchUser(u);
+                                      }}
+                                      className="w-full text-left px-3 py-2 text-xs font-semibold text-[#004B87] hover:bg-blue-50 flex items-center space-x-2 cursor-pointer transition-colors"
+                                    >
+                                      <LogIn className="w-3.5 h-3.5 text-blue-600" />
+                                      <span>Ganti Akun (Login)</span>
+                                    </button>
+                                  )}
+
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setOpenKebabUserId(null);
+                                      handleOpenEditUser(u);
+                                    }}
+                                    className="w-full text-left px-3 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50 flex items-center space-x-2 cursor-pointer transition-colors"
+                                  >
+                                    <Edit2 className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>Edit Akun</span>
+                                  </button>
+
+                                  {!isCurrentLoggedIn && (
+                                    <div className="border-t border-slate-100 my-1">
+                                      <button
+                                        type="button"
+                                        onClick={() => {
+                                          setOpenKebabUserId(null);
+                                          setUserToDelete(u);
+                                        }}
+                                        className="w-full text-left px-3 py-2 text-xs font-semibold text-rose-600 hover:bg-rose-50 flex items-center space-x-2 cursor-pointer transition-colors"
+                                      >
+                                        <Trash2 className="w-3.5 h-3.5 text-rose-500" />
+                                        <span>Hapus Akun</span>
+                                      </button>
+                                    </div>
+                                  )}
+                                </div>
                               )}
                             </div>
                           </td>
@@ -662,85 +718,87 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
       {/* SUB-TAB 2: UNIT KERJA MANAGEMENT */}
       {activeSubTab === 'units' && (
         <div className="space-y-4">
-          {/* Top Quick Stats */}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+          {/* Ringkasan Statistik Kompak */}
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-500">Total Unit Kerja</div>
-                <div className="text-2xl font-black text-slate-900 mt-0.5">{unitsList.length}</div>
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Total Unit</div>
+                <div className="text-xl font-heading font-extrabold text-slate-900 mt-0.5">{unitsList.length}</div>
               </div>
-              <div className="p-3 bg-blue-50 text-blue-600 rounded-xl">
-                <Building2 className="w-5 h-5" />
+              <div className="p-2.5 bg-blue-50 text-[#004B87] rounded-lg">
+                <Building2 className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-500">Dinas Kesehatan & Bidang</div>
-                <div className="text-2xl font-black text-purple-900 mt-0.5">
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Dinas Kesehatan</div>
+                <div className="text-xl font-heading font-extrabold text-purple-700 mt-0.5">
                   {unitsList.filter((u) => isDinasCategory(u.kategori)).length}
                 </div>
               </div>
-              <div className="p-3 bg-purple-50 text-purple-600 rounded-xl">
-                <Building2 className="w-5 h-5" />
+              <div className="p-2.5 bg-purple-50 text-purple-600 rounded-lg">
+                <Building2 className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-500">Puskesmas</div>
-                <div className="text-2xl font-black text-emerald-900 mt-0.5">
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Puskesmas</div>
+                <div className="text-xl font-heading font-extrabold text-emerald-700 mt-0.5">
                   {unitsList.filter((u) => u.kategori === 'Puskesmas').length}
                 </div>
               </div>
-              <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl">
-                <Building className="w-5 h-5" />
+              <div className="p-2.5 bg-emerald-50 text-emerald-600 rounded-lg">
+                <Building className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between">
               <div>
-                <div className="text-xs font-bold text-slate-500">Rumah Sakit</div>
-                <div className="text-2xl font-black text-indigo-900 mt-0.5">
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Rumah Sakit</div>
+                <div className="text-xl font-heading font-extrabold text-indigo-700 mt-0.5">
                   {unitsList.filter((u) => u.kategori === 'Rumah Sakit').length}
                 </div>
               </div>
-              <div className="p-3 bg-indigo-50 text-indigo-600 rounded-xl">
-                <Sparkles className="w-5 h-5" />
+              <div className="p-2.5 bg-indigo-50 text-indigo-600 rounded-lg">
+                <Sparkles className="w-4 h-4" />
               </div>
             </div>
 
-            <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex items-center justify-between">
+            <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex items-center justify-between col-span-2 sm:col-span-1">
               <div>
-                <div className="text-xs font-bold text-slate-500">Total Pegawai Terdata</div>
-                <div className="text-2xl font-black text-amber-900 mt-0.5">
-                  {pegawaiList.filter((p) => !p.is_deleted).length} Pegawai
+                <div className="text-[11px] font-heading font-bold text-slate-500 uppercase tracking-wider">Pegawai Terdata</div>
+                <div className="text-xl font-heading font-extrabold text-[#00A3AD] mt-0.5">
+                  {pegawaiList.filter((p) => !p.is_deleted).length} ASN
                 </div>
               </div>
-              <div className="p-3 bg-amber-50 text-amber-600 rounded-xl">
-                <Users className="w-5 h-5" />
+              <div className="p-2.5 bg-teal-50 text-[#00A3AD] rounded-lg">
+                <Users className="w-4 h-4" />
               </div>
             </div>
           </div>
 
           {/* Action & Filter Bar */}
-          <div className="bg-white p-4 rounded-xl border border-slate-200/90 shadow-sm flex flex-col md:flex-row items-center justify-between gap-3">
-            <div className="flex flex-col sm:flex-row items-center gap-3 w-full md:w-auto">
+          <div className="bg-white p-3.5 rounded-xl border border-slate-200/90 shadow-2xs flex flex-col md:flex-row items-center justify-between gap-3">
+            <div className="flex flex-col sm:flex-row items-center gap-2.5 w-full md:w-auto">
               <div className="relative w-full sm:w-72">
                 <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
+                  id="input-search-units"
                   placeholder="Cari kode, nama unit, kepala..."
                   value={unitSearch}
                   onChange={(e) => setUnitSearch(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#004B87] focus:bg-white"
                 />
               </div>
 
               <select
+                id="select-kategori-filter"
                 value={kategoriFilter}
                 onChange={(e) => setKategoriFilter(e.target.value)}
-                className="w-full sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
+                className="w-full sm:w-48 px-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium focus:outline-none focus:ring-2 focus:ring-[#004B87] focus:bg-white"
               >
                 <option value="Semua">Semua Kategori</option>
                 <option value="Dinas">Dinas Kesehatan</option>
@@ -753,8 +811,9 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
             <button
               type="button"
+              id="btn-add-unit"
               onClick={handleOpenAddUnit}
-              className="w-full md:w-auto flex items-center justify-center space-x-2 bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold px-4 py-2.5 rounded-xl shadow-sm transition-all"
+              className="w-full md:w-auto flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003866] text-white text-xs font-heading font-extrabold px-4 py-2.5 rounded-xl shadow-2xs transition-all cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Tambah Unit Kerja Baru</span>
@@ -762,17 +821,17 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
           </div>
 
           {/* Units Table */}
-          <div className="bg-white rounded-xl border border-slate-200/90 shadow-sm overflow-hidden">
+          <div className="bg-white rounded-xl border border-slate-200/90 shadow-2xs overflow-hidden">
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-xs">
+              <table className="w-full text-left border-collapse text-xs font-body">
                 <thead>
-                  <tr className="bg-slate-50 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-extrabold">
-                    <th className="p-4">Kode & Nama Unit Kerja</th>
-                    <th className="p-4">Kategori</th>
-                    <th className="p-4">Kepala Unit & NIP</th>
-                    <th className="p-4">Alamat & Telepon</th>
-                    <th className="p-4 text-center">Pegawai Terdaftar</th>
-                    <th className="p-4 text-center">Aksi</th>
+                  <tr className="bg-slate-50/80 border-b border-slate-200 text-slate-600 uppercase tracking-wider font-heading font-bold text-[11px]">
+                    <th className="p-3.5 pl-4">Kode & Nama Unit Kerja</th>
+                    <th className="p-3.5">Kategori</th>
+                    <th className="p-3.5">Kepala Unit & NIP</th>
+                    <th className="p-3.5">Alamat & Kontak</th>
+                    <th className="p-3.5 text-center">Pegawai Terdaftar</th>
+                    <th className="p-3.5 text-center pr-4">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
@@ -788,36 +847,36 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
                       return (
                         <tr key={unit.id} className="hover:bg-slate-50/70 transition-colors">
-                          <td className="p-4">
-                            <div className="font-extrabold text-slate-900 text-sm">{unit.nama_unit}</div>
-                            <div className="text-[11px] font-mono text-blue-700 font-semibold mt-0.5">
+                          <td className="p-3.5 pl-4">
+                            <div className="font-heading font-bold text-slate-900 text-xs sm:text-sm">{unit.nama_unit}</div>
+                            <div className="text-[11px] font-mono text-[#004B87] font-semibold mt-0.5">
                               Kode: {unit.kode_unit}
                             </div>
                           </td>
-                          <td className="p-4">
+                          <td className="p-3.5">
                             <span
-                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${
+                              className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-heading font-bold ${
                                 isDinasCategory(unit.kategori)
-                                  ? 'bg-purple-100 text-purple-900 border border-purple-200'
+                                  ? 'bg-purple-50 text-purple-800 border border-purple-200'
                                   : unit.kategori === 'Puskesmas'
-                                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-200'
+                                  ? 'bg-emerald-50 text-emerald-800 border border-emerald-200'
                                   : unit.kategori === 'Rumah Sakit'
-                                  ? 'bg-indigo-100 text-indigo-900 border border-indigo-200'
-                                  : 'bg-amber-100 text-amber-900 border border-amber-200'
+                                  ? 'bg-indigo-50 text-indigo-800 border border-indigo-200'
+                                  : 'bg-amber-50 text-amber-800 border border-amber-200'
                               }`}
                             >
                               {isDinasCategory(unit.kategori) ? 'Dinas Kesehatan' : unit.kategori}
                             </span>
                           </td>
-                          <td className="p-4">
-                            <div className="font-bold text-slate-800">{unit.kepala_unit || '-'}</div>
+                          <td className="p-3.5">
+                            <div className="font-heading font-bold text-slate-800">{unit.kepala_unit || '-'}</div>
                             {unit.nip_kepala && (
                               <div className="text-[11px] font-mono text-slate-500">NIP: {unit.nip_kepala}</div>
                             )}
                           </td>
-                          <td className="p-4 max-w-xs">
+                          <td className="p-3.5 max-w-xs">
                             {unit.alamat && (
-                              <div className="flex items-center space-x-1 text-slate-700">
+                              <div className="flex items-center space-x-1 text-slate-700 truncate">
                                 <MapPin className="w-3.5 h-3.5 text-slate-400 shrink-0" />
                                 <span className="truncate">{unit.alamat}</span>
                               </div>
@@ -829,17 +888,17 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                               </div>
                             )}
                           </td>
-                          <td className="p-4 text-center">
-                            <span className="bg-blue-50 text-blue-900 border border-blue-200 px-3 py-1 rounded-full text-xs font-black">
+                          <td className="p-3.5 text-center">
+                            <span className="bg-blue-50 text-[#004B87] border border-blue-200 px-3 py-1 rounded-full text-xs font-heading font-bold">
                               {pegCount} Pegawai
                             </span>
                           </td>
-                          <td className="p-4 text-center">
+                          <td className="p-3.5 text-center pr-4">
                             <div className="flex items-center justify-center space-x-1">
                               <button
                                 type="button"
                                 onClick={() => handleOpenEditUnit(unit)}
-                                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-blue-600 transition-colors"
+                                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-600 hover:text-blue-600 transition-colors cursor-pointer"
                                 title="Edit Unit Kerja"
                               >
                                 <Edit2 className="w-4 h-4" />
