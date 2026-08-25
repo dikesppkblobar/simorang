@@ -220,7 +220,7 @@ export interface UnitKerjaItem {
   id: string;
   kode_unit: string;
   nama_unit: string;
-  kategori: 'Dinas' | 'Puskesmas' | 'Rumah Sakit' | 'Lab / UPTD' | 'KB / PPKB';
+  kategori: 'Dinas' | 'Dinas Kesehatan' | 'Puskesmas' | 'Rumah Sakit' | 'Lab / UPTD' | 'KB / PPKB';
   alamat?: string;
   telepon?: string;
   kepala_unit?: string;
