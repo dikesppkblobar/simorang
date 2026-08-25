@@ -130,7 +130,6 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           'Nama Universitas / Institusi PT': p.namaUniversitas,
           'Program Studi': p.programStudi,
           'No. WhatsApp': p.noWhatsapp,
-          'Legalitas STR & SIP': p.legalitasStrSip,
         }));
 
         const worksheet = XLSX.utils.json_to_sheet(rows);
@@ -188,7 +187,6 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           { wch: 30 }, // Univ
           { wch: 24 }, // Prodi
           { wch: 18 }, // WA
-          { wch: 32 }, // STR SIP
         ];
 
         XLSX.writeFile(workbook, `Laporan_Komprehensif_SIMORANG_DINKES_PPKB_${getTodayFormatted()}.xlsx`);
@@ -282,7 +280,6 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
             'Status Kelulusan UKKJ / UKOM': p.statusUkom,
             'Pangkat / Golongan': `${p.namaPangkatSekarang} (${p.golonganSekarang})`,
             'Masa Kerja Golongan': p.masaKerjaGolongan,
-            'Legalitas STR / SIP': p.legalitasStrSip,
           }));
 
         const worksheet = XLSX.utils.json_to_sheet(jafungRows);
@@ -302,7 +299,6 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           { wch: 20 }, // UKOM
           { wch: 24 }, // Pangkat
           { wch: 20 }, // MKG
-          { wch: 32 }, // STR SIP
         ];
 
         XLSX.writeFile(workbook, `Rekap_Jabatan_Fungsional_Kesehatan_SIMORANG_${getTodayFormatted()}.xlsx`);
