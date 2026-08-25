@@ -159,13 +159,59 @@ class DBStore {
         supabaseService.fetchAllUsers(),
         supabaseService.fetchAllAplikasi(),
       ]);
-      if (p !== null && Array.isArray(p)) this.pegawai = p;
-      if (sk !== null && Array.isArray(sk)) this.skHistory = sk;
-      if (k !== null && Array.isArray(k)) this.keluarga = k;
-      if (log !== null && Array.isArray(log)) this.auditLogs = log;
-      if (u !== null && Array.isArray(u)) this.units = u;
-      if (usr !== null && Array.isArray(usr)) this.users = usr;
-      if (app !== null && Array.isArray(app)) this.aplikasiList = app;
+      if (p !== null && Array.isArray(p) && p.length > 0) this.pegawai = p;
+      if (sk !== null && Array.isArray(sk) && sk.length > 0) this.skHistory = sk;
+      if (k !== null && Array.isArray(k) && k.length > 0) this.keluarga = k;
+      if (log !== null && Array.isArray(log) && log.length > 0) this.auditLogs = log;
+      if (u !== null && Array.isArray(u) && u.length > 0) this.units = u;
+
+      if (usr !== null && Array.isArray(usr) && usr.length > 0) {
+        // Smart merge users to ensure password and any local modifications are NEVER lost
+        const mergedUsers = [...this.users];
+        for (const remoteUser of usr) {
+          const idx = mergedUsers.findIndex(
+            (uItem) =>
+              uItem.id === remoteUser.id ||
+              (uItem.username && remoteUser.username && uItem.username.toLowerCase() === remoteUser.username.toLowerCase())
+          );
+          if (idx >= 0) {
+            mergedUsers[idx] = {
+              ...mergedUsers[idx],
+              ...remoteUser,
+              // Always preserve existing local password if remote is missing/empty
+              password: remoteUser.password || mergedUsers[idx].password || 'admin',
+              nip: remoteUser.nip !== undefined ? remoteUser.nip : mergedUsers[idx].nip,
+              no_hp: remoteUser.no_hp !== undefined ? remoteUser.no_hp : mergedUsers[idx].no_hp,
+            };
+          } else {
+            mergedUsers.push({
+              ...remoteUser,
+              password: remoteUser.password || 'admin',
+            });
+          }
+        }
+        this.users = mergedUsers;
+      }
+
+      if (app !== null && Array.isArray(app) && app.length > 0) {
+        // Smart merge aplikasi list
+        const mergedApps = [...this.aplikasiList];
+        for (const remoteApp of app) {
+          const idx = mergedApps.findIndex((a) => a.id === remoteApp.id);
+          if (idx >= 0) {
+            mergedApps[idx] = {
+              ...mergedApps[idx],
+              ...remoteApp,
+              username: remoteApp.username !== undefined ? remoteApp.username : mergedApps[idx].username,
+              password: remoteApp.password !== undefined ? remoteApp.password : mergedApps[idx].password,
+            };
+          } else {
+            mergedApps.push(remoteApp);
+          }
+        }
+        this.aplikasiList = mergedApps;
+      }
+
       this.saveToStorage(false);
       return true;
     } catch (err) {
@@ -293,7 +339,15 @@ class DBStore {
   }
 
   updateUser(id: string, updates: Partial<UserAccount>, adminEmail: string) {
-    const idx = this.users.findIndex((u) => u.id === id);
+    let idx = this.users.findIndex((u) => u.id === id);
+    if (idx === -1) {
+      idx = this.users.findIndex(
+        (u) =>
+          (updates.username && u.username?.toLowerCase() === updates.username.toLowerCase()) ||
+          (updates.nip && u.nip === updates.nip) ||
+          (updates.email && u.email?.toLowerCase() === updates.email.toLowerCase())
+      );
+    }
     if (idx === -1) throw new Error('Pengguna tidak ditemukan.');
     this.users[idx] = { 
       ...this.users[idx], 
@@ -304,7 +358,7 @@ class DBStore {
       admin_email: adminEmail,
       aksi: 'Update',
       tabel_terdampak: 'user_account',
-      deskripsi: `Memperbarui data akun pengguna: ${this.users[idx].nama_lengkap} (${this.users[idx].username})`,
+      deskripsi: `Memperbarui data akun pengguna: ${this.users[idx].nama_lengkap} (${this.users[idx].username}) - Role: ${this.users[idx].role}, Unit: ${this.users[idx].unit_kerja}`,
     });
     this.saveToStorage();
     supabaseService.upsertUser(this.users[idx]).catch((err) => {
