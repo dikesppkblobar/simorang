@@ -13,18 +13,50 @@ import {
 
 const API_BASE = '/api';
 
+let backendAvailable: boolean | null = null;
+
+async function checkBackendAvailable(): Promise<boolean> {
+  if (backendAvailable !== null) return backendAvailable;
+  try {
+    const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+    const timeoutId = controller ? setTimeout(() => controller.abort(), 2000) : null;
+    const res = await fetch(`${API_BASE}/health`, {
+      method: 'GET',
+      signal: controller?.signal,
+    });
+    if (timeoutId) clearTimeout(timeoutId);
+    if (res.ok) {
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const j = await res.json();
+        backendAvailable = j && j.status === 'ok';
+        return backendAvailable;
+      }
+    }
+  } catch (_) {}
+  backendAvailable = false;
+  return false;
+}
+
 /**
  * Helper to safely fetch JSON from the API backend.
- * If the response is not OK (e.g. 404 on Vercel static hosting) or not JSON,
- * it returns null instead of throwing "Unexpected token < or T ... is not valid JSON".
+ * If the response is not OK (e.g. 404/405 on Vercel static hosting) or not JSON,
+ * it returns null and falls back to dbStore + Supabase Cloud client.
  */
 async function safeFetchJson<T = any>(
   url: string,
   options?: RequestInit
 ): Promise<{ success: boolean; data?: T; error?: string } | null> {
+  const isAvailable = await checkBackendAvailable();
+  if (!isAvailable) {
+    return null;
+  }
   try {
     const res = await fetch(url, options);
     if (!res.ok) {
+      if (res.status === 404 || res.status === 405) {
+        backendAvailable = false;
+      }
       return null;
     }
     const contentType = res.headers.get('content-type') || '';
@@ -34,6 +66,7 @@ async function safeFetchJson<T = any>(
     const json = await res.json();
     return json;
   } catch (err) {
+    backendAvailable = false;
     return null;
   }
 }
