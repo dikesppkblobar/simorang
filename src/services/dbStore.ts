@@ -56,9 +56,9 @@ class DBStore {
           this.skHistory = sk !== null ? JSON.parse(sk) : [];
           this.keluarga = k !== null ? JSON.parse(k) : [];
           this.auditLogs = log !== null ? JSON.parse(log) : [];
-          this.units = u !== null && JSON.parse(u).length > 0 ? JSON.parse(u) : [...INITIAL_UNITS];
-          this.users = usr !== null && JSON.parse(usr).length > 0 ? JSON.parse(usr) : [...INITIAL_USERS];
-          this.aplikasiList = app !== null && JSON.parse(app).length > 0 ? JSON.parse(app) : [...INITIAL_APLIKASI_KEPEGAWAIAN];
+          this.units = u !== null ? JSON.parse(u) : [];
+          this.users = usr !== null ? JSON.parse(usr) : [];
+          this.aplikasiList = app !== null ? JSON.parse(app) : [];
           return;
         }
       } catch (err) {
@@ -75,9 +75,9 @@ class DBStore {
           this.skHistory = parsed.skHistory || [];
           this.keluarga = parsed.keluarga || [];
           this.auditLogs = parsed.auditLogs || [];
-          this.units = parsed.units && parsed.units.length > 0 ? parsed.units : [...INITIAL_UNITS];
-          this.users = parsed.users && parsed.users.length > 0 ? parsed.users : [...INITIAL_USERS];
-          this.aplikasiList = parsed.aplikasiList && parsed.aplikasiList.length > 0 ? parsed.aplikasiList : [...INITIAL_APLIKASI_KEPEGAWAIAN];
+          this.units = parsed.units || [];
+          this.users = parsed.users || [];
+          this.aplikasiList = parsed.aplikasiList || [];
           return;
         }
       } catch (err) {
@@ -85,14 +85,14 @@ class DBStore {
       }
     }
 
-    // Default Fallback
-    this.pegawai = [...INITIAL_PEGAWAI];
-    this.skHistory = [...INITIAL_SK_HISTORY];
-    this.keluarga = [...INITIAL_KELUARGA];
-    this.auditLogs = [...INITIAL_AUDIT_LOGS];
-    this.units = [...INITIAL_UNITS];
-    this.users = [...INITIAL_USERS];
-    this.aplikasiList = [...INITIAL_APLIKASI_KEPEGAWAIAN];
+    // Default Fallback (Kosong, mengacu ke database riil)
+    this.pegawai = [];
+    this.skHistory = [];
+    this.keluarga = [];
+    this.auditLogs = [];
+    this.units = [];
+    this.users = [];
+    this.aplikasiList = [];
     this.saveToStorage();
   }
 
@@ -163,37 +163,41 @@ class DBStore {
       if (sk !== null && Array.isArray(sk)) this.skHistory = sk;
       if (k !== null && Array.isArray(k)) this.keluarga = k;
       if (log !== null && Array.isArray(log)) this.auditLogs = log;
-      if (u !== null && Array.isArray(u) && u.length > 0) this.units = u;
+      if (u !== null && Array.isArray(u)) this.units = u;
 
-      if (usr !== null && Array.isArray(usr) && usr.length > 0) {
-        // Smart merge users to ensure password and any local modifications are NEVER lost
-        const mergedUsers = [...usr];
-        for (let i = 0; i < mergedUsers.length; i++) {
-          const remoteUser = mergedUsers[i];
-          const localMatch = this.users.find(
-            (uItem) =>
-              uItem.id === remoteUser.id ||
-              (uItem.username && remoteUser.username && uItem.username.toLowerCase() === remoteUser.username.toLowerCase())
-          );
-          if (localMatch) {
-            mergedUsers[i] = {
-              ...localMatch,
-              ...remoteUser,
-              password: remoteUser.password || localMatch.password || 'admin',
-              nip: remoteUser.nip !== undefined ? remoteUser.nip : localMatch.nip,
-              no_hp: remoteUser.no_hp !== undefined ? remoteUser.no_hp : localMatch.no_hp,
-            };
-          } else {
-            mergedUsers[i] = {
-              ...remoteUser,
-              password: remoteUser.password || 'admin',
-            };
+      if (usr !== null && Array.isArray(usr)) {
+        if (usr.length === 0) {
+          this.users = [];
+        } else {
+          // Smart merge users to ensure password and any local modifications are NEVER lost
+          const mergedUsers = [...usr];
+          for (let i = 0; i < mergedUsers.length; i++) {
+            const remoteUser = mergedUsers[i];
+            const localMatch = this.users.find(
+              (uItem) =>
+                uItem.id === remoteUser.id ||
+                (uItem.username && remoteUser.username && uItem.username.toLowerCase() === remoteUser.username.toLowerCase())
+            );
+            if (localMatch) {
+              mergedUsers[i] = {
+                ...localMatch,
+                ...remoteUser,
+                password: remoteUser.password || localMatch.password || 'admin',
+                nip: remoteUser.nip !== undefined ? remoteUser.nip : localMatch.nip,
+                no_hp: remoteUser.no_hp !== undefined ? remoteUser.no_hp : localMatch.no_hp,
+              };
+            } else {
+              mergedUsers[i] = {
+                ...remoteUser,
+                password: remoteUser.password || 'admin',
+              };
+            }
           }
+          this.users = mergedUsers;
         }
-        this.users = mergedUsers;
       }
 
-      if (app !== null && Array.isArray(app) && app.length > 0) {
+      if (app !== null && Array.isArray(app)) {
         this.aplikasiList = app;
       }
 
