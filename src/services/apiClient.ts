@@ -1,6 +1,6 @@
 import { dbStore } from './dbStore';
 import { supabaseService } from './supabaseService';
-import { SUPABASE_SCHEMA_SQL } from '../supabaseSchema';
+import { SUPABASE_SCHEMA_SQL } from 'src/data/supabaseSchema.ts';
 import {
   Pegawai,
   RiwayatSK,
