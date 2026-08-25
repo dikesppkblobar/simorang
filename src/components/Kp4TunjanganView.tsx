@@ -26,6 +26,7 @@ import {
 import { KeluargaKP4, Pegawai, StatusHubungan } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { formatDateIndonesian } from '../services/dateCalculator';
+import { openDocumentInNewTab, downloadDocumentFile } from '../utils/fileHelper';
 
 interface Kp4TunjanganViewProps {
   keluargaList: KeluargaKP4[];
@@ -314,10 +315,23 @@ export const Kp4TunjanganView: React.FC<Kp4TunjanganViewProps> = ({
                             )}
 
                             {item.surat_ket_kuliah_url ? (
-                              <span className="inline-flex items-center space-x-1 text-emerald-800 font-bold bg-emerald-100 px-2 py-0.5 rounded text-[10px]">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const pegawai = pegawaiMap.get(item.nip_pegawai) || null;
+                                  const cleanNama = item.nama_keluarga.replace(/[^a-zA-Z0-9]/g, '_');
+                                  const fileName = `Suket_Kuliah_${cleanNama}_${item.nip_pegawai}.pdf`;
+                                  openDocumentInNewTab(item.surat_ket_kuliah_url, fileName, {
+                                    pegawai,
+                                    title: `Surat Keterangan Kuliah - ${item.nama_keluarga}`,
+                                  });
+                                }}
+                                className="inline-flex items-center space-x-1 text-emerald-800 hover:text-emerald-950 font-bold bg-emerald-100 hover:bg-emerald-200 px-2 py-0.5 rounded text-[10px] transition-colors cursor-pointer"
+                                title="Buka Dokumen Suket Kuliah di Tab Baru"
+                              >
                                 <FileCheck className="w-3 h-3" />
-                                <span>Kuliah Aktif (Ada Suket)</span>
-                              </span>
+                                <span>Kuliah Aktif (Buka Berkas)</span>
+                              </button>
                             ) : isNeedsSuket ? (
                               <span className="inline-flex items-center space-x-1 text-red-800 font-bold bg-red-100 px-2 py-0.5 rounded text-[10px]">
                                 <AlertTriangle className="w-3 h-3" />
@@ -676,15 +690,23 @@ export const Kp4TunjanganView: React.FC<Kp4TunjanganViewProps> = ({
                       <span>Berkas Terlampir</span>
                     </span>
 
-                    <a
-                      href={viewingDetailItem.surat_ket_kuliah_url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center space-x-1 transition-colors"
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const pegawai = pegawaiMap.get(viewingDetailItem.nip_pegawai) || null;
+                        const cleanNama = viewingDetailItem.nama_keluarga.replace(/[^a-zA-Z0-9]/g, '_');
+                        const fileName = `Suket_Kuliah_${cleanNama}_${viewingDetailItem.nip_pegawai}.pdf`;
+                        openDocumentInNewTab(viewingDetailItem.surat_ket_kuliah_url, fileName, {
+                          pegawai,
+                          title: `Surat Keterangan Kuliah - ${viewingDetailItem.nama_keluarga}`,
+                        });
+                      }}
+                      className="px-3 py-1.5 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold flex items-center space-x-1 transition-colors cursor-pointer text-xs"
+                      title="Buka Dokumen di Tab Baru"
                     >
                       <Paperclip className="w-3.5 h-3.5" />
-                      <span>Buka / Unduh Berkas</span>
-                    </a>
+                      <span>Buka di Tab Baru</span>
+                    </button>
                   </div>
                 ) : (
                   <div className="mt-1 p-2 bg-amber-100 text-amber-900 rounded font-semibold text-[11px] flex items-center space-x-1">
