@@ -935,7 +935,7 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                     <input
                       type="text"
                       required
-                      placeholder="e.g. dr. H. AHMAD SYAMSUL"
+                      placeholder="e.g. Nama Lengkap Pengguna / Operator"
                       value={userFormData.nama_lengkap}
                       onChange={(e) => setUserFormData({ ...userFormData, nama_lengkap: e.target.value })}
                       className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold focus:outline-none focus:ring-2 focus:ring-blue-500"
