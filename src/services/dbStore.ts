@@ -515,10 +515,21 @@ class DBStore {
     this.skHistory.unshift(sk);
     const p = this.getPegawaiByNip(sk.nip_pegawai);
     if (p) {
+      p.updated_at = new Date().toISOString();
       if (sk.jenis_sk === 'Pangkat') {
         p.tmt_golongan = sk.tmt_berlaku;
+        p.tmt_pangkat_terakhir = sk.tmt_berlaku;
         p.no_sk_pangkat = sk.nomor_sk;
         p.tgl_sk_pangkat = sk.tmt_berlaku;
+        if ((sk as any).golongan_pangkat) {
+          p.golongan_pangkat = (sk as any).golongan_pangkat;
+        }
+        if ((sk as any).nama_pangkat) {
+          p.nama_pangkat = (sk as any).nama_pangkat;
+        }
+      } else if (sk.jenis_sk === 'KGB') {
+        p.tmt_kgb_terakhir = sk.tmt_berlaku;
+        p.no_sk_kgb = sk.nomor_sk;
       } else if (sk.jenis_sk === 'UKOM') {
         p.status_ukkj = 'Lulus UKKJ';
         p.status_ukom = true;
