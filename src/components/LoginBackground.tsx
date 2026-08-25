@@ -12,14 +12,14 @@ export const LoginBackground: React.FC = () => {
       />
 
       {/* 2. Canva Giri Menang Lombok Barat Embedded Background (if available) */}
-      <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center">
-  <img
-    src="/bg-login.webp"
-    alt="Background Login SIMORANG"
-    className="w-full h-full object-cover object-center"
-    loading="eager" // Memuat gambar utama login lebih awal secara prioritas
-  />
-</div>
+      <div className="absolute inset-0 w-full h-full overflow-hidden flex items-center justify-center opacity-85">
+        <img
+          src="https://images.genpi.co/uploads/news/watermark/2019/04/01/be018b8227afd5e25068f8122a63cc26.jpg"
+          alt="Background Kantor Gubernur / Giri Menang Lombok"
+          className="w-full h-full object-cover object-center"
+          loading="eager"
+        />
+      </div>
 
       {/* 3. Dark Overlay (35-40% opacity) + Subtle Blur to ensure high contrast and readable text */}
       <div className="absolute inset-0 w-full h-full bg-slate-950/45 backdrop-blur-[1.5px]" />
