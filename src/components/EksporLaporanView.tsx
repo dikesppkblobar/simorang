@@ -127,6 +127,8 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
 
           // Pendidikan & Kontak
           'Pendidikan Terakhir': p.pendidikanTerakhir,
+          'Nama Universitas / Institusi PT': p.namaUniversitas,
+          'Program Studi': p.programStudi,
           'No. WhatsApp': p.noWhatsapp,
           'Legalitas STR & SIP': p.legalitasStrSip,
         }));
@@ -183,6 +185,8 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
 
           // Lainnya
           { wch: 24 }, // Pendidikan
+          { wch: 30 }, // Univ
+          { wch: 24 }, // Prodi
           { wch: 18 }, // WA
           { wch: 32 }, // STR SIP
         ];
@@ -207,6 +211,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           'Nama Lengkap': p.namaLengkap,
           'Unit Kerja': p.unitKerja,
           'Status ASN': p.statusKepegawaian,
+          'Pendidikan Terakhir': p.pendidikanTerakhir,
           'Masa Kerja Golongan (MKG)': p.masaKerjaGolongan,
 
           // Pangkat
@@ -269,6 +274,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
             'Nama Pejabat Fungsional': p.namaLengkap,
             'Unit Kerja': p.unitKerja,
             'Jabatan Fungsional Spesifik': p.jabatanSpesifik,
+            'Pendidikan Terakhir': p.pendidikanTerakhir,
             'Jenjang Jafung Sebelumnya': p.jenjangJafungSebelumnya,
             'Jenjang Jafung Sekarang': p.jenjangJafungSekarang,
             'Proyeksi Jenjang Selanjutnya': p.proyeksiJenjangJafungSelanjutnya,
@@ -377,6 +383,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           'Status ASN': p.statusKepegawaian,
           'Jenis Jabatan': p.jenisJabatan,
           'Jabatan Spesifik': p.jabatanSpesifik,
+          'Pendidikan Terakhir': p.pendidikanTerakhir,
           'Pangkat Sebelumnya': p.pangkatSebelumnya,
           'Pangkat Sekarang': `${p.namaPangkatSekarang} (${p.golonganSekarang})`,
           'TMT Pangkat': p.tmtPangkatSekarang,
@@ -753,6 +760,11 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
                       <div className="font-heading font-bold text-slate-900">{row.namaLengkap}</div>
                       <div className="text-[11px] font-mono text-slate-500">{row.nip}</div>
                       <div className="text-[10.5px] text-slate-600 font-medium">{row.jabatanSpesifik}</div>
+                      {row.pendidikanTerakhir && row.pendidikanTerakhir !== '-' && (
+                        <div className="text-[10px] text-indigo-700 font-semibold mt-0.5">
+                          🎓 {row.pendidikanTerakhir}
+                        </div>
+                      )}
                     </td>
                     <td className="p-3 text-slate-700 font-medium">
                       <div>{row.unitKerja}</div>
