@@ -59,6 +59,7 @@ import {
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 
   // Master State
   const [pegawaiList, setPegawaiList] = useState<Pegawai[]>([]);
@@ -584,30 +585,143 @@ export default function App() {
 
   return (
     <div className="h-screen w-screen flex flex-col overflow-hidden bg-[#F4F7F9] font-body text-[#1E293B]">
-      {/* Top Navbar with User Switcher */}
+      {/* Top Navbar with User Switcher & Mobile Menu Toggle */}
       <Navbar
         currentUser={currentUser}
         usersList={usersList}
         onSwitchUser={handleSwitchUser}
         onLogout={handleLogout}
+        onToggleMobileMenu={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+        isMobileMenuOpen={isMobileDrawerOpen}
       />
 
       {/* Main Body with Sidebar + View */}
       <div className="flex flex-1 overflow-hidden relative">
-        {/* Mobile Backdrop when sidebar is open on small screens */}
-        {!isSidebarCollapsed && (
-          <div
-            onClick={() => setIsSidebarCollapsed(true)}
-            className="md:hidden fixed inset-0 bg-slate-900/60 backdrop-blur-xs z-30 transition-opacity"
-          />
-        )}
+        {/* Mobile Navigation Drawer (Slide-out Panel) */}
+        <AnimatePresence>
+          {isMobileDrawerOpen && (
+            <div className="md:hidden fixed inset-0 z-50 flex">
+              {/* Backdrop */}
+              <motion.div
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                onClick={() => setIsMobileDrawerOpen(false)}
+                className="fixed inset-0 bg-slate-900/60 backdrop-blur-xs"
+              />
 
-        {/* Sidebar Navigation */}
+              {/* Drawer Content */}
+              <motion.div
+                initial={{ x: '-100%' }}
+                animate={{ x: 0 }}
+                exit={{ x: '-100%' }}
+                transition={{ type: 'spring', damping: 25, stiffness: 250 }}
+                className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between z-10 border-r border-slate-200"
+              >
+                <div>
+                  {/* Drawer Header */}
+                  <div className="p-4 bg-[#004B87] text-white flex items-center justify-between">
+                    <div className="flex items-center space-x-2.5">
+                      <div className="bg-white/15 p-1 rounded-lg">
+                        <LogoLombokBarat size={28} />
+                      </div>
+                      <div>
+                        <div className="font-heading font-extrabold text-sm tracking-tight text-white leading-tight">
+                          SIMORANG
+                        </div>
+                        <div className="text-[10px] text-blue-100 font-medium">
+                          DINKES-PPKB Lombok Barat
+                        </div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setIsMobileDrawerOpen(false)}
+                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                      title="Tutup Menu"
+                    >
+                      <PanelLeftClose className="w-5 h-5" />
+                    </button>
+                  </div>
+
+                  {/* Logged in User Summary Card inside Drawer */}
+                  <div className="p-3.5 bg-slate-50 border-b border-slate-200">
+                    <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">
+                      Akun Pengguna Aktif
+                    </div>
+                    <div className="font-heading font-bold text-xs text-slate-900 truncate">
+                      {currentUser.nama_lengkap}
+                    </div>
+                    <div className="text-[11px] text-blue-700 font-medium truncate mt-0.5">
+                      {currentUser.role} • {currentUser.unit_kerja}
+                    </div>
+                  </div>
+
+                  {/* Navigation Links */}
+                  <div className="p-3">
+                    <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider px-2 mb-2">
+                      Menu Utama
+                    </div>
+                    <nav className="space-y-1">
+                      {navItems.map((item) => {
+                        const Icon = item.icon;
+                        const isActive = activeTab === item.id;
+
+                        return (
+                          <button
+                            key={item.id}
+                            type="button"
+                            onClick={() => {
+                              setActiveTab(item.id);
+                              setIsMobileDrawerOpen(false);
+                            }}
+                            className={`w-full px-3.5 py-3 rounded-xl flex items-center justify-between text-xs font-heading font-bold transition-all cursor-pointer ${
+                              isActive
+                                ? 'bg-[#004B87] text-white shadow-sm'
+                                : 'text-slate-700 hover:bg-slate-100 active:bg-slate-200'
+                            }`}
+                          >
+                            <div className="flex items-center gap-3">
+                              <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                              <span>{item.label}</span>
+                            </div>
+                            {item.badge !== null && item.badge > 0 && (
+                              <span
+                                className={`px-2 py-0.5 rounded-full text-[10px] font-heading font-extrabold ${
+                                  isActive
+                                    ? 'bg-white text-[#004B87]'
+                                    : 'bg-emerald-100 text-[#003663] border border-emerald-300'
+                                }`}
+                              >
+                                {item.badge}
+                              </span>
+                            )}
+                          </button>
+                        );
+                      })}
+                    </nav>
+                  </div>
+                </div>
+
+                {/* Drawer Footer */}
+                <div className="p-4 border-t border-slate-100 bg-slate-50">
+                  <div className="text-[11px] text-slate-500 text-center font-medium">
+                    SIMORANG DINKES-PPKB
+                  </div>
+                  <div className="text-[10px] text-slate-400 text-center font-mono mt-0.5">
+                    Kabupaten Lombok Barat v2.5
+                  </div>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
+
+        {/* Desktop Sidebar Navigation (Hidden on Mobile) */}
         <aside
-          className={`bg-white border-r border-[#E2E8F0] flex-shrink-0 flex flex-col justify-between select-none shadow-sm transition-all duration-300 z-40 md:z-auto ${
-            isSidebarCollapsed
-              ? 'w-16'
-              : 'fixed inset-y-0 left-0 w-64 md:relative md:inset-auto md:w-64'
+          className={`hidden md:flex bg-white border-r border-[#E2E8F0] flex-shrink-0 flex-col justify-between select-none shadow-xs transition-all duration-300 z-20 ${
+            isSidebarCollapsed ? 'w-16' : 'w-64'
           }`}
         >
           {/* Nudge Toggle Button on Edge */}
@@ -681,12 +795,7 @@ export default function App() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => {
-                      setActiveTab(item.id);
-                      if (window.innerWidth < 768) {
-                        setIsSidebarCollapsed(true);
-                      }
-                    }}
+                    onClick={() => setActiveTab(item.id)}
                     className={`w-full px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-heading font-semibold transition-all cursor-pointer ${
                       isActive
                         ? 'bg-[#004B87] text-white shadow-sm'
