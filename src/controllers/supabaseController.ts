@@ -82,6 +82,7 @@ CREATE TABLE IF NOT EXISTS users (
   username TEXT UNIQUE NOT NULL,
   nama_lengkap TEXT NOT NULL,
   email TEXT UNIQUE,
+  password TEXT DEFAULT 'admin',
   role TEXT NOT NULL DEFAULT 'Admin Unit Kerja',
   unit_kerja TEXT NOT NULL,
   nip TEXT,
@@ -91,6 +92,9 @@ CREATE TABLE IF NOT EXISTS users (
   terakhir_login TEXT,
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- JALANKAN INI JIKA TABEL SUDAH ADA SEBELUMNYA UNTUK MEMASTIKAN KOLOM PASSWORD TERSEDIA
+ALTER TABLE IF EXISTS users ADD COLUMN IF NOT EXISTS password TEXT DEFAULT 'admin';
 
 -- ------------------------------------------------------------------------------
 -- 3. TABEL UTAMA PEGAWAI (PNS, PPPK, NON-ASN / BLUD / KONTRAK)
