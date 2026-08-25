@@ -228,9 +228,13 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
           no_hp: userFormData.no_hp.trim() || undefined,
           status: userFormData.status,
         };
-        // Only update password if user typed one or it already exists
-        if (userFormData.password) {
+        // Always ensure password is set properly
+        if (userFormData.password && userFormData.password.trim()) {
           payload.password = userFormData.password.trim();
+        } else if (editingUser.password) {
+          payload.password = editingUser.password;
+        } else {
+          payload.password = 'admin';
         }
 
         const success = await onUpdateUser(editingUser.id, payload);
