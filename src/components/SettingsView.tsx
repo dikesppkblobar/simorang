@@ -46,6 +46,7 @@ interface SettingsViewProps {
   onDeleteUnit: (id: string) => Promise<boolean>;
   onSwitchUser: (user: UserAccount) => void;
   defaultSubTab?: 'scope' | 'users' | 'export' | 'audit';
+  defaultManagementSubTab?: 'users' | 'units' | 'database';
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -67,8 +68,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onDeleteUnit,
   onSwitchUser,
   defaultSubTab = 'scope',
+  defaultManagementSubTab = 'users',
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'scope' | 'users' | 'export' | 'audit'>(defaultSubTab);
+
+  React.useEffect(() => {
+    if (defaultSubTab) {
+      setActiveSubTab(defaultSubTab);
+    }
+  }, [defaultSubTab]);
 
   const isAllUnitsActive = selectedUnitScope === 'SEMUA_UNIT';
   const activePegawaiCount = scopedPegawaiList.filter((p) => !p.is_deleted).length;
@@ -331,6 +339,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           unitsList={unitsList}
           pegawaiList={pegawaiList}
           currentUser={currentUser}
+          defaultSubTab={defaultManagementSubTab}
           onAddUser={onAddUser}
           onUpdateUser={onUpdateUser}
           onDeleteUser={onDeleteUser}
