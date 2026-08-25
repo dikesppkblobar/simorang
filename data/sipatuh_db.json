@@ -218,6 +218,246 @@
   "keluarga": [],
   "auditLogs": [
     {
+      "id": "log-1787626150089-56",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Update",
+      "tabel_terdampak": "user_account",
+      "deskripsi": "Memperbarui data akun pengguna: Rizki Wahyudi (yudi) - Role: Admin Dinkes, Unit: Dinas Kesehatan Kab. Lombok Barat",
+      "created_at": "2026-08-25T02:49:10.089+00:00"
+    },
+    {
+      "id": "log-1787625446329-774",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "aplikasi_kepegawaian",
+      "deskripsi": "Menghapus portal aplikasi kepegawaian: TASPEN One Stop Service (TOS)",
+      "created_at": "2026-08-25T02:37:26.329+00:00"
+    },
+    {
+      "id": "log-1787625400478-513",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Update",
+      "tabel_terdampak": "user_account",
+      "deskripsi": "Memperbarui data akun pengguna: yudi (yudi)",
+      "created_at": "2026-08-25T02:36:40.478+00:00"
+    },
+    {
+      "id": "log-1787625305145-106",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Update",
+      "tabel_terdampak": "user_account",
+      "deskripsi": "Memperbarui data akun pengguna: yudi (yudi)",
+      "created_at": "2026-08-25T02:35:05.145+00:00"
+    },
+    {
+      "id": "log-1787625153568-598",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Create",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menambahkan Unit Kerja baru: SEKRETARIAT (Dinas)",
+      "created_at": "2026-08-25T02:32:33.568+00:00"
+    },
+    {
+      "id": "log-1787625099871-612",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Balai Penyuluhan KB Kec. Gerung",
+      "created_at": "2026-08-25T02:31:39.871+00:00"
+    },
+    {
+      "id": "log-1787625097968-402",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Balai Penyuluhan KB Kec. Gunungsari",
+      "created_at": "2026-08-25T02:31:37.968+00:00"
+    },
+    {
+      "id": "log-1787625095735-242",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Balai Penyuluhan KB Kec. Narmada",
+      "created_at": "2026-08-25T02:31:35.735+00:00"
+    },
+    {
+      "id": "log-1787625089287-89",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Update",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Memperbarui data Unit Kerja: Labkesda Lombok Barat",
+      "created_at": "2026-08-25T02:31:29.287+00:00"
+    },
+    {
+      "id": "log-1787625081613-368",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Banyumulek",
+      "created_at": "2026-08-25T02:31:21.613+00:00"
+    },
+    {
+      "id": "log-1787625078711-732",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Eyat Mayang",
+      "created_at": "2026-08-25T02:31:18.711+00:00"
+    },
+    {
+      "id": "log-1787625076713-976",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Gerung",
+      "created_at": "2026-08-25T02:31:16.713+00:00"
+    },
+    {
+      "id": "log-1787625074485-66",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Gunungsari",
+      "created_at": "2026-08-25T02:31:14.485+00:00"
+    },
+    {
+      "id": "log-1787625069999-105",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Jembatan Kembar",
+      "created_at": "2026-08-25T02:31:09.999+00:00"
+    },
+    {
+      "id": "log-1787625067205-402",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Kediri",
+      "created_at": "2026-08-25T02:31:07.205+00:00"
+    },
+    {
+      "id": "log-1787625065458-621",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Kuripan",
+      "created_at": "2026-08-25T02:31:05.458+00:00"
+    },
+    {
+      "id": "log-1787625063744-642",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Labuapi",
+      "created_at": "2026-08-25T02:31:03.744+00:00"
+    },
+    {
+      "id": "log-1787625061609-245",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Lembar",
+      "created_at": "2026-08-25T02:31:01.609+00:00"
+    },
+    {
+      "id": "log-1787625020786-339",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Lingsar",
+      "created_at": "2026-08-25T02:30:20.786+00:00"
+    },
+    {
+      "id": "log-1787625018639-752",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Meninting",
+      "created_at": "2026-08-25T02:30:18.639+00:00"
+    },
+    {
+      "id": "log-1787625016510-120",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Narmada",
+      "created_at": "2026-08-25T02:30:16.51+00:00"
+    },
+    {
+      "id": "log-1787625014649-114",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Parampuan",
+      "created_at": "2026-08-25T02:30:14.649+00:00"
+    },
+    {
+      "id": "log-1787625012714-236",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Pelangan",
+      "created_at": "2026-08-25T02:30:12.714+00:00"
+    },
+    {
+      "id": "log-1787625010623-493",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Penimbung",
+      "created_at": "2026-08-25T02:30:10.623+00:00"
+    },
+    {
+      "id": "log-1787625008456-174",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Sedau",
+      "created_at": "2026-08-25T02:30:08.456+00:00"
+    },
+    {
+      "id": "log-1787625006208-850",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Sekotong",
+      "created_at": "2026-08-25T02:30:06.208+00:00"
+    },
+    {
+      "id": "log-1787625004063-703",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Sigerongan",
+      "created_at": "2026-08-25T02:30:04.063+00:00"
+    },
+    {
+      "id": "log-1787625001956-930",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: Puskesmas Suranadi",
+      "created_at": "2026-08-25T02:30:01.956+00:00"
+    },
+    {
+      "id": "log-1787625000226-466",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: RSUD Awet Muda Narmada",
+      "created_at": "2026-08-25T02:30:00.226+00:00"
+    },
+    {
+      "id": "log-1787624997655-263",
+      "admin_email": "admin.dikes@lombokbaratkab.go.id",
+      "aksi": "Delete",
+      "tabel_terdampak": "unit_kerja",
+      "deskripsi": "Menghapus Unit Kerja: RSUD Tripat Gerung",
+      "created_at": "2026-08-25T02:29:57.655+00:00"
+    },
+    {
       "id": "log-init-001",
       "admin_email": "admin.dikes@lombokbaratkab.go.id",
       "aksi": "System Initialize",
@@ -1124,42 +1364,6 @@
   ],
   "units": [
     {
-      "id": "unit-024",
-      "kode_unit": "KB-01",
-      "nama_unit": "Balai Penyuluhan KB Kec. Gerung",
-      "kategori": "KB / PPKB",
-      "alamat": "Jl. Gatot Subroto, Gerung",
-      "telepon": "(0370) 682500",
-      "kepala_unit": "Koordinator KB Gerung",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-026",
-      "kode_unit": "KB-03",
-      "nama_unit": "Balai Penyuluhan KB Kec. Gunungsari",
-      "kategori": "KB / PPKB",
-      "alamat": "Jl. Pariwisata Gunungsari",
-      "telepon": "(0370) 673100",
-      "kepala_unit": "Koordinator KB Gunungsari",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-025",
-      "kode_unit": "KB-02",
-      "nama_unit": "Balai Penyuluhan KB Kec. Narmada",
-      "kategori": "KB / PPKB",
-      "alamat": "Jl. Raya Narmada, Narmada",
-      "telepon": "(0370) 671400",
-      "kepala_unit": "Koordinator KB Narmada",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
       "id": "unit-001",
       "kode_unit": "DINAS-01",
       "nama_unit": "Dinas Kesehatan Kab. Lombok Barat",
@@ -1175,272 +1379,32 @@
       "id": "unit-023",
       "kode_unit": "LAB-01",
       "nama_unit": "Labkesda Lombok Barat",
-      "kategori": "Lab / UPTD",
+      "kategori": "Dinas",
       "alamat": "Jl. Pendidikan No. 5, Gerung",
       "telepon": "(0370) 682990",
       "kepala_unit": "Kepala Labkesda",
-      "nip_kepala": null,
+      "nip_kepala": "",
       "status": "Aktif",
       "created_at": "2026-08-25T02:15:58.785466+00:00"
     },
     {
-      "id": "unit-019",
-      "kode_unit": "PKM-18",
-      "nama_unit": "Puskesmas Banyumulek",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Wisata Banyumulek, Kediri",
-      "telepon": "(0370) 671550",
-      "kepala_unit": "Kepala Puskesmas Banyumulek",
-      "nip_kepala": null,
+      "id": "unit-1787625153568",
+      "kode_unit": "01",
+      "nama_unit": "SEKRETARIAT",
+      "kategori": "Dinas",
+      "alamat": "",
+      "telepon": "",
+      "kepala_unit": "",
+      "nip_kepala": "",
       "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-013",
-      "kode_unit": "PKM-12",
-      "nama_unit": "Puskesmas Eyat Mayang",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Eyat Mayang, Lembar",
-      "telepon": "(0370) 681912",
-      "kepala_unit": "Kepala Puskesmas Eyat Mayang",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-002",
-      "kode_unit": "PKM-01",
-      "nama_unit": "Puskesmas Gerung",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Gatot Subroto, Gerung",
-      "telepon": "(0370) 682334",
-      "kepala_unit": "Kepala Puskesmas Gerung",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-006",
-      "kode_unit": "PKM-05",
-      "nama_unit": "Puskesmas Gunungsari",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Pariwisata Gunungsari",
-      "telepon": "(0370) 673441",
-      "kepala_unit": "Kepala Puskesmas Gunungsari",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-014",
-      "kode_unit": "PKM-13",
-      "nama_unit": "Puskesmas Jembatan Kembar",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Lembar, Jembatan Kembar",
-      "telepon": "(0370) 681925",
-      "kepala_unit": "Kepala Puskesmas Jembatan Kembar",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-008",
-      "kode_unit": "PKM-07",
-      "nama_unit": "Puskesmas Kediri",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. TGH. Abdul Karim, Kediri",
-      "telepon": "(0370) 671882",
-      "kepala_unit": "Kepala Puskesmas Kediri",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-015",
-      "kode_unit": "PKM-14",
-      "nama_unit": "Puskesmas Kuripan",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. TGH. Lalu Panji, Kuripan",
-      "telepon": "(0370) 684110",
-      "kepala_unit": "Kepala Puskesmas Kuripan",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-005",
-      "kode_unit": "PKM-04",
-      "nama_unit": "Puskesmas Labuapi",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. TGH. Lopan, Labuapi",
-      "telepon": "(0370) 672556",
-      "kepala_unit": "Kepala Puskesmas Labuapi",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-012",
-      "kode_unit": "PKM-11",
-      "nama_unit": "Puskesmas Lembar",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Pelabuhan Lembar, Kec. Lembar",
-      "telepon": "(0370) 681900",
-      "kepala_unit": "Kepala Puskesmas Lembar",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-009",
-      "kode_unit": "PKM-08",
-      "nama_unit": "Puskesmas Lingsar",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Lingsar, Kec. Lingsar",
-      "telepon": "(0370) 672110",
-      "kepala_unit": "Kepala Puskesmas Lingsar",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-004",
-      "kode_unit": "PKM-03",
-      "nama_unit": "Puskesmas Meninting",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Senggigi, Batu Layar",
-      "telepon": "(0370) 692223",
-      "kepala_unit": "Kepala Puskesmas Meninting",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-003",
-      "kode_unit": "PKM-02",
-      "nama_unit": "Puskesmas Narmada",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Narmada, Kec. Narmada",
-      "telepon": "(0370) 671112",
-      "kepala_unit": "Kepala Puskesmas Narmada",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-020",
-      "kode_unit": "PKM-19",
-      "nama_unit": "Puskesmas Parampuan",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Labuapi, Parampuan",
-      "telepon": "(0370) 672901",
-      "kepala_unit": "Kepala Puskesmas Parampuan",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-017",
-      "kode_unit": "PKM-16",
-      "nama_unit": "Puskesmas Pelangan",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Pariwisata Pelangan, Sekotong",
-      "telepon": "(0370) 683990",
-      "kepala_unit": "Kepala Puskesmas Pelangan",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-011",
-      "kode_unit": "PKM-10",
-      "nama_unit": "Puskesmas Penimbung",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Penimbung, Gunungsari",
-      "telepon": "(0370) 675001",
-      "kepala_unit": "Kepala Puskesmas Penimbung",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-018",
-      "kode_unit": "PKM-17",
-      "nama_unit": "Puskesmas Sedau",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Sedau, Narmada",
-      "telepon": "(0370) 674992",
-      "kepala_unit": "Kepala Puskesmas Sedau",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-007",
-      "kode_unit": "PKM-06",
-      "nama_unit": "Puskesmas Sekotong",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Sekotong, Sekotong Barat",
-      "telepon": "(0370) 683445",
-      "kepala_unit": "Kepala Puskesmas Sekotong",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-016",
-      "kode_unit": "PKM-15",
-      "nama_unit": "Puskesmas Sigerongan",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Raya Sigerongan, Lingsar",
-      "telepon": "(0370) 672440",
-      "kepala_unit": "Kepala Puskesmas Sigerongan",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-010",
-      "kode_unit": "PKM-09",
-      "nama_unit": "Puskesmas Suranadi",
-      "kategori": "Puskesmas",
-      "alamat": "Jl. Wisata Suranadi, Narmada",
-      "telepon": "(0370) 674550",
-      "kepala_unit": "Kepala Puskesmas Suranadi",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-022",
-      "kode_unit": "RSUD-02",
-      "nama_unit": "RSUD Awet Muda Narmada",
-      "kategori": "Rumah Sakit",
-      "alamat": "Jl. Ahmad Yani No. 1, Narmada",
-      "telepon": "(0370) 671800",
-      "kepala_unit": "Direktur RSUD Awet Muda",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
-    },
-    {
-      "id": "unit-021",
-      "kode_unit": "RSUD-01",
-      "nama_unit": "RSUD Tripat Gerung",
-      "kategori": "Rumah Sakit",
-      "alamat": "Jl. H. Lalang Seta, Gerung Utara",
-      "telepon": "(0370) 681122",
-      "kepala_unit": "Direktur RSUD Tripat",
-      "nip_kepala": null,
-      "status": "Aktif",
-      "created_at": "2026-08-25T02:15:58.785466+00:00"
+      "created_at": null
     }
   ],
   "users": [
     {
       "id": "usr-001",
       "username": "admin.dinkes",
-      "nama_lengkap": "dr. H. AHMAD SYAMSUL (Admin Utama)",
+      "nama_lengkap": "Administrator DINKES-PPKB (Admin Utama)",
       "email": "admin.dikes@lombokbaratkab.go.id",
       "password": "admin",
       "role": "Admin Dinkes",
@@ -1449,7 +1413,7 @@
       "no_hp": "081234567890",
       "avatar_url": null,
       "status": "Aktif",
-      "terakhir_login": "2026-08-24 20:58",
+      "terakhir_login": "2026-08-25 09:42",
       "created_at": "2026-01-01T00:00:00+00:00"
     },
     {
@@ -1464,7 +1428,7 @@
       "no_hp": "",
       "avatar_url": null,
       "status": "Aktif",
-      "terakhir_login": "2026-08-25 09:10",
+      "terakhir_login": "2026-08-25 09:29",
       "created_at": "2026-08-24T09:34:01.162+00:00"
     }
   ],
