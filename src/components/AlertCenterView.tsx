@@ -63,6 +63,7 @@ interface AlertCenterViewProps {
   onAddKeluarga?: (data: any) => Promise<boolean> | boolean;
   onUpdateKeluarga?: (id: string, updates: Partial<KeluargaKP4>) => Promise<boolean> | boolean;
   onDeleteKeluarga?: (id: string) => Promise<boolean> | boolean;
+  defaultSubTab?: 'pangkat' | 'jafung' | 'ukom' | 'ujian_dinas' | 'kgb' | 'cuti' | 'pensiun' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4';
 }
 
 export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
@@ -80,6 +81,7 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
   onAddKeluarga,
   onUpdateKeluarga,
   onDeleteKeluarga,
+  defaultSubTab = 'jafung',
 }) => {
   const isSuperAdmin = currentUser?.role === 'Admin Dinkes';
   type SubTabType =
@@ -106,7 +108,13 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
     | 'kgb'
     | 'mutasi';
 
-  const [activeSubTab, setActiveSubTab] = useState<SubTabType>('jafung');
+  const [activeSubTab, setActiveSubTab] = useState<SubTabType>(defaultSubTab);
+
+  React.useEffect(() => {
+    if (defaultSubTab) {
+      setActiveSubTab(defaultSubTab);
+    }
+  }, [defaultSubTab]);
   const [searchTerm, setSearchTerm] = useState('');
 
   // Notification Modal State for Admin Unit Kerja & Admin Dinkes
