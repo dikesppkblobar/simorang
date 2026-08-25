@@ -90,14 +90,6 @@ export function createPegawai(req: Request, res: Response) {
       no_sk_kontrak,
       masa_kerja_non_asn,
       sumber_pembiayaan,
-      // STR & SIP
-      no_str,
-      tgl_terbit_str,
-      tgl_akhir_str,
-      is_str_seumur_hidup,
-      no_sip,
-      tgl_berlaku_sip_mulai,
-      tgl_berlaku_sip_akhir,
     } = req.body;
 
     const statusKepeg = status_kepegawaian || 'PNS';
@@ -160,14 +152,6 @@ export function createPegawai(req: Request, res: Response) {
       no_sk_kontrak,
       masa_kerja_non_asn,
       sumber_pembiayaan,
-
-      no_str,
-      tgl_terbit_str,
-      tgl_akhir_str,
-      is_str_seumur_hidup,
-      no_sip,
-      tgl_berlaku_sip_mulai,
-      tgl_berlaku_sip_akhir,
     };
 
     const adminEmail = (req as any).user?.email || 'admin@dikes.lombokbarat.go.id';
