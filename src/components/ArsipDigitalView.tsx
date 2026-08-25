@@ -30,6 +30,7 @@ import {
 } from 'lucide-react';
 import { RiwayatSK, Pegawai, JenisSK, UnitKerjaItem } from '../types';
 import { formatDateIndonesian } from '../services/dateCalculator';
+import { openDocumentInNewTab, downloadDocumentFile } from '../utils/fileHelper';
 
 interface ArsipDigitalViewProps {
   skList: RiwayatSK[];
@@ -59,6 +60,19 @@ export const ArsipDigitalView: React.FC<ArsipDigitalViewProps> = ({
   const [isDeleting, setIsDeleting] = useState(false);
 
   const pegawaiMap = new Map<string, Pegawai>(pegawaiList.map((p) => [p.nip, p]));
+
+  // Membuka berkas dokumen langsung di tab baru dengan penampil bawaan peramban
+  const handleOpenFile = (sk: RiwayatSK) => {
+    const pegawai = pegawaiMap.get(sk.nip_pegawai) || null;
+    const cleanJenis = (sk.jenis_sk || 'DOKUMEN').toString().replace(/[^a-zA-Z0-9]/g, '_');
+    const cleanNomor = (sk.nomor_sk || 'SK').replace(/[^a-zA-Z0-9]/g, '_');
+    const fileName = `SK_${cleanJenis}_${sk.nip_pegawai}_${cleanNomor}.pdf`;
+    openDocumentInNewTab(sk.file_url, fileName, {
+      sk,
+      pegawai,
+      title: sk.keterangan || `Surat Keputusan ${sk.jenis_sk} (${sk.nomor_sk})`,
+    });
+  };
 
   // Get list of unique units synchronized with master units
   const unitList = React.useMemo(() => {
@@ -623,20 +637,16 @@ export const ArsipDigitalView: React.FC<ArsipDigitalViewProps> = ({
 
                         <td className="p-3.5 text-right">
                           <div className="inline-flex items-center justify-end gap-2">
-                            {sk.file_url ? (
-                              <a
-                                href={sk.file_url}
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="inline-flex items-center space-x-1 text-[#004B87] hover:text-[#003663] font-heading font-bold hover:underline py-1 px-2 rounded-lg hover:bg-blue-50 transition-all text-xs"
-                                title="Buka Pratinjau Berkas"
-                              >
-                                <Eye className="w-3.5 h-3.5" />
-                                <span>Buka Berkas</span>
-                              </a>
-                            ) : (
-                              <span className="text-slate-400 italic text-[11px]">Tanpa File</span>
-                            )}
+                            <button
+                              id={`btn-preview-sk-${sk.id}`}
+                              type="button"
+                              onClick={() => handleOpenFile(sk)}
+                              className="inline-flex items-center space-x-1 text-[#004B87] hover:text-[#003663] font-heading font-bold hover:underline py-1 px-2 rounded-lg hover:bg-blue-50 transition-all text-xs cursor-pointer"
+                              title="Buka Dokumen di Tab Baru"
+                            >
+                              <Eye className="w-3.5 h-3.5" />
+                              <span>Buka Berkas</span>
+                            </button>
 
                             {onDeleteSk && (
                               <button
@@ -766,20 +776,16 @@ export const ArsipDigitalView: React.FC<ArsipDigitalViewProps> = ({
                               </span>
 
                               <div className="flex items-center gap-2">
-                                {sk.file_url ? (
-                                  <a
-                                    href={sk.file_url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-[#004B87] hover:text-[#003663] font-heading font-bold flex items-center space-x-1 hover:underline text-xs"
-                                    title="Pratinjau Berkas"
-                                  >
-                                    <Eye className="w-3.5 h-3.5" />
-                                    <span>Buka Berkas</span>
-                                  </a>
-                                ) : (
-                                  <span className="text-slate-400 italic text-[11px]">Tanpa File</span>
-                                )}
+                                <button
+                                  id={`btn-folder-preview-sk-${sk.id}`}
+                                  type="button"
+                                  onClick={() => handleOpenFile(sk)}
+                                  className="text-[#004B87] hover:text-[#003663] font-heading font-bold flex items-center space-x-1 hover:underline text-xs cursor-pointer"
+                                  title="Buka Dokumen di Tab Baru"
+                                >
+                                  <Eye className="w-3.5 h-3.5" />
+                                  <span>Buka Berkas</span>
+                                </button>
 
                                 {onDeleteSk && (
                                   <button
