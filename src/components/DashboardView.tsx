@@ -375,25 +375,20 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
 
       {/* Visual Charts Grid: Komposisi Jabatan & Sebaran Unit */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* CARD 1: Komposisi Jenis Jabatan ASN (Distribusi Pelaksana, Fungsional, Struktural + Detail PNS, PPPK Penuh Waktu, PPPK Paruh Waktu) */}
+        {/* CARD 1: Komposisi Jenis Jabatan ASN (Clean, Centered Interactive Donut & Integrated Progress Bar) */}
         <div
           id="chart-card-jabatan"
           className="bg-white p-5 rounded-xl border border-slate-200/90 shadow-xs flex flex-col justify-between"
         >
-          {/* Card Header with Direct Navigation */}
-          <div className="flex items-center justify-between pb-3 border-b border-slate-100">
-            <div>
-              <h3 className="text-sm font-heading font-bold text-slate-900 flex items-center gap-1.5">
-                <Briefcase className="w-4 h-4 text-[#004B87]" />
-                <span>Komposisi Jenis Jabatan ASN</span>
-              </h3>
-              <p className="text-xs text-slate-500">
-                Distribusi peran Pelaksana, Fungsional, dan Struktural
-              </p>
-            </div>
+          {/* Header Ringkas */}
+          <div className="flex items-center justify-between pb-2 border-b border-slate-100">
+            <h3 className="text-sm font-heading font-bold text-slate-900 flex items-center gap-2">
+              <Briefcase className="w-4 h-4 text-[#004B87]" />
+              <span>Komposisi Jenis Jabatan ASN</span>
+            </h3>
             <button
               onClick={() => onNavigateTab('pegawai')}
-              className="inline-flex items-center gap-1 text-xs font-semibold text-[#004B87] hover:text-[#003366] bg-blue-50 hover:bg-blue-100/80 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-[#004B87] hover:text-[#003366] bg-blue-50/90 hover:bg-blue-100 px-2.5 py-1 rounded-lg transition-colors cursor-pointer"
               title="Langsung menuju Data Pegawai"
             >
               <span>Lihat di Daftar Pegawai</span>
@@ -401,168 +396,178 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
             </button>
           </div>
 
-          {/* ASN Status Composition Summary Badges */}
-          <div className="mt-3.5 pt-1 pb-1">
-            <div className="text-[11px] font-heading font-semibold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center justify-between">
-              <span>Status Kepegawaian ASN:</span>
-              <span className="text-slate-500 font-medium font-body normal-case">Total {totalJabatanCount} Pegawai</span>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2 text-center">
-                <div className="text-[10px] text-slate-500 font-medium">PNS</div>
-                <div className="text-sm font-heading font-extrabold text-[#004B87]">{totalPns}</div>
-                <div className="text-[10px] text-slate-400 font-medium">
-                  {totalJabatanCount > 0 ? ((totalPns / totalJabatanCount) * 100).toFixed(1) : 0}%
-                </div>
-              </div>
-              <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2 text-center">
-                <div className="text-[10px] text-slate-500 font-medium">PPPK Penuh Waktu</div>
-                <div className="text-sm font-heading font-extrabold text-[#00A3AD]">{totalPppkPenuh}</div>
-                <div className="text-[10px] text-slate-400 font-medium">
-                  {totalJabatanCount > 0 ? ((totalPppkPenuh / totalJabatanCount) * 100).toFixed(1) : 0}%
-                </div>
-              </div>
-              <div className="bg-slate-50 border border-slate-200/80 rounded-lg p-2 text-center">
-                <div className="text-[10px] text-slate-500 font-medium">PPPK Paruh Waktu</div>
-                <div className="text-sm font-heading font-extrabold text-[#82BE00]">{totalPppkParuh}</div>
-                <div className="text-[10px] text-slate-400 font-medium">
-                  {totalJabatanCount > 0 ? ((totalPppkParuh / totalJabatanCount) * 100).toFixed(1) : 0}%
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-12 gap-4 items-center my-3">
-            {/* Donut Chart Canvas */}
-            <div className="sm:col-span-5 h-48 relative flex items-center justify-center">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Pie
-                    data={displayPieData}
-                    cx="50%"
-                    cy="50%"
-                    innerRadius={46}
-                    outerRadius={70}
-                    paddingAngle={displayPieData.length > 1 ? 4 : 0}
-                    dataKey="count"
-                    isAnimationActive={true}
-                  >
-                    {displayPieData.map((entry, index) => {
-                      const color =
-                        JABATAN_COLORS[entry.name] ||
-                        DEFAULT_COLORS[index % DEFAULT_COLORS.length];
-                      return <Cell key={`cell-${index}`} fill={color} />;
-                    })}
-                  </Pie>
-                  <Tooltip
-                    formatter={(value, name) => [
-                      `${value} Pegawai (${totalJabatanCount > 0 ? ((Number(value) / totalJabatanCount) * 100).toFixed(1) : 0}%)`,
-                      `${name}`,
-                    ]}
-                    contentStyle={{
-                      backgroundColor: '#FFFFFF',
-                      borderRadius: '8px',
-                      border: '1px solid #E2E8F0',
-                      fontSize: '12px',
-                      boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1)',
-                    }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-
-              {/* Center Donut Label */}
-              <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                <span className="text-xl font-heading font-extrabold text-slate-800">
-                  {totalJabatanCount}
+          {/* Progress Bar / Bar Terpadu Status Kepegawaian ASN */}
+          <div className="pt-3 pb-1">
+            <div className="flex items-center justify-between text-[11px] text-slate-500 mb-1.5">
+              <span className="font-medium text-slate-600">Status Kepegawaian ({totalJabatanCount} ASN):</span>
+              <div className="flex items-center gap-3 text-[11px]">
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#004B87]" />
+                  <span>PNS <strong className="text-slate-800 font-semibold">{totalPns}</strong></span>
                 </span>
-                <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
-                  ASN
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#00A3AD]" />
+                  <span>PPPK Penuh <strong className="text-slate-800 font-semibold">{totalPppkPenuh}</strong></span>
                 </span>
+                <span className="flex items-center gap-1">
+                  <span className="w-2 h-2 rounded-full bg-[#82BE00]" />
+                  <span>PPPK Paruh <strong className="text-slate-800 font-semibold">{totalPppkParuh}</strong></span>
+                </span>
+                {totalNonAsn > 0 && (
+                  <span className="flex items-center gap-1">
+                    <span className="w-2 h-2 rounded-full bg-[#F59E0B]" />
+                    <span>Non-ASN <strong className="text-slate-800 font-semibold">{totalNonAsn}</strong></span>
+                  </span>
+                )}
               </div>
             </div>
 
-            {/* Detailed Breakdown List with ASN Status Chips */}
-            <div className="sm:col-span-7 space-y-2.5">
-              {(['Pelaksana', 'Fungsional', 'Struktural'] as const).map((jabatanName) => {
-                const detail = jabatanMap[jabatanName] || {
-                  name: jabatanName,
-                  total: 0,
-                  pns: 0,
-                  pppkPenuh: 0,
-                  pppkParuh: 0,
-                  nonAsn: 0,
-                };
-                const color = JABATAN_COLORS[jabatanName] || '#004B87';
-                const percentage =
-                  totalJabatanCount > 0
-                    ? ((detail.total / totalJabatanCount) * 100).toFixed(1)
-                    : '0.0';
-
-                return (
+            {/* Multi-colored interactive thin progress bar */}
+            <div className="w-full h-2 rounded-full bg-slate-100 flex overflow-hidden shadow-2xs">
+              {totalJabatanCount > 0 && (
+                <>
                   <div
-                    key={jabatanName}
-                    onClick={() => onNavigateTab('pegawai')}
-                    className="p-2.5 rounded-xl border border-slate-200/80 bg-slate-50/60 hover:bg-slate-100/80 hover:border-slate-300 transition-all cursor-pointer group"
-                    title={`Klik untuk melihat daftar pegawai ${jabatanName}`}
-                  >
-                    {/* Header Row: Name & Total Count */}
-                    <div className="flex items-center justify-between mb-1.5">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <span
-                          className="w-2.5 h-2.5 rounded-full shrink-0"
-                          style={{ backgroundColor: color }}
-                        />
-                        <span className="text-xs font-heading font-bold text-slate-800 group-hover:text-[#004B87] transition-colors">
-                          {jabatanName}
-                        </span>
-                      </div>
-
-                      <div className="flex items-center gap-1.5 shrink-0">
-                        <span className="text-xs font-heading font-extrabold text-slate-800">
-                          {detail.total} ASN
-                        </span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded font-semibold bg-white text-slate-600 border border-slate-200">
-                          {percentage}%
-                        </span>
-                      </div>
-                    </div>
-
-                    {/* Breakdown per Status ASN: PNS, PPPK Penuh Waktu, PPPK Paruh Waktu */}
-                    <div className="flex flex-wrap items-center gap-1 pt-1 border-t border-slate-200/50 text-[10px]">
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-blue-50 text-[#004B87] font-medium">
-                        PNS: <strong className="font-bold">{detail.pns}</strong>
-                      </span>
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-teal-50 text-[#00858e] font-medium">
-                        PPPK Penuh: <strong className="font-bold">{detail.pppkPenuh}</strong>
-                      </span>
-                      <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-lime-50 text-[#5e8c00] font-medium">
-                        PPPK Paruh: <strong className="font-bold">{detail.pppkParuh}</strong>
-                      </span>
-                      {detail.nonAsn > 0 && (
-                        <span className="inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded bg-amber-50 text-amber-800 font-medium">
-                          Non-ASN: <strong className="font-bold">{detail.nonAsn}</strong>
-                        </span>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
+                    style={{ width: `${(totalPns / totalJabatanCount) * 100}%` }}
+                    className="bg-[#004B87] transition-all duration-300 hover:brightness-110"
+                    title={`PNS: ${totalPns} (${((totalPns / totalJabatanCount) * 100).toFixed(1)}%)`}
+                  />
+                  <div
+                    style={{ width: `${(totalPppkPenuh / totalJabatanCount) * 100}%` }}
+                    className="bg-[#00A3AD] transition-all duration-300 hover:brightness-110"
+                    title={`PPPK Penuh Waktu: ${totalPppkPenuh} (${((totalPppkPenuh / totalJabatanCount) * 100).toFixed(1)}%)`}
+                  />
+                  <div
+                    style={{ width: `${(totalPppkParuh / totalJabatanCount) * 100}%` }}
+                    className="bg-[#82BE00] transition-all duration-300 hover:brightness-110"
+                    title={`PPPK Paruh Waktu: ${totalPppkParuh} (${((totalPppkParuh / totalJabatanCount) * 100).toFixed(1)}%)`}
+                  />
+                  {totalNonAsn > 0 && (
+                    <div
+                      style={{ width: `${(totalNonAsn / totalJabatanCount) * 100}%` }}
+                      className="bg-[#F59E0B] transition-all duration-300 hover:brightness-110"
+                      title={`Non-ASN: ${totalNonAsn} (${((totalNonAsn / totalJabatanCount) * 100).toFixed(1)}%)`}
+                    />
+                  )}
+                </>
+              )}
             </div>
           </div>
 
-          {/* Card Footer Link directly to Data Pegawai */}
-          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-500">
-            <span className="flex items-center gap-1">
-              <Info className="w-3.5 h-3.5 text-slate-400" />
-              Sesuai klasifikasi MenPAN-RB & BKN
-            </span>
-            <button
+          {/* Visual Utama: Centered Interactive Donut Chart */}
+          <div className="h-52 relative my-1 flex items-center justify-center">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={displayPieData}
+                  cx="50%"
+                  cy="50%"
+                  innerRadius={54}
+                  outerRadius={80}
+                  paddingAngle={displayPieData.length > 1 ? 4 : 0}
+                  dataKey="count"
+                  isAnimationActive={true}
+                  cursor="pointer"
+                  onClick={() => onNavigateTab('pegawai')}
+                >
+                  {displayPieData.map((entry, index) => {
+                    const color =
+                      JABATAN_COLORS[entry.name] ||
+                      DEFAULT_COLORS[index % DEFAULT_COLORS.length];
+                    return <Cell key={`cell-${index}`} fill={color} />;
+                  })}
+                </Pie>
+                <Tooltip
+                  content={({ active, payload }) => {
+                    if (active && payload && payload.length) {
+                      const data = payload[0].payload;
+                      const jabName = data.name;
+                      const detail = jabatanMap[jabName] || {
+                        total: data.count,
+                        pns: 0,
+                        pppkPenuh: 0,
+                        pppkParuh: 0,
+                        nonAsn: 0,
+                      };
+                      const percent =
+                        totalJabatanCount > 0
+                          ? ((detail.total / totalJabatanCount) * 100).toFixed(1)
+                          : '0';
+                      const color = JABATAN_COLORS[jabName] || '#004B87';
+
+                      return (
+                        <div className="bg-slate-900/95 text-white text-xs p-3 rounded-xl shadow-xl border border-slate-700/80 backdrop-blur-xs min-w-[210px]">
+                          <div className="flex items-center justify-between gap-2 pb-2 border-b border-slate-700">
+                            <div className="flex items-center gap-1.5 font-bold">
+                              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: color }} />
+                              <span className="text-white text-xs font-heading">{jabName}</span>
+                            </div>
+                            <span className="font-bold text-white text-xs">
+                              {detail.total} ASN <span className="text-slate-300 text-[11px] font-normal">({percent}%)</span>
+                            </span>
+                          </div>
+                          <div className="pt-2 space-y-1 text-[11px]">
+                            <div className="flex justify-between text-slate-300">
+                              <span>PNS:</span>
+                              <span className="font-semibold text-white">{detail.pns}</span>
+                            </div>
+                            <div className="flex justify-between text-slate-300">
+                              <span>PPPK Penuh Waktu:</span>
+                              <span className="font-semibold text-white">{detail.pppkPenuh}</span>
+                            </div>
+                            <div className="flex justify-between text-slate-300">
+                              <span>PPPK Paruh Waktu:</span>
+                              <span className="font-semibold text-white">{detail.pppkParuh}</span>
+                            </div>
+                            {detail.nonAsn > 0 && (
+                              <div className="flex justify-between text-amber-300">
+                                <span>Non-ASN:</span>
+                                <span className="font-semibold">{detail.nonAsn}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      );
+                    }
+                    return null;
+                  }}
+                />
+              </PieChart>
+            </ResponsiveContainer>
+
+            {/* Center Donut Label */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <span className="text-2xl font-heading font-extrabold text-slate-800 tracking-tight">
+                {totalJabatanCount}
+              </span>
+              <span className="text-[10px] uppercase font-semibold text-slate-400 tracking-wider">
+                Total ASN
+              </span>
+            </div>
+          </div>
+
+          {/* Legenda Minimalis di Bawah Grafik */}
+          <div className="pt-2.5 border-t border-slate-100 flex items-center justify-center gap-6 text-xs text-slate-600">
+            <div
               onClick={() => onNavigateTab('pegawai')}
-              className="text-[#004B87] hover:underline font-semibold flex items-center gap-0.5 cursor-pointer"
+              className="flex items-center gap-1.5 hover:text-[#004B87] cursor-pointer transition-colors"
             >
-              <span>Lihat di Daftar Pegawai</span>
-              <ChevronRight className="w-3 h-3" />
-            </button>
+              <span className="w-2.5 h-2.5 rounded-full bg-[#004B87]" />
+              <span className="font-medium">Pelaksana</span>
+            </div>
+            <div
+              onClick={() => onNavigateTab('pegawai')}
+              className="flex items-center gap-1.5 hover:text-[#00A3AD] cursor-pointer transition-colors"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-[#00A3AD]" />
+              <span className="font-medium">Fungsional</span>
+            </div>
+            <div
+              onClick={() => onNavigateTab('pegawai')}
+              className="flex items-center gap-1.5 hover:text-[#82BE00] cursor-pointer transition-colors"
+            >
+              <span className="w-2.5 h-2.5 rounded-full bg-[#82BE00]" />
+              <span className="font-medium">Struktural</span>
+            </div>
           </div>
         </div>
 
