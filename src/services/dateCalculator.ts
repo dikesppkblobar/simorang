@@ -577,3 +577,36 @@ export function getStrSipExpiryStatus(
 
   return { strStatus, sipStatus };
 }
+
+/**
+ * Memeriksa apakah suatu kategori unit kerja termasuk dalam kategori 'Dinas' / 'Dinas Kesehatan'
+ */
+export function isDinasCategory(kategori?: string): boolean {
+  if (!kategori) return false;
+  const k = kategori.toLowerCase().trim();
+  return (
+    k === 'dinas' ||
+    k === 'dinas kesehatan' ||
+    k.includes('dinas') ||
+    k.includes('dikes') ||
+    k.includes('dinkes')
+  );
+}
+
+/**
+ * Memeriksa apakah cakupan (scope) saat ini adalah Dinas Kesehatan
+ */
+export function isDinasScope(scope?: string): boolean {
+  if (!scope) return false;
+  const s = scope.toLowerCase().trim();
+  return (
+    s === 'dinas' ||
+    s === 'dinas kesehatan' ||
+    s === 'dinas kesehatan kab. lombok barat' ||
+    s === 'semual_dinas' ||
+    s.includes('dinas kesehatan') ||
+    s.includes('dikes') ||
+    s.includes('dinkes')
+  );
+}
+
