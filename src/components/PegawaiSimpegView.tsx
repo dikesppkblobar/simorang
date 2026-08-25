@@ -30,7 +30,6 @@ import {
   GraduationCap,
   Heart,
   Check,
-  ShieldCheck,
 } from 'lucide-react';
 import { Pegawai, RiwayatSK, KeluargaKP4, StatusKepegawaian, SumberPembiayaan, JenisJabatan, StatusHubungan } from '../types';
 import { dbStore } from '../services/dbStore';
@@ -245,13 +244,6 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
     status_pencantuman_gelar: 'Terverifikasi BKN',
     nama_universitas_pt: '',
     program_studi: '',
-    no_str: '',
-    tgl_terbit_str: '',
-    tgl_akhir_str: '',
-    is_str_seumur_hidup: false,
-    no_sip: '',
-    tgl_berlaku_sip_mulai: '',
-    tgl_berlaku_sip_akhir: '',
 
     // PNS
     golongan_pangkat: 'III/a',
@@ -428,13 +420,6 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
       status_pencantuman_gelar: pegawai.status_pencantuman_gelar || 'Terverifikasi BKN',
       nama_universitas_pt: pegawai.nama_universitas_pt || '',
       program_studi: pegawai.program_studi || '',
-      no_str: pegawai.no_str || '',
-      tgl_terbit_str: pegawai.tgl_terbit_str || '',
-      tgl_akhir_str: pegawai.tgl_akhir_str || '',
-      is_str_seumur_hidup: pegawai.is_str_seumur_hidup ?? false,
-      no_sip: pegawai.no_sip || '',
-      tgl_berlaku_sip_mulai: pegawai.tgl_berlaku_sip_mulai || '',
-      tgl_berlaku_sip_akhir: pegawai.tgl_berlaku_sip_akhir || '',
 
       // PNS
       golongan_pangkat: pegawai.golongan_pangkat || 'III/a',
@@ -818,14 +803,6 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                 no_sk_kontrak: '',
                 masa_kerja_non_asn: '1 Tahun',
                 sumber_pembiayaan: 'BLUD',
-
-                no_str: '',
-                tgl_terbit_str: '',
-                tgl_akhir_str: '',
-                is_str_seumur_hidup: false,
-                no_sip: '',
-                tgl_berlaku_sip_mulai: '',
-                tgl_berlaku_sip_akhir: '',
               });
               setNikValidationResult(null);
               setNipValidationResult(null);
@@ -1534,68 +1511,6 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                     </div>
                   </div>
 
-                  {/* Highlight Block: Legalitas Tenaga Kesehatan (STR & SIP) */}
-                  <div className="bg-teal-50/70 p-4 rounded-xl border border-teal-200 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <h4 className="font-bold text-teal-950 text-xs flex items-center space-x-2">
-                        <ShieldCheck className="w-4 h-4 text-teal-700" />
-                        <span>Legalitas Praktik Tenaga Medis / SDMK (STR & SIP)</span>
-                      </h4>
-                      <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-200/70 text-teal-900">
-                        UU No. 17/2023
-                      </span>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      <div className="bg-white p-3 rounded-lg border border-teal-100 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500 text-[10.5px] font-semibold">Surat Tanda Registrasi (STR)</span>
-                          {selectedPegawaiDetail.pegawai.is_str_seumur_hidup ? (
-                            <span className="text-[10px] bg-emerald-100 text-emerald-800 font-bold px-2 py-0.2 rounded-full">
-                              Seumur Hidup
-                            </span>
-                          ) : selectedPegawaiDetail.pegawai.tgl_akhir_str ? (
-                            <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.2 rounded-full">
-                              s.d {formatDateIndonesian(selectedPegawaiDetail.pegawai.tgl_akhir_str)}
-                            </span>
-                          ) : null}
-                        </div>
-                        <div className="font-mono font-bold text-slate-800 text-xs">
-                          {selectedPegawaiDetail.pegawai.no_str || (
-                            <span className="text-slate-400 italic font-normal text-[11px]">Belum direkam</span>
-                          )}
-                        </div>
-                        {selectedPegawaiDetail.pegawai.tgl_terbit_str && (
-                          <div className="text-[10px] text-slate-500">
-                            Terbit: {formatDateIndonesian(selectedPegawaiDetail.pegawai.tgl_terbit_str)}
-                          </div>
-                        )}
-                      </div>
-
-                      <div className="bg-white p-3 rounded-lg border border-teal-100 space-y-1">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500 text-[10.5px] font-semibold">Surat Izin Praktik (SIP)</span>
-                          {selectedPegawaiDetail.pegawai.tgl_berlaku_sip_akhir && (
-                            <span className="text-[10px] bg-blue-100 text-blue-800 font-bold px-2 py-0.2 rounded-full">
-                              s.d {formatDateIndonesian(selectedPegawaiDetail.pegawai.tgl_berlaku_sip_akhir)}
-                            </span>
-                          )}
-                        </div>
-                        <div className="font-mono font-bold text-slate-800 text-xs">
-                          {selectedPegawaiDetail.pegawai.no_sip || (
-                            <span className="text-slate-400 italic font-normal text-[11px]">Belum direkam</span>
-                          )}
-                        </div>
-                        {selectedPegawaiDetail.pegawai.tgl_berlaku_sip_mulai && (
-                          <div className="text-[10px] text-slate-500">
-                            Berlaku: {formatDateIndonesian(selectedPegawaiDetail.pegawai.tgl_berlaku_sip_mulai)}{' '}
-                            {selectedPegawaiDetail.pegawai.tgl_berlaku_sip_akhir ? `s.d ${formatDateIndonesian(selectedPegawaiDetail.pegawai.tgl_berlaku_sip_akhir)}` : ''}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Highlight Block: Pemantauan Karir ASN (PermenPANRB 1/2023) - Hanya Ditampilkan untuk Jabatan Fungsional */}
                   {selectedPegawaiDetail.pegawai.jenis_jabatan === 'Fungsional' &&
                     selectedPegawaiDetail.pegawai.status_kepegawaian !== 'Non-ASN' && (
@@ -2218,7 +2133,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                 <span>
                   {isAddModalOpen
                     ? 'Tambah Data Pegawai Baru (Validasi BKN/Dikes)'
-                    : 'Edit Biodata & Legalitas Pegawai'}
+                    : 'Edit Biodata Pegawai'}
                 </span>
               </h3>
               <button
@@ -2472,92 +2387,6 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                 </div>
               </div>
 
-              {/* Form Section: Legalitas Tenaga Medis & Tenaga Kesehatan (STR & SIP) */}
-              <div className="p-4 bg-teal-50/60 rounded-xl border border-teal-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-teal-200/70 pb-2">
-                  <h4 className="font-bold text-teal-950 text-xs flex items-center space-x-1.5">
-                    <ShieldCheck className="w-4 h-4 text-teal-700" />
-                    <span>Legalitas Praktik Tenaga Kesehatan (STR & SIP)</span>
-                  </h4>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-teal-200/70 text-teal-900">
-                    UU Kesehatan No. 17/2023
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Nomor STR:</label>
-                    <input
-                      type="text"
-                      value={formData.no_str}
-                      onChange={(e) => setFormData({ ...formData, no_str: e.target.value })}
-                      placeholder="Nomor STR KKI / KTKI"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-mono text-xs focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Tgl Terbit STR:</label>
-                    <input
-                      type="date"
-                      value={formData.tgl_terbit_str}
-                      onChange={(e) => setFormData({ ...formData, tgl_terbit_str: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <div>
-                    <div className="flex items-center justify-between mb-1">
-                      <label className="block font-bold text-slate-800">Tgl Akhir STR:</label>
-                      <label className="flex items-center space-x-1 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={formData.is_str_seumur_hidup}
-                          onChange={(e) => setFormData({ ...formData, is_str_seumur_hidup: e.target.checked })}
-                          className="rounded text-teal-600 focus:ring-teal-500 w-3.5 h-3.5"
-                        />
-                        <span className="text-[10.5px] font-bold text-teal-900">Seumur Hidup</span>
-                      </label>
-                    </div>
-                    <input
-                      type="date"
-                      disabled={formData.is_str_seumur_hidup}
-                      value={formData.is_str_seumur_hidup ? '' : formData.tgl_akhir_str}
-                      onChange={(e) => setFormData({ ...formData, tgl_akhir_str: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs focus:ring-2 focus:ring-teal-500 disabled:bg-slate-100 disabled:text-slate-400"
-                    />
-                  </div>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-teal-200/50">
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Nomor SIP:</label>
-                    <input
-                      type="text"
-                      value={formData.no_sip}
-                      onChange={(e) => setFormData({ ...formData, no_sip: e.target.value })}
-                      placeholder="Nomor Izin Praktik Dinkes/PTSP"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-mono text-xs focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">TMT Berlaku SIP (Mulai):</label>
-                    <input
-                      type="date"
-                      value={formData.tgl_berlaku_sip_mulai}
-                      onChange={(e) => setFormData({ ...formData, tgl_berlaku_sip_mulai: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">TMT Selesai SIP (Akhir):</label>
-                    <input
-                      type="date"
-                      value={formData.tgl_berlaku_sip_akhir}
-                      onChange={(e) => setFormData({ ...formData, tgl_berlaku_sip_akhir: e.target.value })}
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs focus:ring-2 focus:ring-teal-500"
-                    />
-                  </div>
-                </div>
-              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                 <div>
                   <label className="block font-bold text-[#1E293B] mb-1">Jenis Jabatan:*</label>
