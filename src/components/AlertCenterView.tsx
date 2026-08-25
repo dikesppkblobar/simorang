@@ -81,21 +81,21 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
   onAddKeluarga,
   onUpdateKeluarga,
   onDeleteKeluarga,
-  defaultSubTab = 'jafung',
+  defaultSubTab = 'pangkat',
 }) => {
   const isSuperAdmin = currentUser?.role === 'Admin Dinkes';
   type SubTabType =
     | 'pangkat'
     | 'jafung'
+    | 'kgb'
     | 'ukom'
     | 'ujian_dinas'
-    | 'kgb'
-    | 'cuti'
-    | 'pensiun'
     | 'izin_belajar'
     | 'pencantuman_gelar'
     | 'mutasi'
-    | 'kp4';
+    | 'kp4'
+    | 'cuti'
+    | 'pensiun';
 
   type ModalType =
     | 'pak_jafung'
@@ -224,12 +224,41 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       p.jenis_jabatan === 'Pelaksana' &&
       p.status_kepegawaian === 'PNS' &&
       p.status_ujian_dinas !== 'Tidak ada' &&
-      p.status_ujian_dinas !== 'Tidak Ada' &&
       p.status_ujian_dinas !== 'Bukan Pelaksana'
   ).length;
-  const izinBelajarCount = activePegawai.filter((p) => p.status_izin_belajar).length;
+  const izinBelajarCount = activePegawai.filter((p) => Boolean(p.status_izin_belajar)).length;
 
-  // Configuration for monitoring cards grid
+  const isPegawaiPencantumanGelar = (p: Pegawai) =>
+    Boolean(
+      p.status_pencantuman_gelar &&
+        p.status_pencantuman_gelar !== 'Tidak ada' &&
+        p.status_pencantuman_gelar !== 'Bukan Tugas Belajar' &&
+        (p.status_pencantuman_gelar.toLowerCase().includes('verval') ||
+          p.status_pencantuman_gelar.toLowerCase().includes('terverifikasi') ||
+          p.gelar_depan ||
+          p.gelar_belakang)
+    );
+
+  const pencantumanGelarCount = activePegawai.filter(isPegawaiPencantumanGelar).length;
+
+  const isPegawaiMutasi = (p: Pegawai) => {
+    const hasSkMutasi = skList.some((sk) => sk.nip === p.nip && sk.jenis_sk === 'Mutasi');
+    const hasJenisMutasi =
+      p.jenis_mutasi &&
+      p.jenis_mutasi !== 'Tidak ada' &&
+      p.jenis_mutasi !== 'Tidak Ada' &&
+      p.jenis_mutasi !== '-' &&
+      p.jenis_mutasi !== 'Kenaikan Pangkat Reguler' &&
+      (p.jenis_mutasi.toLowerCase().includes('mutasi') ||
+        p.jenis_mutasi.toLowerCase().includes('rotasi') ||
+        p.jenis_mutasi.toLowerCase().includes('pindah'));
+    return Boolean(hasSkMutasi || hasJenisMutasi);
+  };
+
+  const mutasiCount = activePegawai.filter(isPegawaiMutasi).length;
+
+  // Configuration for monitoring cards grid in requested order:
+  // Kenaikan Pangkat, Jafung, KGB, UKOM, Ujian Dinas, Izin Belajar, Pencantuman Gelar, Mutasi, KP4, Cuti, Pensiun (paling kanan)
   const monitoringCards: {
     id: SubTabType;
     title: string;
@@ -270,6 +299,19 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       regNote: 'PermenPANRB 1/2023 & Per BKN 3/2023',
     },
     {
+      id: 'kgb',
+      title: 'KGB Gaji Berkala',
+      count: kgbAlerts.length,
+      countLabel: 'Diproses',
+      badgeBg: 'bg-emerald-100',
+      badgeText: 'text-emerald-900',
+      icon: Clock,
+      iconBg: 'bg-emerald-50 border-emerald-200',
+      iconColor: 'text-emerald-600',
+      description: 'Kenaikan Gaji Berkala 2 Tahunan',
+      regNote: 'Notifikasi Otomatis H-3 Bulan',
+    },
+    {
       id: 'ukom',
       title: 'Uji Kompetensi / UKKJ (PNS)',
       count: jafungPnsCount,
@@ -296,17 +338,56 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       regNote: 'Penyetaraan & STLUD BKN',
     },
     {
-      id: 'kgb',
-      title: 'KGB Gaji Berkala',
-      count: kgbAlerts.length,
-      countLabel: 'Diproses',
-      badgeBg: 'bg-emerald-100',
-      badgeText: 'text-emerald-900',
-      icon: Clock,
-      iconBg: 'bg-emerald-50 border-emerald-200',
-      iconColor: 'text-emerald-600',
-      description: 'Kenaikan Gaji Berkala 2 Tahunan',
-      regNote: 'Notifikasi Otomatis H-3 Bulan',
+      id: 'izin_belajar',
+      title: 'Izin & Tugas Belajar',
+      count: izinBelajarCount,
+      countLabel: 'Aktif',
+      badgeBg: 'bg-purple-100',
+      badgeText: 'text-purple-900',
+      icon: BookOpen,
+      iconBg: 'bg-purple-50 border-purple-200',
+      iconColor: 'text-purple-600',
+      description: 'Pengembangan Bangkom ASN',
+      regNote: 'SE MenPANRB No. 28/2021',
+    },
+    {
+      id: 'pencantuman_gelar',
+      title: 'Pencantuman Gelar',
+      count: pencantumanGelarCount,
+      countLabel: 'Usulan',
+      badgeBg: 'bg-violet-100',
+      badgeText: 'text-violet-900',
+      icon: GraduationCap,
+      iconBg: 'bg-violet-50 border-violet-200',
+      iconColor: 'text-violet-600',
+      description: 'Gelar D-3, S-1, S-2, S-3 Pasca Lulus',
+      regNote: 'Pengesahan Gelar Per BKN',
+    },
+    {
+      id: 'mutasi',
+      title: 'Mutasi Kepegawaian',
+      count: mutasiCount,
+      countLabel: 'Proses',
+      badgeBg: 'bg-sky-100',
+      badgeText: 'text-sky-900',
+      icon: Layers,
+      iconBg: 'bg-sky-50 border-sky-200',
+      iconColor: 'text-sky-600',
+      description: 'Rotasi Penempatan & Jabatan',
+      regNote: 'Penyegaran / Kebutuhan Satker',
+    },
+    {
+      id: 'kp4',
+      title: 'Tunjangan KP4 Anak',
+      count: kp4Alerts.length,
+      countLabel: 'Tanggungan',
+      badgeBg: 'bg-pink-100',
+      badgeText: 'text-pink-900',
+      icon: Baby,
+      iconBg: 'bg-pink-50 border-pink-200',
+      iconColor: 'text-pink-600',
+      description: 'Evaluasi Usia Anak 21-25 Thn',
+      regNote: 'Verifikasi Surat Ket. Kuliah',
     },
     {
       id: 'cuti',
@@ -333,58 +414,6 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       iconColor: 'text-rose-600',
       description: 'BUP PNS (58/60/65 Thn) & Habis Kontrak PPPK / Non-ASN',
       regNote: 'Pengurusan DPCP & Evaluasi Kontrak',
-    },
-    {
-      id: 'izin_belajar',
-      title: 'Izin & Tugas Belajar',
-      count: izinBelajarCount,
-      countLabel: 'Aktif',
-      badgeBg: 'bg-purple-100',
-      badgeText: 'text-purple-900',
-      icon: BookOpen,
-      iconBg: 'bg-purple-50 border-purple-200',
-      iconColor: 'text-purple-600',
-      description: 'Pengembangan Bangkom ASN',
-      regNote: 'SE MenPANRB No. 28/2021',
-    },
-    {
-      id: 'pencantuman_gelar',
-      title: 'Pencantuman Gelar',
-      count: 'Verval',
-      countLabel: 'BKN',
-      badgeBg: 'bg-violet-100',
-      badgeText: 'text-violet-900',
-      icon: GraduationCap,
-      iconBg: 'bg-violet-50 border-violet-200',
-      iconColor: 'text-violet-600',
-      description: 'Gelar D-3, S-1, S-2, S-3 Pasca Lulus',
-      regNote: 'Pengesahan Gelar Per BKN',
-    },
-    {
-      id: 'mutasi',
-      title: 'Mutasi Kepegawaian',
-      count: 'Internal',
-      countLabel: 'Unit',
-      badgeBg: 'bg-sky-100',
-      badgeText: 'text-sky-900',
-      icon: Layers,
-      iconBg: 'bg-sky-50 border-sky-200',
-      iconColor: 'text-sky-600',
-      description: 'Rotasi Penempatan & Jabatan',
-      regNote: 'Penyegaran / Kebutuhan Satker',
-    },
-    {
-      id: 'kp4',
-      title: 'Tunjangan KP4 Anak',
-      count: kp4Alerts.length,
-      countLabel: 'Tanggungan',
-      badgeBg: 'bg-pink-100',
-      badgeText: 'text-pink-900',
-      icon: Baby,
-      iconBg: 'bg-pink-50 border-pink-200',
-      iconColor: 'text-pink-600',
-      description: 'Evaluasi Usia Anak 21-25 Thn',
-      regNote: 'Verifikasi Surat Ket. Kuliah',
     },
   ];
 
@@ -1901,108 +1930,124 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredPegawai.map((pegawai) => (
-                  <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="p-3.5">
-                      <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
-                      <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
-                      <div className="text-[11px] text-slate-500">{pegawai.unit_kerja}</div>
-                    </td>
-                    <td className="p-3.5 font-medium text-slate-800">
-                      <div className="font-bold text-indigo-900">
-                        {pegawai.program_studi || (pegawai.status_izin_belajar ? 'S-2 Magister Kesehatan Masyarakat' : 'S-1 Keperawatan / Kebidanan')}
-                      </div>
-                      <div className="text-[11px] text-slate-500">{pegawai.nama_universitas_pt || 'Universitas Mataram'}</div>
-                    </td>
-                    <td className="p-3.5">
-                      {pegawai.status_izin_belajar ? (
+                {(() => {
+                  const izinBelajarList = filteredPegawai.filter((p) => Boolean(p.status_izin_belajar));
+                  if (izinBelajarList.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-500">
+                          <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                          Tidak ada data pegawai yang sedang izin/tugas belajar saat ini.
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return izinBelajarList.map((pegawai) => (
+                    <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="p-3.5">
+                        <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
+                        <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
+                        <div className="text-[11px] text-slate-500">{pegawai.unit_kerja}</div>
+                      </td>
+                      <td className="p-3.5 font-medium text-slate-800">
+                        <div className="font-bold text-indigo-900">
+                          {pegawai.program_studi || 'S-2 Magister Kesehatan Masyarakat'}
+                        </div>
+                        <div className="text-[11px] text-slate-500">{pegawai.nama_universitas_pt || 'Universitas Mataram'}</div>
+                      </td>
+                      <td className="p-3.5">
                         <span className="bg-indigo-100 text-indigo-900 font-bold px-2.5 py-1 rounded-full text-[11px]">
                           SK IZIN BELAJAR AKTIF
                         </span>
-                      ) : (
-                        <span className="bg-slate-100 text-slate-600 font-semibold px-2.5 py-1 rounded-full text-[11px]">
-                          TIDAK/BELUM IZIN BELAJAR
-                        </span>
-                      )}
-                    </td>
-                    <td className="p-3.5 font-semibold text-slate-700">
-                      {pegawai.progres_semester || (pegawai.status_izin_belajar ? 'Semester 4' : 'Pendidikan Selesai')}
-                    </td>
-                    <td className="p-3.5 text-right">
-                      {isSuperAdmin ? (
-                        <button
-                          onClick={() => handleOpenActionModal(pegawai, 'izin_belajar')}
-                          className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                          <span>Update Progres</span>
-                        </button>
-                      ) : (
-                        <button
-                          onClick={() => handleOpenSendNotification(pegawai, 'Izin / Tugas Belajar', 'Pemberitahuan pemutakhiran Laporan Progres Semester Pendidikan Bangkom.')}
-                          className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Kirim Pemberitahuan</span>
-                        </button>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                      </td>
+                      <td className="p-3.5 font-semibold text-slate-700">
+                        {pegawai.progres_semester || 'Semester 4'}
+                      </td>
+                      <td className="p-3.5 text-right">
+                        {isSuperAdmin ? (
+                          <button
+                            onClick={() => handleOpenActionModal(pegawai, 'izin_belajar')}
+                            className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Update Progres</span>
+                          </button>
+                        ) : (
+                          <button
+                            onClick={() => handleOpenSendNotification(pegawai, 'Izin / Tugas Belajar', 'Pemberitahuan pemutakhiran Laporan Progres Semester Pendidikan Bangkom.')}
+                            className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Kirim Pemberitahuan</span>
+                          </button>
+                        )}
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card List View */}
           <div className="md:hidden space-y-3">
-            {filteredPegawai.map((pegawai) => (
-              <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                      {pegawai.nama_lengkap}
+            {(() => {
+              const izinBelajarList = filteredPegawai.filter((p) => Boolean(p.status_izin_belajar));
+              if (izinBelajarList.length === 0) {
+                return (
+                  <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                    <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                    <p className="text-xs">Tidak ada data pegawai yang sedang izin/tugas belajar saat ini.</p>
+                  </div>
+                );
+              }
+              return izinBelajarList.map((pegawai) => (
+                <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                        {pegawai.nama_lengkap}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                      <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
                     </div>
-                    <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
-                    <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
+                    <span className="bg-indigo-100 text-indigo-900 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                      AKTIF
+                    </span>
                   </div>
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
-                    pegawai.status_izin_belajar ? 'bg-indigo-100 text-indigo-900' : 'bg-slate-100 text-slate-600'
-                  }`}>
-                    {pegawai.status_izin_belajar ? 'AKTIF' : 'BELUM'}
-                  </span>
-                </div>
 
-                <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
-                  <div className="font-bold text-indigo-900">
-                    {pegawai.program_studi || (pegawai.status_izin_belajar ? 'S-2 Magister Kesehatan Masyarakat' : 'S-1 Keperawatan')}
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
+                    <div className="font-bold text-indigo-900">
+                      {pegawai.program_studi || 'S-2 Magister Kesehatan Masyarakat'}
+                    </div>
+                    <div className="text-[11px] text-slate-500">{pegawai.nama_universitas_pt || 'Universitas Mataram'}</div>
+                    <div className="text-[11px] text-slate-700 font-semibold pt-0.5">
+                      Progres: {pegawai.progres_semester || 'Semester 4'}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-slate-500">{pegawai.nama_universitas_pt || 'Universitas Mataram'}</div>
-                  <div className="text-[11px] text-slate-700 font-semibold pt-0.5">
-                    Progres: {pegawai.progres_semester || (pegawai.status_izin_belajar ? 'Semester 4' : 'Pendidikan Selesai')}
-                  </div>
-                </div>
 
-                <div className="pt-1">
-                  {isSuperAdmin ? (
-                    <button
-                      onClick={() => handleOpenActionModal(pegawai, 'izin_belajar')}
-                      className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                    >
-                      <Edit3 className="w-3.5 h-3.5" />
-                      <span>Update Progres</span>
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => handleOpenSendNotification(pegawai, 'Izin / Tugas Belajar', 'Pemberitahuan pemutakhiran Laporan Progres Semester Pendidikan Bangkom.')}
-                      className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Kirim Pemberitahuan</span>
-                    </button>
-                  )}
+                  <div className="pt-1">
+                    {isSuperAdmin ? (
+                      <button
+                        onClick={() => handleOpenActionModal(pegawai, 'izin_belajar')}
+                        className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <Edit3 className="w-3.5 h-3.5" />
+                        <span>Update Progres</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleOpenSendNotification(pegawai, 'Izin / Tugas Belajar', 'Pemberitahuan pemutakhiran Laporan Progres Semester Pendidikan Bangkom.')}
+                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                      >
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Kirim Pemberitahuan</span>
+                      </button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </div>
       )}
@@ -2033,108 +2078,132 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredPegawai.map((pegawai) => {
-                  const statusGelar = pegawai.status_pencantuman_gelar || 'Terverifikasi BKN';
-                  const gelarDisplay = [pegawai.gelar_depan, pegawai.gelar_belakang].filter(Boolean).join(' ') || 'Belum Ada';
+                {(() => {
+                  const gelarList = filteredPegawai.filter(isPegawaiPencantumanGelar);
+                  if (gelarList.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-500">
+                          <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                          Tidak ada data usulan pencantuman gelar akademik saat ini.
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return gelarList.map((pegawai) => {
+                    const statusGelar = pegawai.status_pencantuman_gelar || 'Terverifikasi BKN';
+                    const gelarDisplay = [pegawai.gelar_depan, pegawai.gelar_belakang].filter(Boolean).join(' ') || 'Gelar Akademik';
 
-                  return (
-                    <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="p-3.5">
-                        <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
-                        <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
-                      </td>
-                      <td className="p-3.5 font-bold text-blue-900">
-                        {gelarDisplay}
-                      </td>
-                      <td className="p-3.5 font-medium text-emerald-800">
-                        <div className="font-bold text-emerald-900">
-                          {pegawai.akreditasi_pt || 'BAN-PT Akreditasi A (Unggul)'}
-                        </div>
-                        <div className="text-[11px] text-slate-500">{pegawai.nama_universitas_pt || 'Universitas Mataram'}</div>
-                      </td>
-                      <td className="p-3.5">
-                        <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full text-[11px]">
-                          {statusGelar.toUpperCase()}
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-right">
-                        {isSuperAdmin ? (
-                          <button
-                            onClick={() => handleOpenActionModal(pegawai, 'gelar')}
-                            className="inline-flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
-                          >
-                            <FileCheck className="w-3.5 h-3.5" />
-                            <span>Input Pertek Gelar</span>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenSendNotification(pegawai, 'Pencantuman Gelar', 'Pemberitahuan verifikasi Ijazah & Surat Keterangan Verval BKN.')}
-                            className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>Kirim Pemberitahuan</span>
-                          </button>
-                        )}
-                      </td>
-                    </tr>
-                  );
-                })}
+                    return (
+                      <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="p-3.5">
+                          <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
+                          <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
+                        </td>
+                        <td className="p-3.5 font-bold text-blue-900">
+                          {gelarDisplay}
+                        </td>
+                        <td className="p-3.5 font-medium text-emerald-800">
+                          <div className="font-bold text-emerald-900">
+                            {pegawai.akreditasi_pt || 'BAN-PT Akreditasi A (Unggul)'}
+                          </div>
+                          <div className="text-[11px] text-slate-500">{pegawai.nama_universitas_pt || 'Universitas Mataram'}</div>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full text-[11px]">
+                            {statusGelar.toUpperCase()}
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          {isSuperAdmin ? (
+                            <button
+                              onClick={() => handleOpenActionModal(pegawai, 'gelar')}
+                              className="inline-flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                            >
+                              <FileCheck className="w-3.5 h-3.5" />
+                              <span>Input Pertek Gelar</span>
+                            </button>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenSendNotification(pegawai, 'Pencantuman Gelar', 'Pemberitahuan verifikasi Ijazah & Surat Keterangan Verval BKN.')}
+                              className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Kirim Pemberitahuan</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  });
+                })()}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card List View */}
           <div className="md:hidden space-y-3">
-            {filteredPegawai.map((pegawai) => {
-              const statusGelar = pegawai.status_pencantuman_gelar || 'Terverifikasi BKN';
-              const gelarDisplay = [pegawai.gelar_depan, pegawai.gelar_belakang].filter(Boolean).join(' ') || 'Belum Ada';
+            {(() => {
+              const gelarList = filteredPegawai.filter(isPegawaiPencantumanGelar);
+              if (gelarList.length === 0) {
+                return (
+                  <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                    <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                    <p className="text-xs">Tidak ada data usulan pencantuman gelar akademik saat ini.</p>
+                  </div>
+                );
+              }
+              return gelarList.map((pegawai) => {
+                const statusGelar = pegawai.status_pencantuman_gelar || 'Terverifikasi BKN';
+                const gelarDisplay = [pegawai.gelar_depan, pegawai.gelar_belakang].filter(Boolean).join(' ') || 'Gelar Akademik';
 
-              return (
-                <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                        {pegawai.nama_lengkap}
+                return (
+                  <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {pegawai.nama_lengkap}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
                       </div>
-                      <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                      <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                        {statusGelar.toUpperCase()}
+                      </span>
                     </div>
-                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                      {statusGelar.toUpperCase()}
-                    </span>
-                  </div>
 
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-semibold block">Gelar Diusulkan</span>
-                      <span className="font-bold text-blue-900">{gelarDisplay}</span>
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Gelar Diusulkan</span>
+                        <span className="font-bold text-blue-900">{gelarDisplay}</span>
+                      </div>
+                      <div className="text-[11px] text-emerald-900 font-semibold">
+                        {pegawai.akreditasi_pt || 'BAN-PT Akreditasi A (Unggul)'} - {pegawai.nama_universitas_pt || 'Universitas Mataram'}
+                      </div>
                     </div>
-                    <div className="text-[11px] text-emerald-900 font-semibold">
-                      {pegawai.akreditasi_pt || 'BAN-PT Akreditasi A (Unggul)'} - {pegawai.nama_universitas_pt || 'Universitas Mataram'}
-                    </div>
-                  </div>
 
-                  <div className="pt-1">
-                    {isSuperAdmin ? (
-                      <button
-                        onClick={() => handleOpenActionModal(pegawai, 'gelar')}
-                        className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                      >
-                        <FileCheck className="w-3.5 h-3.5" />
-                        <span>Input Pertek Gelar</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleOpenSendNotification(pegawai, 'Pencantuman Gelar', 'Pemberitahuan verifikasi Ijazah & Surat Keterangan Verval BKN.')}
-                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Kirim Pemberitahuan</span>
-                      </button>
-                    )}
+                    <div className="pt-1">
+                      {isSuperAdmin ? (
+                        <button
+                          onClick={() => handleOpenActionModal(pegawai, 'gelar')}
+                          className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <FileCheck className="w-3.5 h-3.5" />
+                          <span>Input Pertek Gelar</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenSendNotification(pegawai, 'Pencantuman Gelar', 'Pemberitahuan verifikasi Ijazah & Surat Keterangan Verval BKN.')}
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </div>
       )}
@@ -2165,115 +2234,139 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-100">
-                {filteredPegawai.map((pegawai) => (
-                  <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
-                    <td className="p-3.5">
-                      <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
-                      <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
-                    </td>
-                    <td className="p-3.5 font-medium text-slate-800">
-                      {pegawai.unit_kerja}
-                    </td>
-                    <td className="p-3.5 font-semibold text-indigo-900">
-                      {pegawai.jenis_mutasi || 'Mutasi Internal / Rotasi Jabatan'}
-                    </td>
-                    <td className="p-3.5">
-                      <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full text-[11px]">
-                        SELESAI / AKTIF
-                      </span>
-                    </td>
-                    <td className="p-3.5 text-right">
-                      <div className="flex items-center justify-end space-x-1.5">
-                        {isSuperAdmin ? (
-                          <>
+                {(() => {
+                  const mutasiList = filteredPegawai.filter(isPegawaiMutasi);
+                  if (mutasiList.length === 0) {
+                    return (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-500">
+                          <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                          Tidak ada data usulan mutasi atau rotasi unit kerja saat ini.
+                        </td>
+                      </tr>
+                    );
+                  }
+                  return mutasiList.map((pegawai) => (
+                    <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
+                      <td className="p-3.5">
+                        <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
+                        <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
+                      </td>
+                      <td className="p-3.5 font-medium text-slate-800">
+                        {pegawai.unit_kerja}
+                      </td>
+                      <td className="p-3.5 font-semibold text-indigo-900">
+                        {pegawai.jenis_mutasi || 'Mutasi Internal / Rotasi Jabatan'}
+                      </td>
+                      <td className="p-3.5">
+                        <span className="bg-emerald-100 text-emerald-800 font-bold px-2.5 py-1 rounded-full text-[11px]">
+                          SELESAI / AKTIF
+                        </span>
+                      </td>
+                      <td className="p-3.5 text-right">
+                        <div className="flex items-center justify-end space-x-1.5">
+                          {isSuperAdmin ? (
+                            <>
+                              <button
+                                onClick={() => handleOpenActionModal(pegawai, 'mutasi')}
+                                className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Update Unit</span>
+                              </button>
+                              <button
+                                onClick={() => onOpenUploadSkModal(pegawai.nip, 'Mutasi')}
+                                className="inline-flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                              >
+                                <FileUp className="w-3.5 h-3.5" />
+                                <span>SK Mutasi</span>
+                              </button>
+                            </>
+                          ) : (
                             <button
-                              onClick={() => handleOpenActionModal(pegawai, 'mutasi')}
-                              className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                              onClick={() => handleOpenSendNotification(pegawai, 'Mutasi / Rotasi Unit', `Laporan usulan mutasi/rotasi unit kerja saat ini (${pegawai.unit_kerja}).`)}
+                              className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              <span>Update Unit</span>
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Kirim Pemberitahuan</span>
                             </button>
-                            <button
-                              onClick={() => onOpenUploadSkModal(pegawai.nip, 'Mutasi')}
-                              className="inline-flex items-center space-x-1 bg-blue-600 hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
-                            >
-                              <FileUp className="w-3.5 h-3.5" />
-                              <span>SK Mutasi</span>
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenSendNotification(pegawai, 'Mutasi / Rotasi Unit', `Laporan usulan mutasi/rotasi unit kerja saat ini (${pegawai.unit_kerja}).`)}
-                            className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>Kirim Pemberitahuan</span>
-                          </button>
-                        )}
-                      </div>
-                    </td>
-                  </tr>
-                ))}
+                          )}
+                        </div>
+                      </td>
+                    </tr>
+                  ));
+                })()}
               </tbody>
             </table>
           </div>
 
           {/* Mobile Card List View */}
           <div className="md:hidden space-y-3">
-            {filteredPegawai.map((pegawai) => (
-              <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                <div className="flex items-start justify-between gap-2">
-                  <div>
-                    <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                      {pegawai.nama_lengkap}
+            {(() => {
+              const mutasiList = filteredPegawai.filter(isPegawaiMutasi);
+              if (mutasiList.length === 0) {
+                return (
+                  <div className="p-6 text-center text-slate-500 bg-slate-50 rounded-xl border border-slate-200">
+                    <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                    <p className="text-xs">Tidak ada data usulan mutasi atau rotasi unit kerja saat ini.</p>
+                  </div>
+                );
+              }
+              return mutasiList.map((pegawai) => (
+                <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                        {pegawai.nama_lengkap}
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
                     </div>
-                    <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                    <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                      SELESAI / AKTIF
+                    </span>
                   </div>
-                  <span className="bg-emerald-100 text-emerald-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                    SELESAI / AKTIF
-                  </span>
-                </div>
 
-                <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
-                  <div>
-                    <span className="text-[10px] text-slate-400 font-semibold block">Unit Penempatan</span>
-                    <span className="font-bold text-slate-800">{pegawai.unit_kerja}</span>
+                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1">
+                    <div>
+                      <span className="text-[10px] text-slate-400 font-semibold block">Unit Penempatan</span>
+                      <span className="font-bold text-slate-800">{pegawai.unit_kerja}</span>
+                    </div>
+                    <div className="text-[11px] text-indigo-900 font-semibold">
+                      {pegawai.jenis_mutasi || 'Mutasi Internal / Rotasi Jabatan'}
+                    </div>
                   </div>
-                  <div className="text-[11px] text-indigo-900 font-semibold">
-                    {pegawai.jenis_mutasi || 'Mutasi Internal / Rotasi Jabatan'}
-                  </div>
-                </div>
 
-                <div className="pt-1 flex items-center justify-end gap-1.5">
-                  {isSuperAdmin ? (
-                    <>
+                  <div className="pt-1 flex items-center justify-end gap-1.5">
+                    {isSuperAdmin ? (
+                      <>
+                        <button
+                          onClick={() => handleOpenActionModal(pegawai, 'mutasi')}
+                          className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Update Unit</span>
+                        </button>
+                        <button
+                          onClick={() => onOpenUploadSkModal(pegawai.nip, 'Mutasi')}
+                          className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                        >
+                          <FileUp className="w-3.5 h-3.5" />
+                          <span>SK Mutasi</span>
+                        </button>
+                      </>
+                    ) : (
                       <button
-                        onClick={() => handleOpenActionModal(pegawai, 'mutasi')}
-                        className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                        onClick={() => handleOpenSendNotification(pegawai, 'Mutasi / Rotasi Unit', `Laporan usulan mutasi/rotasi unit kerja saat ini (${pegawai.unit_kerja}).`)}
+                        className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
                       >
-                        <Edit3 className="w-3.5 h-3.5" />
-                        <span>Update Unit</span>
+                        <Send className="w-3.5 h-3.5" />
+                        <span>Kirim Pemberitahuan</span>
                       </button>
-                      <button
-                        onClick={() => onOpenUploadSkModal(pegawai.nip, 'Mutasi')}
-                        className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                      >
-                        <FileUp className="w-3.5 h-3.5" />
-                        <span>SK Mutasi</span>
-                      </button>
-                    </>
-                  ) : (
-                    <button
-                      onClick={() => handleOpenSendNotification(pegawai, 'Mutasi / Rotasi Unit', `Laporan usulan mutasi/rotasi unit kerja saat ini (${pegawai.unit_kerja}).`)}
-                      className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
-                    >
-                      <Send className="w-3.5 h-3.5" />
-                      <span>Kirim Pemberitahuan</span>
-                    </button>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              ));
+            })()}
           </div>
         </div>
       )}
