@@ -5,7 +5,6 @@ import {
   Globe,
   Users,
   FileSpreadsheet,
-  ShieldAlert,
   Sliders,
   CheckCircle2,
   XCircle,
@@ -16,7 +15,6 @@ import {
 } from 'lucide-react';
 import { UserAndUnitManagementView } from './UserAndUnitManagementView';
 import { EksporLaporanView } from './EksporLaporanView';
-import { AuditLogsView } from './AuditLogsView';
 import {
   Pegawai,
   RiwayatSK,
@@ -37,7 +35,7 @@ interface SettingsViewProps {
   scopedPegawaiList: Pegawai[];
   skList: RiwayatSK[];
   keluargaList: KeluargaKP4[];
-  auditLogs: AuditLog[];
+  auditLogs?: AuditLog[];
   onAddUser: (userData: any) => Promise<boolean>;
   onUpdateUser: (id: string, updates: any) => Promise<boolean>;
   onDeleteUser: (id: string) => Promise<boolean>;
@@ -45,7 +43,7 @@ interface SettingsViewProps {
   onUpdateUnit: (id: string, updates: any) => Promise<boolean>;
   onDeleteUnit: (id: string) => Promise<boolean>;
   onSwitchUser: (user: UserAccount) => void;
-  defaultSubTab?: 'scope' | 'users' | 'export' | 'audit';
+  defaultSubTab?: 'users' | 'export' | 'scope';
   defaultManagementSubTab?: 'users' | 'units' | 'database';
 }
 
@@ -67,13 +65,18 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   onUpdateUnit,
   onDeleteUnit,
   onSwitchUser,
-  defaultSubTab = 'scope',
+  defaultSubTab = 'users',
   defaultManagementSubTab = 'users',
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'scope' | 'users' | 'export' | 'audit'>(defaultSubTab);
+  const [activeSubTab, setActiveSubTab] = useState<'users' | 'export' | 'scope'>(() => {
+    if (defaultSubTab && (defaultSubTab === 'users' || defaultSubTab === 'export' || defaultSubTab === 'scope')) {
+      return defaultSubTab;
+    }
+    return currentUser.role === 'Admin Dinkes' ? 'users' : 'export';
+  });
 
   React.useEffect(() => {
-    if (defaultSubTab) {
+    if (defaultSubTab && (defaultSubTab === 'users' || defaultSubTab === 'export' || defaultSubTab === 'scope')) {
       setActiveSubTab(defaultSubTab);
     }
   }, [defaultSubTab]);
@@ -112,37 +115,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               Pengaturan & Konfigurasi Sistem
             </h1>
             <p className="text-xs text-slate-500 mt-0.5">
-              Kelola cakupan data (*scope*), akun pengguna, unit kerja, ekspor laporan, dan catatan audit log.
+              Kelola manajemen akun pengguna, unit kerja, ekspor laporan, dan cakupan data (*scope*).
             </p>
-          </div>
-        </div>
-
-        {/* Current Scope Pill in Header */}
-        <div className="bg-blue-50 border border-blue-200 px-4 py-2 rounded-xl flex items-center gap-2">
-          <Building className="w-4 h-4 text-[#004B87] shrink-0" />
-          <div className="text-xs">
-            <span className="text-slate-500 font-medium">Scope Aktif: </span>
-            <span className="font-heading font-bold text-[#004B87]">{getScopeBadge()}</span>
-            <span className="text-slate-500 font-semibold ml-1.5">({activePegawaiCount} Pegawai Tampil)</span>
           </div>
         </div>
       </div>
 
       {/* Sub Tabs Navigation */}
       <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-2">
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('scope')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-heading font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-            activeSubTab === 'scope'
-              ? 'bg-[#004B87] text-white shadow-xs'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <Sliders className="w-4 h-4" />
-          <span>Scope Data Disajikan</span>
-        </button>
-
         {currentUser.role === 'Admin Dinkes' && (
           <button
             type="button"
@@ -173,15 +153,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
         <button
           type="button"
-          onClick={() => setActiveSubTab('audit')}
+          onClick={() => setActiveSubTab('scope')}
           className={`px-4 py-2.5 rounded-xl text-xs font-heading font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-            activeSubTab === 'audit'
+            activeSubTab === 'scope'
               ? 'bg-[#004B87] text-white shadow-xs'
               : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
           }`}
         >
-          <ShieldAlert className="w-4 h-4" />
-          <span>Audit Logs</span>
+          <Sliders className="w-4 h-4" />
+          <span>Scope Data Disajikan</span>
         </button>
       </div>
 
@@ -358,9 +338,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           keluargaList={keluargaList}
         />
       )}
-
-      {/* SUB TAB 4: AUDIT LOGS */}
-      {activeSubTab === 'audit' && <AuditLogsView logs={auditLogs} />}
     </div>
   );
 };
