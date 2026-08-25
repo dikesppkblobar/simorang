@@ -72,12 +72,11 @@ export interface EmployeeExportRow {
   daftarNamaTanggunganKp4: string;
   statusTunjanganKp4: string;
 
-  // Pendidikan & STR / SIP
+  // Pendidikan & Kontak
   pendidikanTerakhir: string;
   namaUniversitas: string;
   programStudi: string;
   noWhatsapp: string;
-  legalitasStrSip: string;
 }
 
 /**
@@ -328,17 +327,6 @@ export function buildComprehensivePegawaiReport(
       const mkBulan = p.masa_kerja_bulan ?? (p as any).mkg_bulan ?? 0;
       const masaKerjaFormatted = `${mkTahun} Tahun ${mkBulan} Bulan`;
 
-      // 6. STR/SIP
-      let legalitasStrSip = '-';
-      if (p.is_str_seumur_hidup) {
-        legalitasStrSip = 'STR Seumur Hidup (Aktif)';
-      } else if (p.no_str) {
-        legalitasStrSip = `STR: ${p.no_str} (s.d ${p.tgl_akhir_str || '-'})`;
-      }
-      if (p.no_sip) {
-        legalitasStrSip += ` | SIP: ${p.no_sip}`;
-      }
-
       return {
         no: idx + 1,
         nip: p.nip || p.ni_pppk || '-',
@@ -390,7 +378,6 @@ export function buildComprehensivePegawaiReport(
         namaUniversitas: p.nama_universitas_pt || '-',
         programStudi: p.program_studi || '-',
         noWhatsapp: p.no_whatsapp || '-',
-        legalitasStrSip,
       };
     });
 }
