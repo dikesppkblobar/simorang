@@ -24,7 +24,7 @@ export function getSkHistoryByPegawai(req: Request, res: Response) {
 
 export function uploadAndCreateSk(req: Request, res: Response) {
   try {
-    const { nip_pegawai, jenis_sk, nomor_sk, tmt_berlaku, file_url, keterangan } = req.body;
+    const { nip_pegawai, jenis_sk, nomor_sk, tmt_berlaku, file_url, keterangan, golongan_pangkat, nama_pangkat } = req.body;
 
     if (!nip_pegawai || !jenis_sk || !nomor_sk || !tmt_berlaku) {
       return res.status(400).json({
@@ -38,19 +38,21 @@ export function uploadAndCreateSk(req: Request, res: Response) {
       return res.status(404).json({ success: false, error: 'Pegawai tidak ditemukan.' });
     }
 
-    const newSk: RiwayatSK = {
+    const newSk: RiwayatSK & { golongan_pangkat?: string; nama_pangkat?: string } = {
       id: `sk-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
       nip_pegawai,
       jenis_sk,
       nomor_sk: nomor_sk.trim(),
       tmt_berlaku,
-      file_url: file_url || 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-      keterangan: keterangan || `Diunggah via Sistem SAPA Pegawai Dikes Lombok Barat`,
+      file_url: file_url || undefined,
+      keterangan: keterangan || `Diunggah via Sistem SIMORANG Dikes Lombok Barat`,
+      golongan_pangkat: golongan_pangkat || undefined,
+      nama_pangkat: nama_pangkat || undefined,
       created_at: new Date().toISOString(),
     };
 
     const adminEmail = (req as any).user?.email || 'admin@dikes.lombokbarat.go.id';
-    const created = dbStore.addSk(newSk, adminEmail);
+    const created = dbStore.addSk(newSk as any, adminEmail);
 
     return res.status(201).json({
       success: true,
