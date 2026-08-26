@@ -64,12 +64,17 @@ import {
   UserAccount,
   UnitKerjaItem,
   AplikasiKepegawaian,
+  AppFeatureConfig,
+  DEFAULT_FEATURE_CONFIG,
 } from './types';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
+
+  // Feature Configuration State
+  const [featureConfig, setFeatureConfig] = useState<AppFeatureConfig>(() => dbStore.getFeatureConfig());
 
   // Master State - initialized with synchronous baseline data so data appears instantly on every device
   const [pegawaiList, setPegawaiList] = useState<Pegawai[]>(() => dbStore.getPegawaiList(true));
@@ -168,13 +173,14 @@ export default function App() {
   // Load Data
   const refreshData = async () => {
     try {
-      const [p, sk, k, usr, unit, apps] = await Promise.all([
+      const [p, sk, k, usr, unit, apps, feat] = await Promise.all([
         apiClient.getPegawaiList(true),
         apiClient.getAllSk(),
         apiClient.getAllKeluarga(),
         apiClient.getAllUsers(),
         apiClient.getAllUnits(),
         apiClient.getAplikasiList(),
+        apiClient.getFeatureConfig(),
       ]);
       setPegawaiList(p);
       setSkList(sk);
@@ -182,6 +188,7 @@ export default function App() {
       setUsersList(usr);
       setUnitsList(unit);
       setAplikasiList(apps);
+      if (feat) setFeatureConfig(feat);
 
       // Keep active currentUser state in sync with latest user record
       if (Array.isArray(usr) && usr.length > 0) {
@@ -210,6 +217,7 @@ export default function App() {
       setUsersList([...localUsers]);
       setUnitsList([...dbStore.getAllUnits()]);
       setAplikasiList([...dbStore.getAllAplikasi()]);
+      setFeatureConfig({ ...dbStore.getFeatureConfig() });
 
       if (localUsers.length > 0) {
         setCurrentUser((prev) => {
@@ -243,12 +251,38 @@ export default function App() {
       setUsersList([...currentUsers]);
       setUnitsList([...dbStore.getAllUnits()]);
       setAplikasiList([...dbStore.getAllAplikasi()]);
+      setFeatureConfig({ ...dbStore.getFeatureConfig() });
     });
 
     return () => {
       unsubscribe();
     };
   }, []);
+
+  // Handlers for Feature Configuration
+  const handleUpdateFeatureConfig = async (updates: Partial<AppFeatureConfig>) => {
+    try {
+      const updated = await apiClient.updateFeatureConfig(updates, currentUser.role || 'Admin Dinkes');
+      setFeatureConfig(updated);
+      await refreshData();
+      return true;
+    } catch (err: any) {
+      alert(err.message || 'Gagal memperbarui konfigurasi fitur.');
+      return false;
+    }
+  };
+
+  const handleResetFeatureConfig = async () => {
+    try {
+      const reset = await apiClient.resetFeatureConfig(currentUser.role || 'Admin Dinkes');
+      setFeatureConfig(reset);
+      await refreshData();
+      return true;
+    } catch (err: any) {
+      alert(err.message || 'Gagal mereset konfigurasi fitur ke setelan awal.');
+      return false;
+    }
+  };
 
   // Handle Switching User
   const handleSwitchUser = (user: UserAccount) => {
@@ -315,9 +349,14 @@ export default function App() {
     return false;
   };
 
-  // Scoped Pegawai Calculation based on selectedUnitScope
-  // When scope is Dinas Kesehatan (default for Admin Dinkes), ALL data from units categorized as Dinas Kesehatan are included
+  // Scoped Pegawai Calculation based on selectedUnitScope and featureConfig.scope_data_unrestricted
+  // When scope_data_unrestricted is false: strictly locked to Dinas Kesehatan only
   const scopedPegawaiList = pegawaiList.filter((p) => {
+    // If scope_data_unrestricted is false, strictly only show Dinas Kesehatan category
+    if (!featureConfig.scope_data_unrestricted) {
+      return isPegawaiInDinasCategory(p, unitsList);
+    }
+
     if (selectedUnitScope === 'SEMUA_UNIT') return true;
 
     // If current scope is Dinas Kesehatan (or user is Admin Dinkes on Dinas scope)
@@ -345,7 +384,13 @@ export default function App() {
   const totalPangkat = scopedPangkatAlerts.length;
   const totalPensiun = scopedPensiunAlerts.length;
   const totalKp4 = scopedKp4Alerts.length;
-  const grandTotalAlerts = totalKgb + totalPangkat + totalPensiun + totalKp4;
+
+  // Grand Total Alerts calculated based on enabled sub-monitoring feature flags
+  const grandTotalAlerts =
+    (featureConfig.sub_kgb ? totalKgb : 0) +
+    (featureConfig.sub_pangkat ? totalPangkat : 0) +
+    (featureConfig.sub_pensiun ? totalPensiun : 0) +
+    (featureConfig.sub_kp4 ? totalKp4 : 0);
 
   // Build Dashboard Stats for Scoped View
   const activePegawai = scopedPegawaiList.filter((p) => !p.is_deleted);
@@ -626,15 +671,6 @@ export default function App() {
     setIsUploadSkModalOpen(true);
   };
 
-  const navItems = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, badge: null },
-    { id: 'pegawai', label: 'Data Pegawai', icon: Users, badge: null },
-    { id: 'alerts', label: 'Pemantauan ASN', icon: Calendar, badge: grandTotalAlerts, hasSubMenu: true },
-    { id: 'arsip', label: 'Arsip Digital', icon: FolderOpen, badge: null },
-    { id: 'aplikasi', label: 'Aplikasi Kepegawaian', icon: AppWindow, badge: aplikasiList.length },
-    { id: 'settings', label: 'Pengaturan', icon: Settings, badge: null },
-  ];
-
   const jafungPnsCount = activePegawai.filter(
     (p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS'
   ).length;
@@ -678,7 +714,7 @@ export default function App() {
 
   const mutasiCount = activePegawai.filter(isPegawaiMutasi).length;
 
-  const monitoringSubItems: {
+  const allMonitoringSubItems: {
     id: 'pangkat' | 'jafung' | 'kgb' | 'ukom' | 'ujian_dinas' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4' | 'cuti' | 'pensiun';
     label: string;
     icon: React.ElementType;
@@ -695,6 +731,36 @@ export default function App() {
     { id: 'kp4', label: 'Tunjangan KP4 Anak', icon: Baby, count: totalKp4 },
     { id: 'cuti', label: 'Hak & Sisa Cuti', icon: Calendar, count: activePegawai.length },
     { id: 'pensiun', label: 'BUP & Pensiun', icon: AlertTriangle, count: totalPensiun },
+  ];
+
+  const monitoringSubItems = allMonitoringSubItems.filter((item) => {
+    if (item.id === 'pangkat' && !featureConfig.sub_pangkat) return false;
+    if (item.id === 'jafung' && !featureConfig.sub_jafung) return false;
+    if (item.id === 'kgb' && !featureConfig.sub_kgb) return false;
+    if (item.id === 'ukom' && !featureConfig.sub_ukom) return false;
+    if (item.id === 'ujian_dinas' && !featureConfig.sub_ujian_dinas) return false;
+    if (item.id === 'izin_belajar' && !featureConfig.sub_izin_belajar) return false;
+    if (item.id === 'pencantuman_gelar' && !featureConfig.sub_pencantuman_gelar) return false;
+    if (item.id === 'mutasi' && !featureConfig.sub_mutasi) return false;
+    if (item.id === 'kp4' && !featureConfig.sub_kp4) return false;
+    if (item.id === 'cuti' && !featureConfig.sub_cuti) return false;
+    if (item.id === 'pensiun' && !featureConfig.sub_pensiun) return false;
+    return true;
+  });
+
+  const hasActiveMonitoringSubItems = monitoringSubItems.length > 0;
+
+  const navItems = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, badge: null },
+    { id: 'pegawai', label: 'Data Pegawai', icon: Users, badge: null },
+    ...(hasActiveMonitoringSubItems
+      ? [{ id: 'alerts', label: 'Pemantauan ASN', icon: Calendar, badge: grandTotalAlerts, hasSubMenu: true }]
+      : []),
+    { id: 'arsip', label: 'Arsip Digital', icon: FolderOpen, badge: null },
+    ...(featureConfig.aplikasi_kepegawaian
+      ? [{ id: 'aplikasi', label: 'Aplikasi Kepegawaian', icon: AppWindow, badge: aplikasiList.length }]
+      : []),
+    { id: 'settings', label: 'Pengaturan', icon: Settings, badge: null },
   ];
 
   const getScopeLabel = (scope: string) => {
@@ -1191,6 +1257,7 @@ export default function App() {
                   pangkatAlerts={scopedPangkatAlerts}
                   pensiunAlerts={scopedPensiunAlerts}
                   kp4Alerts={scopedKp4Alerts}
+                  featureConfig={featureConfig}
                   defaultSubTab={alertsDefaultSubTab}
                   onSubTabChange={(sub) => setAlertsDefaultSubTab(sub as any)}
                   onOpenUploadSkModal={handleOpenUploadSkModal}
@@ -1207,6 +1274,7 @@ export default function App() {
                   skList={scopedSkList}
                   pegawaiList={activePegawai}
                   unitsList={unitsList}
+                  featureConfig={featureConfig}
                   onOpenUploadSkModal={handleOpenUploadSkModal}
                   onDeleteSk={handleDeleteSk}
                 />
@@ -1235,6 +1303,9 @@ export default function App() {
                   scopedPegawaiList={scopedPegawaiList}
                   skList={skList}
                   keluargaList={keluargaList}
+                  featureConfig={featureConfig}
+                  onUpdateFeatureConfig={handleUpdateFeatureConfig}
+                  onResetFeatureConfig={handleResetFeatureConfig}
                   onAddUser={handleAddUser}
                   onUpdateUser={handleUpdateUser}
                   onDeleteUser={handleDeleteUser}
@@ -1258,6 +1329,9 @@ export default function App() {
                   scopedPegawaiList={scopedPegawaiList}
                   skList={skList}
                   keluargaList={keluargaList}
+                  featureConfig={featureConfig}
+                  onUpdateFeatureConfig={handleUpdateFeatureConfig}
+                  onResetFeatureConfig={handleResetFeatureConfig}
                   onAddUser={handleAddUser}
                   onUpdateUser={handleUpdateUser}
                   onDeleteUser={handleDeleteUser}
@@ -1281,6 +1355,9 @@ export default function App() {
                   scopedPegawaiList={scopedPegawaiList}
                   skList={skList}
                   keluargaList={keluargaList}
+                  featureConfig={featureConfig}
+                  onUpdateFeatureConfig={handleUpdateFeatureConfig}
+                  onResetFeatureConfig={handleResetFeatureConfig}
                   onAddUser={handleAddUser}
                   onUpdateUser={handleUpdateUser}
                   onDeleteUser={handleDeleteUser}
@@ -1289,6 +1366,7 @@ export default function App() {
                   onDeleteUnit={handleDeleteUnit}
                   onSwitchUser={handleSwitchUser}
                   defaultSubTab="export"
+                  defaultManagementSubTab={managementDefaultSubTab}
                 />
               )}
             </motion.div>
