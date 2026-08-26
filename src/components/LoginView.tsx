@@ -197,11 +197,14 @@ export const LoginView: React.FC<LoginViewProps> = ({
       {/* MAIN SECTION: Centered Login and Smoothly Sliding Celebration Card */}
       <main className="relative z-20 flex-1 flex flex-col items-center justify-center p-3 sm:p-5 md:p-6 py-6 sm:py-8">
         
-        {/* CONTAINER: Dual Card or Single Form based on showCelebration with Smooth Layout Animation */}
+        {/* CONTAINER: Dual Card or Single Form based on showCelebration with Ultra-Smooth Fluid Layout Animation */}
         <motion.div
           layout
-          transition={{ type: 'spring', stiffness: 280, damping: 30 }}
-          className={`w-full transition-all duration-500 ${
+          transition={{
+            duration: 0.45,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className={`w-full ${
             showCelebration
               ? 'max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch'
               : 'max-w-md flex flex-col items-center'
@@ -210,9 +213,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
           {/* CARD 1: FORM LOGIN */}
           <motion.div
             layout
-            initial={{ opacity: 0, scale: 0.98 }}
+            initial={{ opacity: 0, scale: 0.99 }}
             animate={{ opacity: 1, scale: 1 }}
-            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            transition={{
+              duration: 0.45,
+              ease: [0.16, 1, 0.3, 1],
+            }}
             className={`${
               showCelebration ? 'lg:col-span-7' : 'w-full'
             } bg-white/95 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl shadow-slate-950/25 ring-1 ring-slate-900/5 p-4 sm:p-6 md:p-7 flex flex-col justify-between relative z-10`}
@@ -402,14 +408,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
               <motion.div
                 key="celebration-card-container"
                 layout
-                initial={{ opacity: 0, x: 50, scale: 0.95 }}
-                animate={{ opacity: 1, x: 0, scale: 1 }}
-                exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                initial={{ opacity: 0, x: 28, y: 0 }}
+                animate={{ opacity: 1, x: 0, y: 0 }}
+                exit={{ opacity: 0, x: 28, y: 0 }}
                 transition={{
-                  type: 'spring',
-                  stiffness: 260,
-                  damping: 24,
-                  mass: 0.8,
+                  duration: 0.45,
+                  ease: [0.16, 1, 0.3, 1],
                 }}
                 className="lg:col-span-5 flex flex-col h-full"
               >
@@ -426,10 +430,13 @@ export const LoginView: React.FC<LoginViewProps> = ({
         {/* CELEBRATION TOGGLE BUTTON: PLACED DIRECTLY BELOW THE LOGIN CARD */}
         <motion.div
           layout
-          initial={{ opacity: 0, y: 15 }}
+          initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, delay: 0.1 }}
-          className={`w-full mt-4 transition-all ${
+          transition={{
+            duration: 0.45,
+            ease: [0.16, 1, 0.3, 1],
+          }}
+          className={`w-full mt-4 ${
             showCelebration ? 'max-w-5xl' : 'max-w-md'
           }`}
         >
