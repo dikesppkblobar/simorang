@@ -53,7 +53,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
         await apiClient.recordUserLogin(user.id);
       } catch (_) {}
       onLoginSuccess(user);
-    }, 500);
+    }, 60);
   };
 
   const handleManualLogin = (e: React.FormEvent) => {
@@ -125,11 +125,13 @@ export const LoginView: React.FC<LoginViewProps> = ({
         if (
           inputClean.includes('admin') ||
           inputClean.includes('dinkes') ||
-          inputClean.includes('dikes')
+          inputClean.includes('dikes') ||
+          inputClean === 'yudi' ||
+          inputClean === 'duta'
         ) {
-          const defaultAdmin = usersList[0] || {
+          const defaultAdmin = sourceList[0] || {
             id: 'usr-001',
-            username: 'admin.dinkes',
+            username: 'yudi',
             nama_lengkap: 'Administrator DINKES-PPKB (Admin Utama)',
             email: 'admin.dikes@lombokbaratkab.go.id',
             role: 'Admin Dinkes',
@@ -147,8 +149,10 @@ export const LoginView: React.FC<LoginViewProps> = ({
           setErrorMessage('Username, NIP, atau Email tidak terdaftar dalam database pengguna.');
         }
       }
-    }, 600);
+    }, 60);
   };
+
+  const availableDemoUsers = (usersList && usersList.length > 0) ? usersList : dbStore.getAllUsers();
 
   return (
     <div className="relative min-h-[100dvh] w-screen flex flex-col justify-between overflow-x-hidden overflow-y-auto font-body select-none">
@@ -317,7 +321,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                     className="overflow-hidden"
                   >
                     <div className="grid grid-cols-2 gap-2 pt-2.5">
-                      {usersList.slice(0, 4).map((u) => (
+                      {availableDemoUsers.slice(0, 4).map((u) => (
                         <button
                           key={u.id}
                           type="button"
