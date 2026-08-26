@@ -218,6 +218,43 @@ export interface UserAccount {
   updated_at?: string;
 }
 
+export interface AppFeatureConfig {
+  // Fitur Utama Sidebar & Modul
+  aplikasi_kepegawaian: boolean;
+  arsip_digital_upload: boolean;
+  scope_data_unrestricted: boolean;
+
+  // Sub-Fitur Pemantauan ASN
+  sub_pangkat: boolean;
+  sub_jafung: boolean;
+  sub_kgb: boolean;
+  sub_ukom: boolean;
+  sub_ujian_dinas: boolean;
+  sub_izin_belajar: boolean;
+  sub_pencantuman_gelar: boolean;
+  sub_mutasi: boolean;
+  sub_kp4: boolean;
+  sub_cuti: boolean;
+  sub_pensiun: boolean;
+}
+
+export const DEFAULT_FEATURE_CONFIG: AppFeatureConfig = {
+  aplikasi_kepegawaian: true,
+  arsip_digital_upload: true,
+  scope_data_unrestricted: true,
+  sub_pangkat: true,
+  sub_jafung: true,
+  sub_kgb: true,
+  sub_ukom: true,
+  sub_ujian_dinas: true,
+  sub_izin_belajar: true,
+  sub_pencantuman_gelar: true,
+  sub_mutasi: true,
+  sub_kp4: true,
+  sub_cuti: true,
+  sub_pensiun: true,
+};
+
 export type KategoriAplikasi =
   | 'Nasional (BKN / Kemenkes)'
   | 'Pemerintah Daerah (Lombok Barat / NTB)'
