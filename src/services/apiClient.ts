@@ -8,6 +8,8 @@ import {
   UserAccount,
   UnitKerjaItem,
   AplikasiKepegawaian,
+  AppFeatureConfig,
+  DEFAULT_FEATURE_CONFIG,
 } from '../types';
 
 const API_BASE = '/api';
@@ -645,5 +647,53 @@ export const apiClient = {
       supabaseService.deleteAplikasi(id).catch(() => {});
     } catch (_) {}
     return res;
+  },
+
+  // Master Feature Flags Operations
+  async getFeatureConfig(): Promise<AppFeatureConfig> {
+    const json = await safeFetchJson<AppFeatureConfig>(`${API_BASE}/feature-config`, {
+      method: 'GET',
+    });
+    if (json && json.success && json.data) {
+      return json.data;
+    }
+    return dbStore.getFeatureConfig();
+  },
+
+  async updateFeatureConfig(
+    updates: Partial<AppFeatureConfig>,
+    adminRole?: string
+  ): Promise<AppFeatureConfig> {
+    const json = await safeFetchJson<AppFeatureConfig>(`${API_BASE}/feature-config`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ updates, admin_role: adminRole }),
+    });
+
+    if (json && json.success && json.data) {
+      try {
+        dbStore.updateFeatureConfig(json.data, adminRole);
+      } catch (_) {}
+      return json.data;
+    }
+
+    return dbStore.updateFeatureConfig(updates, adminRole);
+  },
+
+  async resetFeatureConfig(adminRole?: string): Promise<AppFeatureConfig> {
+    const json = await safeFetchJson<AppFeatureConfig>(`${API_BASE}/feature-config/reset`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ admin_role: adminRole }),
+    });
+
+    if (json && json.success && json.data) {
+      try {
+        dbStore.resetFeatureConfig(adminRole);
+      } catch (_) {}
+      return json.data;
+    }
+
+    return dbStore.resetFeatureConfig(adminRole);
   },
 };
