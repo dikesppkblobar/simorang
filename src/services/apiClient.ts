@@ -5,7 +5,6 @@ import {
   Pegawai,
   RiwayatSK,
   KeluargaKP4,
-  AuditLog,
   UserAccount,
   UnitKerjaItem,
   AplikasiKepegawaian,
@@ -476,15 +475,7 @@ export const apiClient = {
     return res;
   },
 
-  // --- AUDIT LOGS & RESET ---
-  async getAuditLogs(): Promise<AuditLog[]> {
-    const json = await safeFetchJson<AuditLog[]>(`${API_BASE}/audit-logs`);
-    if (json && json.success && Array.isArray(json.data)) {
-      return json.data;
-    }
-    return dbStore.getAuditLogs();
-  },
-
+  // --- RESET & SAMPLE DATA ---
   async clearAllDummyData(adminEmail: string): Promise<void> {
     safeFetchJson(`${API_BASE}/stats/clear-dummy`, { method: 'POST' }).catch(() => {});
     dbStore.clearAllDummyData(adminEmail);
@@ -550,7 +541,6 @@ export const apiClient = {
         pegawai: dbStore.getPegawaiList(true),
         skHistory: dbStore.getAllSk(),
         keluarga: dbStore.getAllKeluarga(),
-        auditLogs: dbStore.getAuditLogs(),
         units: dbStore.getAllUnits(),
         users: dbStore.getAllUsers(),
         aplikasi: dbStore.getAllAplikasi(),
