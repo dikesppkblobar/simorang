@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
   Users,
   Building2,
@@ -34,9 +34,11 @@ import {
   EyeOff,
   Key,
   MoreVertical,
+  Sliders,
 } from 'lucide-react';
-import { UserAccount, UnitKerjaItem, Pegawai, RoleUser } from '../types';
+import { UserAccount, UnitKerjaItem, Pegawai, RoleUser, AppFeatureConfig, DEFAULT_FEATURE_CONFIG } from '../types';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { MasterFiturTab } from './MasterFiturTab';
 import { apiClient } from '../services/apiClient';
 import { isDinasCategory } from '../services/dateCalculator';
 
@@ -45,6 +47,9 @@ interface UserAndUnitManagementViewProps {
   unitsList: UnitKerjaItem[];
   pegawaiList: Pegawai[];
   currentUser: UserAccount;
+  featureConfig?: AppFeatureConfig;
+  onUpdateFeatureConfig?: (updates: Partial<AppFeatureConfig>) => Promise<boolean> | boolean;
+  onResetFeatureConfig?: () => Promise<boolean> | boolean;
   onAddUser: (user: Omit<UserAccount, 'id' | 'created_at'>) => Promise<boolean>;
   onUpdateUser: (id: string, user: Partial<UserAccount>) => Promise<boolean>;
   onDeleteUser: (id: string) => Promise<boolean>;
@@ -52,7 +57,7 @@ interface UserAndUnitManagementViewProps {
   onUpdateUnit: (id: string, unit: Partial<UnitKerjaItem>) => Promise<boolean>;
   onDeleteUnit: (id: string) => Promise<boolean>;
   onSwitchUser: (user: UserAccount) => void;
-  defaultSubTab?: 'users' | 'units' | 'database';
+  defaultSubTab?: 'users' | 'features' | 'units' | 'database';
 }
 
 export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps> = ({
@@ -60,6 +65,9 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
   unitsList,
   pegawaiList,
   currentUser,
+  featureConfig = DEFAULT_FEATURE_CONFIG,
+  onUpdateFeatureConfig = () => true,
+  onResetFeatureConfig = () => true,
   onAddUser,
   onUpdateUser,
   onDeleteUser,
@@ -69,7 +77,7 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
   onSwitchUser,
   defaultSubTab = 'users',
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'users' | 'units' | 'database'>(defaultSubTab);
+  const [activeSubTab, setActiveSubTab] = useState<'users' | 'features' | 'units' | 'database'>(defaultSubTab);
 
   useEffect(() => {
     if (defaultSubTab) {
@@ -337,17 +345,41 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
   };
 
   // Filtered lists
-  const filteredUsers = usersList.filter((u) => {
-    const query = userSearch.toLowerCase().trim();
-    const matchSearch =
-      u.nama_lengkap.toLowerCase().includes(query) ||
-      u.username.toLowerCase().includes(query) ||
-      u.email.toLowerCase().includes(query) ||
-      (u.nip && u.nip.toLowerCase().includes(query)) ||
-      u.unit_kerja.toLowerCase().includes(query);
-    const matchRole = roleFilter === 'Semua' || u.role === roleFilter;
-    return matchSearch && matchRole;
-  });
+  const availableUnitsForUser = React.useMemo(() => {
+    if (currentUser.role !== 'Admin Dinkes') {
+      return unitsList.filter((u) => u.nama_unit === currentUser.unit_kerja);
+    }
+    if (!featureConfig.scope_data_unrestricted) {
+      return unitsList.filter((u) => isDinasCategory(u.kategori) || u.nama_unit.toLowerCase().includes('dinas'));
+    }
+    return unitsList;
+  }, [unitsList, currentUser, featureConfig.scope_data_unrestricted]);
+
+  const filteredUsers = useMemo(() => {
+    return usersList.filter((u) => {
+      // 1. Role Scope Restriction: Non-admin dinkes only sees own unit
+      if (currentUser.role !== 'Admin Dinkes') {
+        if (u.unit_kerja !== currentUser.unit_kerja) return false;
+      } else {
+        // 2. If Admin Dinkes, but scope_data_unrestricted is false, only show users from Dinas Kesehatan
+        if (!featureConfig.scope_data_unrestricted) {
+          const matchingUnit = unitsList.find((unit) => unit.nama_unit === u.unit_kerja);
+          const isDinas = (matchingUnit && isDinasCategory(matchingUnit.kategori)) || u.unit_kerja.toLowerCase().includes('dinas');
+          if (!isDinas) return false;
+        }
+      }
+
+      const query = userSearch.toLowerCase().trim();
+      const matchSearch =
+        u.nama_lengkap.toLowerCase().includes(query) ||
+        u.username.toLowerCase().includes(query) ||
+        u.email.toLowerCase().includes(query) ||
+        (u.nip && u.nip.toLowerCase().includes(query)) ||
+        u.unit_kerja.toLowerCase().includes(query);
+      const matchRole = roleFilter === 'Semua' || u.role === roleFilter;
+      return matchSearch && matchRole;
+    });
+  }, [usersList, userSearch, roleFilter, currentUser, featureConfig.scope_data_unrestricted, unitsList]);
 
   const filteredUnits = unitsList.filter((u) => {
     const matchSearch =
@@ -418,7 +450,22 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
             }`}
           >
             <Users className="w-4 h-4" />
-            <span>Hak Akses & Pengguna ({usersList.length})</span>
+            <span>Hak Akses & Pengguna ({filteredUsers.length})</span>
+          </button>
+
+          {/* Tab Master Fitur di samping kiri Master Unit Kerja */}
+          <button
+            type="button"
+            id="tab-mgmt-features"
+            onClick={() => setActiveSubTab('features')}
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+              activeSubTab === 'features'
+                ? 'bg-[#004B87] text-white shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+          >
+            <Sliders className="w-4 h-4" />
+            <span>Master Fitur</span>
           </button>
 
           <button
@@ -450,6 +497,16 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
           </button>
         </div>
       </div>
+
+      {/* SUB-TAB: MASTER FITUR */}
+      {activeSubTab === 'features' && (
+        <MasterFiturTab
+          featureConfig={featureConfig}
+          currentUser={currentUser}
+          onUpdateFeatureConfig={onUpdateFeatureConfig}
+          onResetFeatureConfig={onResetFeatureConfig}
+        />
+      )}
 
       {/* SUB-TAB 1: USER MANAGEMENT */}
       {activeSubTab === 'users' && (
@@ -1143,15 +1200,22 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                     onChange={(e) => setUserFormData({ ...userFormData, unit_kerja: e.target.value })}
                     className="w-full px-3.5 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold focus:outline-none focus:ring-2 focus:ring-blue-500"
                   >
-                    {unitsList.map((unit) => (
+                    {availableUnitsForUser.map((unit) => (
                       <option key={unit.id} value={unit.nama_unit}>
                         {unit.nama_unit} ({unit.kategori})
                       </option>
                     ))}
                   </select>
-                  <p className="text-[11px] text-slate-500 mt-1">
-                    *Admin Unit Kerja dibatasi hanya untuk mengelola pegawai dari unit kerja ini.
-                  </p>
+                  {!featureConfig.scope_data_unrestricted ? (
+                    <p className="text-[11px] text-amber-700 font-medium mt-1.5 flex items-center gap-1 bg-amber-50 p-2 rounded-lg border border-amber-200">
+                      <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                      <span>Scope Terkunci: Penambahan akun saat ini dibatasi untuk unit Dinas Kesehatan saja. Aktifkan 'Scope Data Multi-Unit' di Master Fitur untuk membuka pilihan Puskesmas/RSUD.</span>
+                    </p>
+                  ) : (
+                    <p className="text-[11px] text-slate-500 mt-1">
+                      *Admin Unit Kerja dibatasi hanya untuk mengelola pegawai dari unit kerja ini.
+                    </p>
+                  )}
                 </div>
 
                 <div>
