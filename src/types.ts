@@ -257,4 +257,3 @@ export interface AplikasiKepegawaian {
   created_at: string;
   updated_at?: string;
 }
-
