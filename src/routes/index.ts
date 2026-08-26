@@ -8,6 +8,7 @@ import exportRoutes from './exportRoutes';
 import statsRoutes from './statsRoutes';
 import supabaseRoutes from './supabaseRoutes';
 import aplikasiRoutes from './aplikasiRoutes';
+import featureConfigRoutes from './featureConfigRoutes';
 
 const router = Router();
 
@@ -20,5 +21,6 @@ router.use('/export', exportRoutes);
 router.use('/stats', statsRoutes);
 router.use('/supabase', supabaseRoutes);
 router.use('/aplikasi', aplikasiRoutes);
+router.use('/feature-config', featureConfigRoutes);
 
 export default router;
