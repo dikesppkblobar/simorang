@@ -21,7 +21,7 @@ import {
   CheckCircle2,
   Sparkles,
 } from 'lucide-react';
-import { StatusKepegawaian, JenisJabatan, SumberPembiayaan } from '../types';
+import { StatusKepegawaian, JenisJabatan, SumberPembiayaan, AppFeatureConfig, DEFAULT_FEATURE_CONFIG } from '../types';
 import { PANGKAT_GOLONGAN_MAP } from '../services/dateCalculator';
 
 interface PegawaiAddEditModalProps {
@@ -40,6 +40,7 @@ interface PegawaiAddEditModalProps {
   handleStatusKepegawaianChange: (status: StatusKepegawaian) => void;
   handleGolonganPnsChange: (gol: string) => void;
   synchronizedUnitOptions: string[];
+  featureConfig?: AppFeatureConfig;
   handleSubmitAdd: (e: React.FormEvent) => void;
   handleSubmitEdit: (e: React.FormEvent) => void;
   statusPerkawinan: 'Menikah' | 'Belum Menikah' | 'Duda' | 'Janda';
@@ -72,6 +73,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
   handleStatusKepegawaianChange,
   handleGolonganPnsChange,
   synchronizedUnitOptions,
+  featureConfig = DEFAULT_FEATURE_CONFIG,
   handleSubmitAdd,
   handleSubmitEdit,
   statusPerkawinan,
