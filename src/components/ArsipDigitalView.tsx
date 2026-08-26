@@ -27,8 +27,10 @@ import {
   Sparkles,
   ChevronDown,
   ChevronUp,
+  Lock,
+  Info,
 } from 'lucide-react';
-import { RiwayatSK, Pegawai, JenisSK, UnitKerjaItem } from '../types';
+import { RiwayatSK, Pegawai, JenisSK, UnitKerjaItem, AppFeatureConfig, DEFAULT_FEATURE_CONFIG } from '../types';
 import { formatDateIndonesian } from '../services/dateCalculator';
 import { openDocumentInNewTab, downloadDocumentFile } from '../utils/fileHelper';
 
@@ -36,6 +38,7 @@ interface ArsipDigitalViewProps {
   skList: RiwayatSK[];
   pegawaiList: Pegawai[];
   unitsList?: UnitKerjaItem[];
+  featureConfig?: AppFeatureConfig;
   onOpenUploadSkModal: (nip?: string, defaultJenisSk?: JenisSK) => void;
   onDeleteSk?: (id: string) => Promise<boolean>;
 }
@@ -44,9 +47,11 @@ export const ArsipDigitalView: React.FC<ArsipDigitalViewProps> = ({
   skList,
   pegawaiList,
   unitsList = [],
+  featureConfig = DEFAULT_FEATURE_CONFIG,
   onOpenUploadSkModal,
   onDeleteSk,
 }) => {
+  const allowUpload = featureConfig.arsip_digital_upload;
   const [searchTerm, setSearchTerm] = useState('');
   const [filterJenisSk, setFilterJenisSk] = useState<string>('Semua');
   const [filterUnitKerja, setFilterUnitKerja] = useState<string>('Semua');
@@ -299,16 +304,32 @@ export const ArsipDigitalView: React.FC<ArsipDigitalViewProps> = ({
           </div>
         </div>
 
-        {/* Single Primary Action Button */}
-        <button
-          id="btn-unggah-arsip-utama"
-          onClick={() => onOpenUploadSkModal()}
-          className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003663] text-white text-xs font-heading font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all shrink-0 cursor-pointer"
-        >
-          <FileUp className="w-4 h-4" />
-          <span>+ Unggah Berkas Baru</span>
-        </button>
+        {/* Single Primary Action Button or Read-Only Update Badge */}
+        {allowUpload ? (
+          <button
+            id="btn-unggah-arsip-utama"
+            onClick={() => onOpenUploadSkModal()}
+            className="w-full sm:w-auto inline-flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003663] text-white text-xs font-heading font-bold px-4 py-2.5 rounded-xl shadow-xs transition-all shrink-0 cursor-pointer"
+          >
+            <FileUp className="w-4 h-4" />
+            <span>+ Unggah Berkas Baru</span>
+          </button>
+        ) : (
+          <div className="flex items-center gap-2 px-3.5 py-2 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 text-xs font-heading font-semibold">
+            <Lock className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+            <span>Mode Pembaruan Data Saja (Unggah Nonaktif)</span>
+          </div>
+        )}
       </div>
+
+      {!allowUpload && (
+        <div className="p-3.5 rounded-xl bg-amber-50/80 border border-amber-200/90 text-amber-900 text-xs flex items-center gap-2.5">
+          <Info className="w-4 h-4 text-amber-600 shrink-0" />
+          <span>
+            <strong>Mode Arsip Digital Terbatas:</strong> Fitur pengunggahan berkas baru dinonaktifkan di Master Fitur. Seluruh dokumen yang tersimpan tetap dapat dilihat, diunduh, dan diperbarui metadata teksnya.
+          </span>
+        </div>
+      )}
 
       {/* 2. Ringkasan Statistik (Compact Cards yang Berfungsi sebagai Filter Cepat) */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
