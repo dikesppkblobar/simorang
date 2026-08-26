@@ -31,7 +31,7 @@ import {
   Heart,
   Check,
 } from 'lucide-react';
-import { Pegawai, RiwayatSK, KeluargaKP4, StatusKepegawaian, SumberPembiayaan, JenisJabatan, StatusHubungan } from '../types';
+import { Pegawai, RiwayatSK, KeluargaKP4, StatusKepegawaian, SumberPembiayaan, JenisJabatan, StatusHubungan, AppFeatureConfig, DEFAULT_FEATURE_CONFIG } from '../types';
 import { dbStore } from '../services/dbStore';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { PegawaiAddEditModal } from './PegawaiAddEditModal';
@@ -59,6 +59,7 @@ interface AnakFormItem {
 interface PegawaiSimpegViewProps {
   pegawaiList: Pegawai[];
   unitsList?: import('../types').UnitKerjaItem[];
+  featureConfig?: AppFeatureConfig;
   onAddPegawai: (pegawaiData: any) => Promise<boolean>;
   onUpdatePegawai: (nip: string, data: any) => Promise<boolean>;
   onSoftDeletePegawai: (nip: string) => void;
@@ -135,6 +136,7 @@ const GOLONGAN_PPPK_OPTIONS = [
 export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
   pegawaiList,
   unitsList = [],
+  featureConfig = DEFAULT_FEATURE_CONFIG,
   onAddPegawai,
   onUpdatePegawai,
   onSoftDeletePegawai,
@@ -2159,6 +2161,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
         handleStatusKepegawaianChange={handleStatusKepegawaianChange}
         handleGolonganPnsChange={handleGolonganPnsChange}
         synchronizedUnitOptions={synchronizedUnitOptions}
+        featureConfig={featureConfig}
         handleSubmitAdd={handleSubmitAdd}
         handleSubmitEdit={handleSubmitEdit}
         statusPerkawinan={statusPerkawinan}
