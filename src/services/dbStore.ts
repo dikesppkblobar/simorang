@@ -31,12 +31,48 @@ class DBStore {
   private units: UnitKerjaItem[] = [];
   private users: UserAccount[] = [];
   private aplikasiList: AplikasiKepegawaian[] = [];
+  private subscribers: Set<() => void> = new Set();
+  private realtimeChannel: any = null;
 
   constructor() {
     this.initData();
+    this.initRealtimeSubscription();
     this.fetchAndMergeSupabaseData().catch((err) => {
       console.warn('Initial Supabase fetch failed:', err);
     });
+  }
+
+  // Subscribe to reactive database changes
+  subscribe(callback: () => void): () => void {
+    this.subscribers.add(callback);
+    return () => {
+      this.subscribers.delete(callback);
+    };
+  }
+
+  private notifySubscribers() {
+    this.subscribers.forEach((cb) => {
+      try {
+        cb();
+      } catch (err) {
+        console.error('Error in dbStore subscriber callback:', err);
+      }
+    });
+  }
+
+  private initRealtimeSubscription() {
+    if (typeof window === 'undefined') return;
+    try {
+      import('./supabaseClient').then(({ supabase }) => {
+        if (!supabase) return;
+        this.realtimeChannel = supabase
+          .channel('db_realtime_sync')
+          .on('postgres_changes', { event: '*', schema: 'public' }, () => {
+            this.fetchAndMergeSupabaseData();
+          })
+          .subscribe();
+      }).catch(() => {});
+    } catch (_) {}
   }
 
   private initData() {
@@ -52,13 +88,19 @@ class DBStore {
           const usr = window.localStorage.getItem('sipatuh_users');
           const app = window.localStorage.getItem('sipatuh_aplikasi');
 
-          this.pegawai = p !== null ? JSON.parse(p) : [];
-          this.skHistory = sk !== null ? JSON.parse(sk) : [];
-          this.keluarga = k !== null ? JSON.parse(k) : [];
-          this.auditLogs = log !== null ? JSON.parse(log) : [];
-          this.units = u !== null ? JSON.parse(u) : [];
-          this.users = usr !== null ? JSON.parse(usr) : [];
-          this.aplikasiList = app !== null ? JSON.parse(app) : [];
+          this.pegawai = p !== null ? JSON.parse(p) : [...INITIAL_PEGAWAI];
+          this.skHistory = sk !== null ? JSON.parse(sk) : [...INITIAL_SK_HISTORY];
+          this.keluarga = k !== null ? JSON.parse(k) : [...INITIAL_KELUARGA];
+          this.auditLogs = log !== null ? JSON.parse(log) : [...INITIAL_AUDIT_LOGS];
+          this.units = u !== null ? JSON.parse(u) : [...INITIAL_UNITS];
+          this.users = usr !== null ? JSON.parse(usr) : [...INITIAL_USERS];
+          this.aplikasiList = app !== null ? JSON.parse(app) : [...INITIAL_APLIKASI_KEPEGAWAIAN];
+
+          // If any essential list is unexpectedly empty, restore baseline values
+          if (this.users.length === 0) this.users = [...INITIAL_USERS];
+          if (this.units.length === 0) this.units = [...INITIAL_UNITS];
+          if (this.pegawai.length === 0) this.pegawai = [...INITIAL_PEGAWAI];
+          if (this.aplikasiList.length === 0) this.aplikasiList = [...INITIAL_APLIKASI_KEPEGAWAIAN];
           return;
         }
       } catch (err) {
@@ -71,13 +113,13 @@ class DBStore {
         if (fs && fs.existsSync && fs.existsSync(filePath)) {
           const raw = fs.readFileSync(filePath, 'utf-8');
           const parsed = JSON.parse(raw);
-          this.pegawai = parsed.pegawai || [];
-          this.skHistory = parsed.skHistory || [];
-          this.keluarga = parsed.keluarga || [];
-          this.auditLogs = parsed.auditLogs || [];
-          this.units = parsed.units || [];
-          this.users = parsed.users || [];
-          this.aplikasiList = parsed.aplikasiList || [];
+          this.pegawai = parsed.pegawai && parsed.pegawai.length > 0 ? parsed.pegawai : [...INITIAL_PEGAWAI];
+          this.skHistory = parsed.skHistory || [...INITIAL_SK_HISTORY];
+          this.keluarga = parsed.keluarga || [...INITIAL_KELUARGA];
+          this.auditLogs = parsed.auditLogs || [...INITIAL_AUDIT_LOGS];
+          this.units = parsed.units && parsed.units.length > 0 ? parsed.units : [...INITIAL_UNITS];
+          this.users = parsed.users && parsed.users.length > 0 ? parsed.users : [...INITIAL_USERS];
+          this.aplikasiList = parsed.aplikasiList && parsed.aplikasiList.length > 0 ? parsed.aplikasiList : [...INITIAL_APLIKASI_KEPEGAWAIAN];
           return;
         }
       } catch (err) {
@@ -85,15 +127,15 @@ class DBStore {
       }
     }
 
-    // Default Fallback (Kosong, mengacu ke database riil)
-    this.pegawai = [];
-    this.skHistory = [];
-    this.keluarga = [];
-    this.auditLogs = [];
-    this.units = [];
-    this.users = [];
-    this.aplikasiList = [];
-    this.saveToStorage();
+    // Default Baseline Initial (Instant populate on first load across all devices)
+    this.pegawai = [...INITIAL_PEGAWAI];
+    this.skHistory = [...INITIAL_SK_HISTORY];
+    this.keluarga = [...INITIAL_KELUARGA];
+    this.auditLogs = [...INITIAL_AUDIT_LOGS];
+    this.units = [...INITIAL_UNITS];
+    this.users = [...INITIAL_USERS];
+    this.aplikasiList = [...INITIAL_APLIKASI_KEPEGAWAIAN];
+    this.saveToStorage(false);
   }
 
   private saveToStorage(triggerSupabaseSync: boolean = true) {
@@ -133,6 +175,8 @@ class DBStore {
         console.error('Error saving dbStore to server file:', err);
       }
     }
+
+    this.notifySubscribers();
 
     if (triggerSupabaseSync) {
       // Sync to Supabase Cloud Database in background
