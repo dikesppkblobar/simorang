@@ -202,7 +202,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
   // Add/Edit Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [activeFormTab, setActiveFormTab] = useState<'identitas' | 'akademik' | 'golongan' | 'keluarga'>('identitas');
+  const [activeFormTab, setActiveFormTab] = useState<'identitas' | 'akademik' | 'golongan' | 'keluarga' | null>('identitas');
 
   // KP4 Tanggungan state in Add Pegawai Form
   const [statusPerkawinan, setStatusPerkawinan] = useState<'Menikah' | 'Belum Menikah' | 'Duda' | 'Janda'>('Menikah');
