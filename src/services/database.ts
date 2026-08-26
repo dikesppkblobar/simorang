@@ -1,4 +1,4 @@
-import { Pegawai, RiwayatSK, KeluargaKP4, AuditLog, UnitKerjaItem, UserAccount, AplikasiKepegawaian } from '../types';
+import { Pegawai, RiwayatSK, KeluargaKP4, UnitKerjaItem, UserAccount, AplikasiKepegawaian } from '../types';
 
 export const INITIAL_PEGAWAI: Pegawai[] = [
   {
@@ -147,25 +147,6 @@ export const INITIAL_KELUARGA: KeluargaKP4[] = [
     no_surat_kuliah: '',
     tgl_surat_kuliah: '2026-08-25',
     semester_kuliah: null,
-  },
-];
-
-export const INITIAL_AUDIT_LOGS: AuditLog[] = [
-  {
-    id: 'log-1787709130290-813',
-    admin_email: 'dinkes@gmail.com',
-    aksi: 'Update',
-    tabel_terdampak: 'pegawai',
-    deskripsi: 'Memperbarui biodata pegawai NIP 197108071992031007 (MUHSAN)',
-    created_at: '2026-08-26T01:52:10.29+00:00',
-  },
-  {
-    id: 'log-init-001',
-    admin_email: 'admin.dikes@lombokbaratkab.go.id',
-    aksi: 'System Initialize',
-    tabel_terdampak: 'master_database',
-    deskripsi: 'Sistem SIMORANG DINKES-PPKB Lombok Barat siap digunakan untuk perekaman data real kepegawaian.',
-    created_at: '2026-08-25T13:10:35.943+00:00',
   },
 ];
 
