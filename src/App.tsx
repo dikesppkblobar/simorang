@@ -136,6 +136,7 @@ export default function App() {
   const [managementDefaultSubTab, setManagementDefaultSubTab] = useState<'users' | 'units' | 'database'>('units');
 
   const handleNavigateTab = (tab: string, subTab?: string) => {
+    setIsAlertsMenuExpanded(false);
     if (tab === 'alerts' || tab === 'kgb' || tab === 'pangkat' || tab === 'kp4' || tab === 'pensiun' || tab === 'jafung' || tab === 'ukom' || tab === 'ujian_dinas' || tab === 'cuti' || tab === 'izin_belajar' || tab === 'pencantuman_gelar' || tab === 'mutasi') {
       if (tab === 'kgb' || subTab === 'kgb') {
         setAlertsDefaultSubTab('kgb');
@@ -148,7 +149,6 @@ export default function App() {
       } else if (subTab) {
         setAlertsDefaultSubTab(subTab as any);
       }
-      setIsAlertsMenuExpanded(true);
       setActiveTab('alerts');
     } else if (tab === 'users_units' || tab === 'units' || tab === 'users' || subTab === 'units' || subTab === 'users') {
       setSettingsDefaultSubTab('users');
@@ -611,7 +611,7 @@ export default function App() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, badge: null },
     { id: 'pegawai', label: 'Data Pegawai', icon: Users, badge: null },
-    { id: 'alerts', label: 'Pusat Pemantauan ASN', icon: Calendar, badge: grandTotalAlerts, hasSubMenu: true },
+    { id: 'alerts', label: 'Pemantauan ASN', icon: Calendar, badge: grandTotalAlerts, hasSubMenu: true },
     { id: 'arsip', label: 'Arsip Digital', icon: FolderOpen, badge: null },
     { id: 'aplikasi', label: 'Aplikasi Kepegawaian', icon: AppWindow, badge: aplikasiList.length },
     { id: 'settings', label: 'Pengaturan', icon: Settings, badge: null },
@@ -734,32 +734,33 @@ export default function App() {
                 transition={{ type: 'spring', damping: 25, stiffness: 250 }}
                 className="relative w-4/5 max-w-xs bg-white h-full shadow-2xl flex flex-col justify-between z-10 border-r border-slate-200"
               >
-                <div>
-                  {/* Drawer Header */}
-                  <div className="p-4 bg-[#004B87] text-white flex items-center justify-between">
-                    <div className="flex items-center space-x-2.5">
-                      <div className="bg-white/15 p-1 rounded-lg">
-                        <LogoLombokBarat size={28} />
+                {/* Fixed Top Header */}
+                <div className="p-4 bg-[#004B87] text-white flex items-center justify-between shrink-0 shadow-xs">
+                  <div className="flex items-center space-x-2.5">
+                    <div className="bg-white/15 p-1 rounded-lg">
+                      <LogoLombokBarat size={28} />
+                    </div>
+                    <div>
+                      <div className="font-heading font-extrabold text-sm tracking-tight text-white leading-tight">
+                        SIMORANG
                       </div>
-                      <div>
-                        <div className="font-heading font-extrabold text-sm tracking-tight text-white leading-tight">
-                          SIMORANG
-                        </div>
-                        <div className="text-[10px] text-blue-100 font-medium">
-                          DINKES-PPKB Lombok Barat
-                        </div>
+                      <div className="text-[10px] text-blue-100 font-medium">
+                        DINKES-PPKB Lombok Barat
                       </div>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => setIsMobileDrawerOpen(false)}
-                      className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-                      title="Tutup Menu"
-                    >
-                      <PanelLeftClose className="w-5 h-5" />
-                    </button>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => setIsMobileDrawerOpen(false)}
+                    className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+                    title="Tutup Menu"
+                  >
+                    <PanelLeftClose className="w-5 h-5" />
+                  </button>
+                </div>
 
+                {/* Scrollable Body: User card + Nav Links */}
+                <div className="flex-1 overflow-y-auto overscroll-contain min-h-0">
                   {/* Logged in User Summary Card inside Drawer */}
                   <div className="p-3.5 bg-slate-50 border-b border-slate-200">
                     <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider mb-1">
@@ -774,7 +775,7 @@ export default function App() {
                   </div>
 
                   {/* Navigation Links */}
-                  <div className="p-3">
+                  <div className="p-3 pb-8">
                     <div className="text-[10px] uppercase font-bold text-slate-400 tracking-wider px-2 mb-2">
                       Menu Utama
                     </div>
@@ -789,12 +790,8 @@ export default function App() {
                               <button
                                 type="button"
                                 onClick={() => {
-                                  if (activeTab !== 'alerts') {
-                                    setActiveTab('alerts');
-                                    setIsAlertsMenuExpanded(true);
-                                  } else {
-                                    setIsAlertsMenuExpanded(!isAlertsMenuExpanded);
-                                  }
+                                  setActiveTab('alerts');
+                                  setIsAlertsMenuExpanded(!isAlertsMenuExpanded);
                                 }}
                                 className={`w-full px-3.5 py-3 rounded-xl flex items-center justify-between text-xs font-heading font-bold transition-all cursor-pointer ${
                                   isActive
@@ -876,6 +873,7 @@ export default function App() {
                             type="button"
                             onClick={() => {
                               setActiveTab(item.id);
+                              setIsAlertsMenuExpanded(false);
                               setIsMobileDrawerOpen(false);
                             }}
                             className={`w-full px-3.5 py-3 rounded-xl flex items-center justify-between text-xs font-heading font-bold transition-all cursor-pointer ${
@@ -906,8 +904,8 @@ export default function App() {
                   </div>
                 </div>
 
-                {/* Drawer Footer */}
-                <div className="p-4 border-t border-slate-100 bg-slate-50">
+                {/* Fixed Drawer Footer */}
+                <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
                   <div className="text-[11px] text-slate-500 text-center font-medium">
                     SIMORANG DINKES-PPKB
                   </div>
@@ -922,7 +920,7 @@ export default function App() {
 
         {/* Desktop Sidebar Navigation (Hidden on Mobile) */}
         <aside
-          className={`hidden md:flex bg-white border-r border-[#E2E8F0] flex-shrink-0 flex-col justify-between select-none shadow-xs transition-all duration-300 z-20 ${
+          className={`hidden md:flex bg-white border-r border-[#E2E8F0] flex-shrink-0 flex-col justify-between select-none shadow-xs transition-all duration-300 z-20 h-full ${
             isSidebarCollapsed ? 'w-16' : 'w-64'
           }`}
         >
@@ -940,10 +938,10 @@ export default function App() {
             )}
           </button>
 
-          <div>
+          <div className="flex-1 overflow-y-auto overscroll-contain min-h-0 flex flex-col">
             {/* Header Section */}
             {isSidebarCollapsed ? (
-              <div className="p-3.5 flex items-center justify-center border-b border-slate-100">
+              <div className="p-3.5 flex items-center justify-center border-b border-slate-100 shrink-0">
                 <button
                   type="button"
                   onClick={() => setIsSidebarCollapsed(false)}
@@ -954,7 +952,7 @@ export default function App() {
                 </button>
               </div>
             ) : (
-              <div className="px-4 py-3.5 flex items-center justify-between border-b border-slate-100 mb-1">
+              <div className="px-4 py-3.5 flex items-center justify-between border-b border-slate-100 mb-1 shrink-0">
                 <span className="text-[11px] uppercase tracking-wider font-heading font-bold text-[#64748B]">
                   NAVIGASI UTAMA
                 </span>
@@ -969,7 +967,7 @@ export default function App() {
               </div>
             )}
 
-            <nav className={`space-y-1 ${isSidebarCollapsed ? 'px-2 mt-2' : 'px-3'}`}>
+            <nav className={`space-y-1 flex-1 pb-6 ${isSidebarCollapsed ? 'px-2 mt-2' : 'px-3'}`}>
               {navItems.map((item) => {
                 const Icon = item.icon;
                 const isActive = activeTab === item.id;
@@ -978,7 +976,10 @@ export default function App() {
                   return (
                     <button
                       key={item.id}
-                      onClick={() => setActiveTab(item.id)}
+                      onClick={() => {
+                        setActiveTab(item.id);
+                        setIsAlertsMenuExpanded(false);
+                      }}
                       title={`${item.label}${item.badge !== null && item.badge > 0 ? ` (${item.badge})` : ''}`}
                       className={`w-full h-10 rounded-xl flex items-center justify-center relative transition-all cursor-pointer ${
                         isActive
@@ -1000,12 +1001,8 @@ export default function App() {
                       <button
                         type="button"
                         onClick={() => {
-                          if (activeTab !== 'alerts') {
-                            setActiveTab('alerts');
-                            setIsAlertsMenuExpanded(true);
-                          } else {
-                            setIsAlertsMenuExpanded(!isAlertsMenuExpanded);
-                          }
+                          setActiveTab('alerts');
+                          setIsAlertsMenuExpanded(!isAlertsMenuExpanded);
                         }}
                         className={`w-full px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-heading font-semibold transition-all cursor-pointer ${
                           isActive
@@ -1083,7 +1080,10 @@ export default function App() {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => {
+                      setActiveTab(item.id);
+                      setIsAlertsMenuExpanded(false);
+                    }}
                     className={`w-full px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-heading font-semibold transition-all cursor-pointer ${
                       isActive
                         ? 'bg-[#004B87] text-white shadow-sm'
@@ -1111,7 +1111,7 @@ export default function App() {
             </nav>
           </div>
 
-          <div className={`border-t border-slate-100 bg-slate-50/50 ${isSidebarCollapsed ? 'p-2 text-center' : 'p-4'}`}>
+          <div className={`border-t border-slate-100 bg-slate-50/50 shrink-0 ${isSidebarCollapsed ? 'p-2 text-center' : 'p-4'}`}>
             {isSidebarCollapsed ? (
               <span className="text-[9px] font-mono text-slate-400 font-bold">v2.5</span>
             ) : (
