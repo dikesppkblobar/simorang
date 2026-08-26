@@ -17,12 +17,14 @@ import {
   Search,
   Check,
   MousePointerClick,
+  X,
 } from 'lucide-react';
 import { Pegawai, RiwayatSK } from '../types';
 
 interface CelebrationGreetingsCardProps {
   pegawaiList: Pegawai[];
   skList: RiwayatSK[];
+  onClose?: () => void;
 }
 
 const BULAN_INDONESIA = [
@@ -33,6 +35,7 @@ const BULAN_INDONESIA = [
 export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> = ({
   pegawaiList,
   skList,
+  onClose,
 }) => {
   const [activeTab, setActiveTab] = useState<'birthday' | 'promotion'>('birthday');
   const [birthdayIndex, setBirthdayIndex] = useState(0);
@@ -291,7 +294,7 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
             </button>
           </div>
 
-          {/* Carousel Navigation Buttons */}
+          {/* Carousel Navigation Buttons & Close Button */}
           <div className="flex items-center space-x-1">
             <button
               type="button"
@@ -314,6 +317,18 @@ export const CelebrationGreetingsCard: React.FC<CelebrationGreetingsCardProps> =
             >
               <ChevronRight className="w-3.5 h-3.5" />
             </button>
+
+            {onClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                title="Tutup Kartu Ucapan"
+                className="ml-1 p-1 rounded-lg bg-rose-50 hover:bg-rose-100 text-rose-600 hover:text-rose-800 border border-rose-200 transition-all cursor-pointer shadow-2xs flex items-center space-x-0.5 px-1.5"
+              >
+                <X className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-heading font-bold">Tutup</span>
+              </button>
+            )}
           </div>
         </div>
 
