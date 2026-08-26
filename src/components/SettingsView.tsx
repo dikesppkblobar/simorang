@@ -21,6 +21,8 @@ import {
   KeluargaKP4,
   UserAccount,
   UnitKerjaItem,
+  AppFeatureConfig,
+  DEFAULT_FEATURE_CONFIG,
 } from '../types';
 import { isDinasScope } from '../services/dateCalculator';
 
@@ -34,6 +36,9 @@ interface SettingsViewProps {
   scopedPegawaiList: Pegawai[];
   skList: RiwayatSK[];
   keluargaList: KeluargaKP4[];
+  featureConfig?: AppFeatureConfig;
+  onUpdateFeatureConfig?: (updates: Partial<AppFeatureConfig>) => Promise<boolean> | boolean;
+  onResetFeatureConfig?: () => Promise<boolean> | boolean;
   onAddUser: (userData: any) => Promise<boolean>;
   onUpdateUser: (id: string, updates: any) => Promise<boolean>;
   onDeleteUser: (id: string) => Promise<boolean>;
@@ -42,7 +47,7 @@ interface SettingsViewProps {
   onDeleteUnit: (id: string) => Promise<boolean>;
   onSwitchUser: (user: UserAccount) => void;
   defaultSubTab?: 'users' | 'export' | 'scope';
-  defaultManagementSubTab?: 'users' | 'units' | 'database';
+  defaultManagementSubTab?: 'users' | 'features' | 'units' | 'database';
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -55,6 +60,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   scopedPegawaiList,
   skList,
   keluargaList,
+  featureConfig = DEFAULT_FEATURE_CONFIG,
+  onUpdateFeatureConfig = () => true,
+  onResetFeatureConfig = () => true,
   onAddUser,
   onUpdateUser,
   onDeleteUser,
@@ -306,6 +314,15 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               <strong>Petunjuk:</strong> Cakupan data (*scope*) ini membatasi data yang ditampilkan di Dashboard, Data Pegawai, Notifikasi KGB & Pangkat, serta Laporan. Anda juga dapat menggantinya melalui tombol *scope* di navbar atas.
             </span>
           </div>
+
+          {!featureConfig.scope_data_unrestricted && (
+            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-2.5 text-xs text-amber-900">
+              <Info className="w-4 h-4 text-amber-600 shrink-0" />
+              <span>
+                <strong>Catatan Master Fitur:</strong> Mode Scope Terkunci aktif di Master Fitur. Data disajikan dan penambahan akun saat ini dibatasi hanya untuk unit kerja Dinas Kesehatan.
+              </span>
+            </div>
+          )}
         </div>
       )}
 
@@ -316,6 +333,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           unitsList={unitsList}
           pegawaiList={pegawaiList}
           currentUser={currentUser}
+          featureConfig={featureConfig}
+          onUpdateFeatureConfig={onUpdateFeatureConfig}
+          onResetFeatureConfig={onResetFeatureConfig}
           defaultSubTab={defaultManagementSubTab}
           onAddUser={onAddUser}
           onUpdateUser={onUpdateUser}
