@@ -73,14 +73,14 @@ export default function App() {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
   const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState<boolean>(false);
 
-  // Master State
-  const [pegawaiList, setPegawaiList] = useState<Pegawai[]>([]);
-  const [skList, setSkList] = useState<RiwayatSK[]>([]);
-  const [keluargaList, setKeluargaList] = useState<KeluargaKP4[]>([]);
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([]);
-  const [usersList, setUsersList] = useState<UserAccount[]>([]);
+  // Master State - initialized with synchronous baseline data so data appears instantly on every device
+  const [pegawaiList, setPegawaiList] = useState<Pegawai[]>(() => dbStore.getPegawaiList(true));
+  const [skList, setSkList] = useState<RiwayatSK[]>(() => dbStore.getAllSk());
+  const [keluargaList, setKeluargaList] = useState<KeluargaKP4[]>(() => dbStore.getAllKeluarga());
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => dbStore.getAuditLogs());
+  const [usersList, setUsersList] = useState<UserAccount[]>(() => dbStore.getAllUsers());
   const [unitsList, setUnitsList] = useState<UnitKerjaItem[]>(() => dbStore.getAllUnits());
-  const [aplikasiList, setAplikasiList] = useState<AplikasiKepegawaian[]>([]);
+  const [aplikasiList, setAplikasiList] = useState<AplikasiKepegawaian[]>(() => dbStore.getAllAplikasi());
 
   // Current Logged-in User Account
   const [currentUser, setCurrentUser] = useState<UserAccount>(() => {
@@ -97,7 +97,7 @@ export default function App() {
     return (
       allUsers[0] || {
         id: 'usr-001',
-        username: 'admin.dinkes',
+        username: 'yudi',
         nama_lengkap: 'Administrator DINKES-PPKB (Admin Utama)',
         email: 'admin.dikes@lombokbaratkab.go.id',
         role: 'Admin Dinkes',
@@ -237,7 +237,24 @@ export default function App() {
   };
 
   useEffect(() => {
+    // 1. Initial background fetch/sync
     refreshData();
+
+    // 2. Subscribe to reactive dbStore changes (Supabase Realtime & background syncs)
+    const unsubscribe = dbStore.subscribe(() => {
+      setPegawaiList([...dbStore.getPegawaiList(true)]);
+      setSkList([...dbStore.getAllSk()]);
+      setKeluargaList([...dbStore.getAllKeluarga()]);
+      setAuditLogs([...dbStore.getAuditLogs()]);
+      const currentUsers = dbStore.getAllUsers();
+      setUsersList([...currentUsers]);
+      setUnitsList([...dbStore.getAllUnits()]);
+      setAplikasiList([...dbStore.getAllAplikasi()]);
+    });
+
+    return () => {
+      unsubscribe();
+    };
   }, []);
 
   // Handle Switching User
@@ -256,10 +273,19 @@ export default function App() {
   // Handle Login Success
   const handleLoginSuccess = (user: UserAccount) => {
     handleSwitchUser(user);
+    // Instant sync to ensure all data is immediately rendered with zero wait time
+    setPegawaiList([...dbStore.getPegawaiList(true)]);
+    setSkList([...dbStore.getAllSk()]);
+    setKeluargaList([...dbStore.getAllKeluarga()]);
+    setAuditLogs([...dbStore.getAuditLogs()]);
+    setUsersList([...dbStore.getAllUsers()]);
+    setUnitsList([...dbStore.getAllUnits()]);
+    setAplikasiList([...dbStore.getAllAplikasi()]);
     setIsLoggedIn(true);
     if (typeof window !== 'undefined') {
       window.sessionStorage.setItem('sipatuh_is_logged_in', 'true');
     }
+    refreshData();
   };
 
   // Handle Logout
