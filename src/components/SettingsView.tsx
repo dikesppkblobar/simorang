@@ -19,7 +19,6 @@ import {
   Pegawai,
   RiwayatSK,
   KeluargaKP4,
-  AuditLog,
   UserAccount,
   UnitKerjaItem,
 } from '../types';
@@ -35,7 +34,6 @@ interface SettingsViewProps {
   scopedPegawaiList: Pegawai[];
   skList: RiwayatSK[];
   keluargaList: KeluargaKP4[];
-  auditLogs?: AuditLog[];
   onAddUser: (userData: any) => Promise<boolean>;
   onUpdateUser: (id: string, updates: any) => Promise<boolean>;
   onDeleteUser: (id: string) => Promise<boolean>;
@@ -57,7 +55,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   scopedPegawaiList,
   skList,
   keluargaList,
-  auditLogs,
   onAddUser,
   onUpdateUser,
   onDeleteUser,
