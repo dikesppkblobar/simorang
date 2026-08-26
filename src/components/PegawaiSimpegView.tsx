@@ -34,6 +34,7 @@ import {
 import { Pegawai, RiwayatSK, KeluargaKP4, StatusKepegawaian, SumberPembiayaan, JenisJabatan, StatusHubungan } from '../types';
 import { dbStore } from '../services/dbStore';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
+import { PegawaiAddEditModal } from './PegawaiAddEditModal';
 import {
   validateNIP,
   validateNIK,
@@ -201,6 +202,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
   // Add/Edit Modal State
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+  const [activeFormTab, setActiveFormTab] = useState<'identitas' | 'akademik' | 'golongan' | 'keluarga'>('identitas');
 
   // KP4 Tanggungan state in Add Pegawai Form
   const [statusPerkawinan, setStatusPerkawinan] = useState<'Menikah' | 'Belum Menikah' | 'Duda' | 'Janda'>('Menikah');
@@ -231,7 +233,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
     no_whatsapp: '',
     sisa_cuti_tahunan: 12,
 
-    // Fields Pemantauan ASN
+    // Fields Pemantauan ASN & Studi
     jenjang_jabatan: 'Ahli Pertama',
     ak_konversi_skp: 12.5,
     total_ak_kumulatif: 37.5,
@@ -244,6 +246,8 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
     status_pencantuman_gelar: 'Terverifikasi BKN',
     nama_universitas_pt: '',
     program_studi: '',
+    progres_semester: '',
+    akreditasi_pt: 'A / Unggul',
 
     // PNS
     golongan_pangkat: 'III/a',
@@ -385,6 +389,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
   };
 
   const handleOpenEdit = (pegawai: Pegawai) => {
+    setActiveFormTab('identitas');
     setFormData({
       status_kepegawaian: pegawai.status_kepegawaian || 'PNS',
       nik: pegawai.nik || '',
@@ -403,11 +408,11 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
       status_ukom: pegawai.status_ukom,
       tmt_cpns: pegawai.tmt_cpns,
       pendidikan_terakhir: pegawai.pendidikan_terakhir,
-      status_izin_belajar: pegawai.status_izin_belajar,
+      status_izin_belajar: !!pegawai.status_izin_belajar,
       no_whatsapp: pegawai.no_whatsapp || '',
       sisa_cuti_tahunan: pegawai.sisa_cuti_tahunan || 12,
 
-      // Fields Pemantauan ASN
+      // Fields Pemantauan ASN & Studi
       jenjang_jabatan: pegawai.jenjang_jabatan || 'Ahli Pertama',
       ak_konversi_skp: pegawai.ak_konversi_skp ?? 12.5,
       total_ak_kumulatif: pegawai.total_ak_kumulatif ?? 37.5,
@@ -420,6 +425,8 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
       status_pencantuman_gelar: pegawai.status_pencantuman_gelar || 'Terverifikasi BKN',
       nama_universitas_pt: pegawai.nama_universitas_pt || '',
       program_studi: pegawai.program_studi || '',
+      progres_semester: pegawai.progres_semester || '',
+      akreditasi_pt: pegawai.akreditasi_pt || 'A / Unggul',
 
       // PNS
       golongan_pangkat: pegawai.golongan_pangkat || 'III/a',
@@ -432,6 +439,9 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
       jenis_mutasi: pegawai.jenis_mutasi || 'Kenaikan Pangkat Reguler',
       no_pertek_bkn: pegawai.no_pertek_bkn || '',
       tgl_pertek_bkn: pegawai.tgl_pertek_bkn || '',
+      nama_jabatan_pns: pegawai.nama_jabatan_pns || pegawai.jabatan_spesifik || '',
+      tmt_jabatan_pns: pegawai.tmt_jabatan_pns || '',
+      no_sk_jabatan_pns: pegawai.no_sk_jabatan_pns || '',
 
       // PPPK
       no_perjanjian_kerja: pegawai.no_perjanjian_kerja || '',
@@ -745,6 +755,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
           <button
             onClick={() => {
               const defaultUnit = synchronizedUnitOptions[0] || 'Dinas Kesehatan Kab. Lombok Barat';
+              setActiveFormTab('identitas');
               setFormData({
                 status_kepegawaian: 'PNS',
                 nik: '',
@@ -765,6 +776,8 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                 pendidikan_terakhir: '',
                 nama_universitas_pt: '',
                 program_studi: '',
+                progres_semester: '',
+                akreditasi_pt: 'A / Unggul',
                 status_izin_belajar: false,
                 no_whatsapp: '',
                 sisa_cuti_tahunan: 12,
@@ -791,6 +804,9 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                 jenis_mutasi: 'Kenaikan Pangkat Reguler',
                 no_pertek_bkn: '',
                 tgl_pertek_bkn: '',
+                nama_jabatan_pns: '',
+                tmt_jabatan_pns: '',
+                no_sk_jabatan_pns: '',
 
                 no_perjanjian_kerja: '',
                 tgl_perjanjian_kerja: '',
@@ -2123,1092 +2139,41 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
         </div>
       )}
 
-      {/* ADD / EDIT MODAL */}
-      {(isAddModalOpen || isEditModalOpen) && (
-        <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 overflow-y-auto">
-          <div className="bg-white rounded-xl max-w-3xl w-full p-6 shadow-2xl border border-slate-100 space-y-5 max-h-[92vh] overflow-y-auto">
-            <div className="flex items-center justify-between border-b pb-3">
-              <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <UserPlus className="w-5 h-5 text-[#2563EB]" />
-                <span>
-                  {isAddModalOpen
-                    ? 'Tambah Data Pegawai Baru (Validasi BKN/Dikes)'
-                    : 'Edit Biodata Pegawai'}
-                </span>
-              </h3>
-              <button
-                onClick={() => {
-                  setIsAddModalOpen(false);
-                  setIsEditModalOpen(false);
-                }}
-                className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-400"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            <form
-              onSubmit={isAddModalOpen ? handleSubmitAdd : handleSubmitEdit}
-              className="space-y-4 text-xs"
-            >
-              {/* 1. Status Kepegawaian Selector / Display */}
-              <div>
-                <label className="block font-bold text-[#1E293B] mb-1.5">
-                  Status Kepegawaian:*
-                </label>
-                {isEditModalOpen ? (
-                  <div className="px-3.5 py-2 bg-blue-50 border border-blue-200 rounded-lg font-bold text-blue-900 text-xs flex items-center justify-between">
-                    <span>{formData.status_kepegawaian}</span>
-                    <span className="text-[10px] bg-blue-600 text-white px-2 py-0.5 rounded uppercase font-semibold">
-                      Pegawai Di-Edit
-                    </span>
-                  </div>
-                ) : (
-                  <select
-                    value={formData.status_kepegawaian}
-                    onChange={(e) => handleStatusKepegawaianChange(e.target.value as StatusKepegawaian)}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-blue-900 text-xs focus:ring-2 focus:ring-blue-500"
-                  >
-                    <option value="PNS">PNS</option>
-                    <option value="PPPK Penuh Waktu">PPPK Penuh Waktu</option>
-                    <option value="PPPK Paruh Waktu">PPPK Paruh Waktu</option>
-                    <option value="Non-ASN">Non-ASN</option>
-                  </select>
-                )}
-              </div>
-
-              {/* 2. Key Identifier Checks: NIK & NIP/NI PPPK */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-slate-50 p-3.5 rounded-xl border border-slate-200">
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">
-                    NIK Wajib (16 Digit Murni):*
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={16}
-                    value={formData.nik}
-                    onChange={(e) => handleNikChange(e.target.value)}
-                    placeholder="Contoh: 5201011205740001"
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-mono font-bold text-xs focus:ring-2 focus:ring-blue-500 outline-none"
-                    required
-                  />
-                  {nikValidationResult && !nikValidationResult.isValid && (
-                    <p className="text-red-600 text-[10px] mt-1 font-semibold">
-                      {nikValidationResult.error}
-                    </p>
-                  )}
-                  {nikValidationResult?.isValid && (
-                    <p className="text-emerald-600 text-[10px] mt-1 font-bold flex items-center space-x-1">
-                      <CheckCircle2 className="w-3 h-3" />
-                      <span>NIK 16 Digit Valid</span>
-                    </p>
-                  )}
-                </div>
-
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">
-                    {formData.status_kepegawaian === 'PNS'
-                      ? 'NIP PNS (18 Digit):*'
-                      : formData.status_kepegawaian?.startsWith('PPPK')
-                      ? 'NI PPPK (18 Digit):*'
-                      : 'NIP / ID Non-ASN (Otomatis NIK):'}
-                  </label>
-                  <input
-                    type="text"
-                    maxLength={18}
-                    disabled={isEditModalOpen || formData.status_kepegawaian === 'Non-ASN'}
-                    value={
-                      formData.status_kepegawaian === 'Non-ASN'
-                        ? formData.nik
-                        : formData.nip
-                    }
-                    onChange={(e) => handleNipChange(e.target.value)}
-                    placeholder="Contoh: 198506252009021004"
-                    className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg font-mono font-bold text-xs focus:ring-2 focus:ring-blue-500 outline-none disabled:bg-slate-100"
-                    required
-                  />
-                  {formData.status_kepegawaian !== 'Non-ASN' &&
-                    nipValidationResult &&
-                    !nipValidationResult.isValid && (
-                      <p className="text-red-600 text-[10px] mt-1 font-semibold">
-                        {nipValidationResult.error}
-                      </p>
-                    )}
-                  {formData.status_kepegawaian !== 'Non-ASN' &&
-                    nipValidationResult?.isValid && (
-                      <p className="text-emerald-600 text-[10px] mt-1 font-bold flex items-center space-x-1">
-                        <CheckCircle2 className="w-3 h-3" />
-                        <span>NIP 18 Digit Valid</span>
-                      </p>
-                    )}
-                </div>
-              </div>
-
-              {/* 3. Personal Info */}
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Gelar Depan:</label>
-                  <input
-                    type="text"
-                    value={formData.gelar_depan}
-                    onChange={(e) => setFormData({ ...formData, gelar_depan: e.target.value })}
-                    placeholder="dr. / Ns. / H."
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Nama Lengkap:*</label>
-                  <input
-                    type="text"
-                    value={formData.nama_lengkap}
-                    onChange={(e) =>
-                      setFormData({ ...formData, nama_lengkap: e.target.value.toUpperCase() })
-                    }
-                    placeholder="NAMA LENGKAP PEGAWAI"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg font-bold uppercase outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Gelar Belakang:</label>
-                  <input
-                    type="text"
-                    value={formData.gelar_belakang}
-                    onChange={(e) => setFormData({ ...formData, gelar_belakang: e.target.value })}
-                    placeholder="M.Kes / S.Kep"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                  />
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Tempat Lahir:*</label>
-                  <input
-                    type="text"
-                    value={formData.tempat_lahir}
-                    onChange={(e) => setFormData({ ...formData, tempat_lahir: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Tanggal Lahir:*</label>
-                  <input
-                    type="date"
-                    value={formData.tanggal_lahir}
-                    onChange={(e) => setFormData({ ...formData, tanggal_lahir: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Jenis Kelamin:*</label>
-                  <select
-                    value={formData.jenis_kelamin}
-                    onChange={(e) => setFormData({ ...formData, jenis_kelamin: e.target.value })}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                  >
-                    <option value="L">Laki-Laki</option>
-                    <option value="P">Perempuan</option>
-                  </select>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Nomor WhatsApp Aktif:</label>
-                  <input
-                    type="text"
-                    value={formData.no_whatsapp}
-                    onChange={(e) => setFormData({ ...formData, no_whatsapp: e.target.value })}
-                    placeholder="081234567890"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium"
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">
-                    Profesi Kesehatan / SDMK:*
-                  </label>
-                  <textarea
-                    rows={2}
-                    value={formData.profesi_sdmk}
-                    onChange={(e) => setFormData({ ...formData, profesi_sdmk: e.target.value })}
-                    placeholder="Contoh: Perawat / Bidan / Dokter / Tenaga Kesehatan"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-medium text-slate-800 text-xs focus:ring-2 focus:ring-blue-500"
-                  />
-                </div>
-              </div>
-
-              {/* Form Section: Pendidikan Terakhir & Institusi Pendidikan */}
-              <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 space-y-3">
-                <div className="flex items-center justify-between border-b border-emerald-200/70 pb-2">
-                  <h4 className="font-bold text-emerald-950 text-xs flex items-center space-x-1.5">
-                    <GraduationCap className="w-4 h-4 text-emerald-700" />
-                    <span>Pendidikan Terakhir & Kualifikasi Akademik</span>
-                  </h4>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-200/70 text-emerald-900">
-                    Data Riwayat Pendidikan
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Pendidikan Terakhir:*</label>
-                    <input
-                      type="text"
-                      value={formData.pendidikan_terakhir}
-                      onChange={(e) => setFormData({ ...formData, pendidikan_terakhir: e.target.value })}
-                      placeholder="Contoh: S1 Keperawatan / D3 Kebidanan"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Nama Universitas / Institusi PT:</label>
-                    <input
-                      type="text"
-                      value={formData.nama_universitas_pt}
-                      onChange={(e) => setFormData({ ...formData, nama_universitas_pt: e.target.value })}
-                      placeholder="Contoh: Poltekkes Kemenkes / Univ. Mataram"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                  <div>
-                    <label className="block font-bold text-slate-800 mb-1">Program Studi / Jurusan:</label>
-                    <input
-                      type="text"
-                      value={formData.program_studi}
-                      onChange={(e) => setFormData({ ...formData, program_studi: e.target.value })}
-                      placeholder="Contoh: Keperawatan / Profesi Ners / Kebidanan"
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-medium text-slate-800 text-xs focus:ring-2 focus:ring-emerald-500"
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Jenis Jabatan:*</label>
-                  <select
-                    value={formData.jenis_jabatan}
-                    onChange={(e) => {
-                      const val = e.target.value as JenisJabatan;
-                      setFormData({
-                        ...formData,
-                        jenis_jabatan: val,
-                        ...(val === 'Fungsional' && {
-                          jenjang_jabatan: formData.jenjang_jabatan || 'Ahli Utama',
-                          ak_konversi_skp: formData.ak_konversi_skp ?? 0,
-                          total_ak_kumulatif: formData.total_ak_kumulatif ?? 0,
-                        }),
-                        ...(val === 'Pelaksana' && {
-                          status_ukkj: formData.status_ukkj || 'Lulus UKKJ',
-                          status_ujian_dinas: formData.status_ujian_dinas || 'Bukan Pelaksana',
-                          status_pencantuman_gelar: formData.status_pencantuman_gelar || 'Terverifikasi BKN',
-                        }),
-                        ...(val === 'Struktural' && {
-                          jenjang_jabatan: formData.jenjang_jabatan || 'Eselon III.a',
-                          status_ujian_dinas: formData.status_ujian_dinas || 'Bukan Pelaksana',
-                          status_pencantuman_gelar: formData.status_pencantuman_gelar || 'Terverifikasi BKN',
-                        }),
-                      });
-                    }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none"
-                  >
-                    <option value="Fungsional">Fungsional</option>
-                    <option value="Pelaksana">Pelaksana</option>
-                    <option value="Struktural">Struktural</option>
-                  </select>
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">Jabatan Spesifik:*</label>
-                  <input
-                    type="text"
-                    value={formData.jabatan_spesifik}
-                    onChange={(e) =>
-                      setFormData({ ...formData, jabatan_spesifik: e.target.value })
-                    }
-                    placeholder="Perawat Ahli Muda / Bidan Mahir"
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1">
-                    Sisa Cuti Tahunan (Hari):*
-                  </label>
-                  <input
-                    type="number"
-                    min={0}
-                    max={30}
-                    value={
-                      Number.isNaN(Number(formData.sisa_cuti_tahunan))
-                        ? 12
-                        : (formData.sisa_cuti_tahunan ?? 12)
-                    }
-                    onChange={(e) => {
-                      const parsed = parseInt(e.target.value);
-                      setFormData({
-                        ...formData,
-                        sisa_cuti_tahunan: Number.isNaN(parsed) ? 0 : parsed,
-                      });
-                    }}
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-bold text-blue-900"
-                    required
-                  />
-                </div>
-                <div>
-                  <label className="block font-bold text-[#1E293B] mb-1 flex items-center justify-between">
-                    <span>Unit Kerja:*</span>
-                    <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
-                      Tersinkron Master Unit ({synchronizedUnitOptions.length})
-                    </span>
-                  </label>
-                  <select
-                    value={formData.unit_kerja || synchronizedUnitOptions[0]}
-                    onChange={(e) =>
-                      setFormData({
-                        ...formData,
-                        unit_kerja: e.target.value,
-                        satker: formData.satker ? formData.satker : e.target.value,
-                      })
-                    }
-                    className="w-full px-3 py-2 bg-slate-50 border border-slate-200 rounded-lg outline-none font-semibold text-slate-800 text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white transition-all"
-                    required
-                  >
-                    {/* Pastikan jika unit_kerja pegawai tidak ada di master, tetap muncul */}
-                    {formData.unit_kerja && !synchronizedUnitOptions.includes(formData.unit_kerja) && (
-                      <option value={formData.unit_kerja}>{formData.unit_kerja}</option>
-                    )}
-                    {synchronizedUnitOptions.map((uk) => (
-                      <option key={uk} value={uk}>
-                        {uk}
-                      </option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-
-              {/* Form Section: Data Pemantauan Karir & Atribut Jabatan ASN */}
-              <div className="p-4 bg-indigo-50/70 rounded-xl border border-indigo-200 space-y-3">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-indigo-200/60 pb-2">
-                  <h4 className="font-bold text-indigo-900 text-xs flex items-center space-x-1.5">
-                    <Award className="w-4 h-4 text-indigo-600" />
-                    <span>
-                      Atribut Jabatan & Pemantauan ASN ({formData.jenis_jabatan}):{' '}
-                      <span className="text-blue-700 font-extrabold">{formData.status_kepegawaian}</span>
-                    </span>
-                  </h4>
-                  <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-indigo-200/70 text-indigo-900 w-fit">
-                    {formData.jenis_jabatan === 'Fungsional' && 'Jenjang Jafung & AK SKP Konversi'}
-                    {formData.jenis_jabatan === 'Pelaksana' && 'Syarat Ukom, STLUD & Gelar BKN'}
-                    {formData.jenis_jabatan === 'Struktural' && 'Jabatan Manajerial & Verval Gelar'}
-                  </span>
-                </div>
-
-                {formData.status_kepegawaian === 'Non-ASN' ? (
-                  <div className="p-3 bg-white/80 rounded-lg border border-indigo-100 text-slate-600 text-xs leading-relaxed font-medium">
-                    <span className="font-bold text-amber-800 block mb-1">Catatan Regulasi Non-ASN:</span>
-                    Tenaga Non-ASN (Kontrak/Honorarium) tidak menggunakan atribut Karir BKN seperti Jabatan Fungsional, PAK Integrasi, Uji Kompetensi (UKKJ), Ujian Dinas STLUD, maupun Pencantuman Gelar BKN.
-                  </div>
-                ) : formData.jenis_jabatan === 'Fungsional' ? (
-                  /* JENIS JABATAN = FUNGSIONAL */
-                  <div className="space-y-3">
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                      <div>
-                        <label className="block font-bold text-slate-800 mb-1">Jenjang Jabatan Fungsional:*</label>
-                        <select
-                          value={formData.jenjang_jabatan || 'Ahli Pertama'}
-                          onChange={(e) => setFormData({ ...formData, jenjang_jabatan: e.target.value })}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                        >
-                          <option value="Ahli Pertama">Ahli Pertama</option>
-                          <option value="Ahli Muda">Ahli Muda</option>
-                          <option value="Ahli Madya">Ahli Madya</option>
-                          <option value="Ahli Utama">Ahli Utama</option>
-                          <option value="Penyelia">Penyelia</option>
-                          <option value="Mahir">Mahir</option>
-                          <option value="Terampil">Terampil</option>
-                          <option value="Pemula">Pemula</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-800 mb-1">
-                          AK Konversi SKP (Tahunan):
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={
-                            Number.isNaN(Number(formData.ak_konversi_skp))
-                              ? 0
-                              : (formData.ak_konversi_skp ?? 12.5)
-                          }
-                          onChange={(e) => {
-                            const parsed = parseFloat(e.target.value);
-                            setFormData({ ...formData, ak_konversi_skp: Number.isNaN(parsed) ? 0 : parsed });
-                          }}
-                          placeholder="12.5"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-mono font-bold"
-                        />
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-800 mb-1">
-                          Total AK Kumulatif (PAK):
-                        </label>
-                        <input
-                          type="number"
-                          step="0.01"
-                          value={
-                            Number.isNaN(Number(formData.total_ak_kumulatif))
-                              ? 0
-                              : (formData.total_ak_kumulatif ?? 37.5)
-                          }
-                          onChange={(e) => {
-                            const parsed = parseFloat(e.target.value);
-                            setFormData({ ...formData, total_ak_kumulatif: Number.isNaN(parsed) ? 0 : parsed });
-                          }}
-                          placeholder="37.5"
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-mono font-bold text-indigo-900"
-                        />
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-indigo-200/60">
-                      <div>
-                        <label className="block font-bold text-slate-800 mb-1">
-                          Status Uji Kompetensi (UKKJ / Ukom):
-                        </label>
-                        <select
-                          value={formData.status_ukkj || 'Belum UKKJ'}
-                          onChange={(e) => setFormData({ ...formData, status_ukkj: e.target.value as any })}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                        >
-                          <option value="Belum UKKJ">Belum UKKJ</option>
-                          <option value="Lulus UKKJ">Lulus UKKJ</option>
-                          <option value="Dalam Proses">Dalam Proses Ukom</option>
-                          <option value="Bukan Jafung">Bukan Jafung</option>
-                          <option value="Tidak ada">Tidak ada</option>
-                        </select>
-                      </div>
-
-                      <div>
-                        <label className="block font-bold text-slate-800 mb-1">
-                          Status Pencantuman Gelar BKN:
-                        </label>
-                        <select
-                          value={formData.status_pencantuman_gelar || 'Terverifikasi BKN'}
-                          onChange={(e) => setFormData({ ...formData, status_pencantuman_gelar: e.target.value as any })}
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                        >
-                          <option value="Terverifikasi BKN">Terverifikasi BKN</option>
-                          <option value="Proses Verval">Proses Verval / Pengajuan</option>
-                          <option value="Belum Pengajuan">Belum Pengajuan</option>
-                          <option value="Bukan Tugas Belajar">Bukan Tugas Belajar</option>
-                          <option value="Tidak ada">Tidak ada</option>
-                        </select>
-                      </div>
-                    </div>
-                  </div>
-                ) : formData.jenis_jabatan === 'Pelaksana' ? (
-                  /* JENIS JABATAN = PELAKSANA */
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">
-                        Status Uji Kompetensi (UKKJ):
-                      </label>
-                      <select
-                        value={formData.status_ukkj || 'Lulus UKKJ'}
-                        onChange={(e) => setFormData({ ...formData, status_ukkj: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                      >
-                        <option value="Lulus UKKJ">Lulus UKKJ</option>
-                        <option value="Belum UKKJ">Belum UKKJ</option>
-                        <option value="Dalam Proses">Dalam Proses Ukom</option>
-                        <option value="Bukan Jafung">Bukan Jafung</option>
-                        <option value="Tidak ada">Tidak ada</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">
-                        Status Ujian Dinas (STLUD):
-                      </label>
-                      <select
-                        value={formData.status_ujian_dinas || 'Bukan Pelaksana'}
-                        onChange={(e) => setFormData({ ...formData, status_ujian_dinas: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                      >
-                        <option value="Bukan Pelaksana">Bukan Pelaksana</option>
-                        <option value="Lulus STLUD">Lulus STLUD (Ujian Dinas)</option>
-                        <option value="Belum Ujian">Belum Ujian Dinas</option>
-                        <option value="Penyesuaian Ijazah">Penyesuaian Ijazah (PI)</option>
-                        <option value="Tidak ada">Tidak ada</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">
-                        Status Pencantuman Gelar BKN:
-                      </label>
-                      <select
-                        value={formData.status_pencantuman_gelar || 'Terverifikasi BKN'}
-                        onChange={(e) => setFormData({ ...formData, status_pencantuman_gelar: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                      >
-                        <option value="Terverifikasi BKN">Terverifikasi BKN</option>
-                        <option value="Proses Verval">Proses Verval / Pengajuan</option>
-                        <option value="Belum Pengajuan">Belum Pengajuan</option>
-                        <option value="Bukan Tugas Belajar">Bukan Tugas Belajar</option>
-                        <option value="Tidak ada">Tidak ada</option>
-                      </select>
-                    </div>
-                  </div>
-                ) : (
-                  /* JENIS JABATAN = STRUKTURAL */
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">
-                        Jenjang / Tingkat Eselon:
-                      </label>
-                      <select
-                        value={formData.jenjang_jabatan || 'Eselon III.a'}
-                        onChange={(e) => setFormData({ ...formData, jenjang_jabatan: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                      >
-                        <option value="Eselon II.b">Eselon II.b (Kepala Dinas)</option>
-                        <option value="Eselon III.a">Eselon III.a (Sekretaris Dinas)</option>
-                        <option value="Eselon III.b">Eselon III.b (Kabid / Kabag)</option>
-                        <option value="Eselon IV.a">Eselon IV.a (Kasubag / Kasi / Kapus)</option>
-                        <option value="Non-Eselon">Non-Eselon / Manajerial</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">
-                        Status Ujian Dinas (STLUD):
-                      </label>
-                      <select
-                        value={formData.status_ujian_dinas || 'Bukan Pelaksana'}
-                        onChange={(e) => setFormData({ ...formData, status_ujian_dinas: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                      >
-                        <option value="Bukan Pelaksana">Bukan Pelaksana</option>
-                        <option value="Lulus STLUD">Lulus STLUD (Ujian Dinas)</option>
-                        <option value="Belum Ujian">Belum Ujian Dinas</option>
-                        <option value="Penyesuaian Ijazah">Penyesuaian Ijazah (PI)</option>
-                        <option value="Tidak ada">Tidak ada</option>
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-slate-800 mb-1">
-                        Status Pencantuman Gelar BKN:
-                      </label>
-                      <select
-                        value={formData.status_pencantuman_gelar || 'Terverifikasi BKN'}
-                        onChange={(e) => setFormData({ ...formData, status_pencantuman_gelar: e.target.value as any })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-semibold text-slate-800"
-                      >
-                        <option value="Terverifikasi BKN">Terverifikasi BKN</option>
-                        <option value="Proses Verval">Proses Verval / Pengajuan</option>
-                        <option value="Belum Pengajuan">Belum Pengajuan</option>
-                        <option value="Bukan Tugas Belajar">Bukan Tugas Belajar</option>
-                        <option value="Tidak ada">Tidak ada</option>
-                      </select>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              {/* 5. Conditional Section by Status Kepegawaian */}
-              {formData.status_kepegawaian === 'PNS' && (
-                <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200 space-y-3">
-                  <h4 className="font-bold text-blue-900 text-xs">Perekaman Atribut PNS:</h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">Golongan Ruang:*</label>
-                      <select
-                        value={formData.golongan_pangkat}
-                        onChange={(e) => handleGolonganPnsChange(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-blue-900"
-                      >
-                        {GOLONGAN_PNS_OPTIONS.map((g) => (
-                          <option key={g} value={g}>
-                            {g} - {getPangkatNameByGolongan(g)}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">Nama Pangkat:</label>
-                      <input
-                        type="text"
-                        readOnly
-                        value={formData.nama_pangkat}
-                        className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-lg font-bold text-slate-700 outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">TMT Golongan:*</label>
-                      <input
-                        type="date"
-                        value={formData.tmt_golongan}
-                        onChange={(e) => setFormData({ ...formData, tmt_golongan: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-medium"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">Masa Kerja (Tahun):</label>
-                      <input
-                        type="number"
-                        value={
-                          Number.isNaN(Number(formData.masa_kerja_tahun))
-                            ? 0
-                            : (formData.masa_kerja_tahun ?? 0)
-                        }
-                        onChange={(e) => {
-                          const parsed = parseInt(e.target.value);
-                          setFormData({ ...formData, masa_kerja_tahun: Number.isNaN(parsed) ? 0 : parsed });
-                        }}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">No. SK Pangkat:</label>
-                      <input
-                        type="text"
-                        value={formData.no_sk_pangkat}
-                        onChange={(e) => setFormData({ ...formData, no_sk_pangkat: e.target.value })}
-                        placeholder="821/204/BKPSDM/2022"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">No. Pertek BKN:</label>
-                      <input
-                        type="text"
-                        value={formData.no_pertek_bkn}
-                        onChange={(e) => setFormData({ ...formData, no_pertek_bkn: e.target.value })}
-                        placeholder="08912/B-KP.03/2022"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 border-t border-blue-200/80 pt-2.5">
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">Nama Jabatan (PNS):</label>
-                      <input
-                        type="text"
-                        value={formData.nama_jabatan_pns || formData.jabatan_spesifik || ''}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            nama_jabatan_pns: e.target.value,
-                            jabatan_spesifik: e.target.value || formData.jabatan_spesifik,
-                          })
-                        }
-                        placeholder="e.g. Perawat Ahli Muda / Staff..."
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">TMT Jabatan:</label>
-                      <input
-                        type="date"
-                        value={formData.tmt_jabatan_pns || ''}
-                        onChange={(e) => setFormData({ ...formData, tmt_jabatan_pns: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-medium"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">No. SK Jabatan:</label>
-                      <input
-                        type="text"
-                        value={formData.no_sk_jabatan_pns || ''}
-                        onChange={(e) => setFormData({ ...formData, no_sk_jabatan_pns: e.target.value })}
-                        placeholder="821.2/105/BKPSDM/2023"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="p-2.5 bg-amber-50 rounded-lg border border-amber-200 text-amber-900 text-[11px] font-semibold">
-                    {getProyeksiKenaikanPangkat(formData.golongan_pangkat, formData.tmt_golongan || formData.tmt_cpns)}
-                  </div>
-                </div>
-              )}
-
-              {formData.status_kepegawaian?.startsWith('PPPK') && (
-                <div className="p-4 bg-emerald-50/60 rounded-xl border border-emerald-200 space-y-3">
-                  <h4 className="font-bold text-emerald-900 text-xs">Perekaman Atribut PPPK:</h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">Golongan PPPK:*</label>
-                      <select
-                        value={formData.golongan_pppk}
-                        onChange={(e) => setFormData({ ...formData, golongan_pppk: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-emerald-900"
-                      >
-                        {GOLONGAN_PPPK_OPTIONS.map((g) => (
-                          <option key={g} value={g}>
-                            {g}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        No. Perjanjian Kerja:*
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.no_perjanjian_kerja}
-                        onChange={(e) =>
-                          setFormData({ ...formData, no_perjanjian_kerja: e.target.value })
-                        }
-                        placeholder="800/120/PPPK-DK/2023"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">Satker:*</label>
-                      <input
-                        type="text"
-                        value={formData.satker}
-                        onChange={(e) => setFormData({ ...formData, satker: e.target.value })}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        TMT Perjanjian Mulai:
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.tmt_perjanjian_mulai}
-                        onChange={(e) =>
-                          setFormData({ ...formData, tmt_perjanjian_mulai: e.target.value })
-                        }
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        TMT Perjanjian Selesai:
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.tmt_perjanjian_selesai}
-                        onChange={(e) =>
-                          setFormData({ ...formData, tmt_perjanjian_selesai: e.target.value })
-                        }
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {formData.status_kepegawaian === 'Non-ASN' && (
-                <div className="p-4 bg-purple-50/60 rounded-xl border border-purple-200 space-y-3">
-                  <h4 className="font-bold text-purple-900 text-xs">
-                    Perekaman Atribut Non-ASN (PKWT):
-                  </h4>
-
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        No. SK Kontrak Kerja:*
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.no_sk_kontrak}
-                        onChange={(e) =>
-                          setFormData({ ...formData, no_sk_kontrak: e.target.value })
-                        }
-                        placeholder="800/045/SK-NONASN/2026"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">Masa Kerja:</label>
-                      <input
-                        type="text"
-                        value={formData.masa_kerja_non_asn}
-                        onChange={(e) =>
-                          setFormData({ ...formData, masa_kerja_non_asn: e.target.value })
-                        }
-                        placeholder="3 Tahun 2 Bulan"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        Sumber Pembiayaan:*
-                      </label>
-                      <select
-                        value={formData.sumber_pembiayaan}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            sumber_pembiayaan: e.target.value as SumberPembiayaan,
-                          })
-                        }
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-purple-900"
-                      >
-                        <option value="BLUD">BLUD (Badan Layanan Umum Daerah)</option>
-                        <option value="APBD">APBD Lombok Barat</option>
-                        <option value="APBN">APBN / Kemenkes</option>
-                      </select>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {/* 6. Perekaman Model DK & Tanggungan Gaji KP4 (Keluarga) */}
-              <div className="p-4 bg-blue-50/60 rounded-xl border border-blue-200 space-y-4">
-                <div className="flex items-center justify-between">
-                  <h4 className="font-bold text-blue-900 text-xs flex items-center space-x-1.5">
-                    <Users className="w-4 h-4 text-blue-700" />
-                    <span>Perekaman Model DK & Tanggungan Gaji (KP4)</span>
-                  </h4>
-                  <span className="text-[11px] text-blue-700 font-medium">
-                    Dasar Pembayaran Tunjangan Keluarga Gaji
-                  </span>
-                </div>
-
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  <div>
-                    <label className="block font-bold text-[#1E293B] mb-1">Status Perkawinan:*</label>
-                    <select
-                      value={statusPerkawinan}
-                      onChange={(e) =>
-                        setStatusPerkawinan(
-                          e.target.value as 'Menikah' | 'Belum Menikah' | 'Duda' | 'Janda'
-                        )
-                      }
-                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none font-bold text-blue-900"
-                    >
-                      <option value="Menikah">Menikah / Kawin (K)</option>
-                      <option value="Belum Menikah">Belum Menikah (TK)</option>
-                      <option value="Duda">Duda</option>
-                      <option value="Janda">Janda</option>
-                    </select>
-                  </div>
-
-                  {statusPerkawinan === 'Menikah' && (
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        Nama Lengkap Pasangan (Suami/Istri):
-                      </label>
-                      <input
-                        type="text"
-                        value={namaPasangan}
-                        onChange={(e) => setNamaPasangan(e.target.value)}
-                        placeholder="Nama Suami / Istri"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-                  )}
-                </div>
-
-                {statusPerkawinan === 'Menikah' && (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 bg-white/70 p-3 rounded-lg border border-blue-100">
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        Tanggal Lahir Pasangan:
-                      </label>
-                      <input
-                        type="date"
-                        value={tglLahirPasangan}
-                        onChange={(e) => setTglLahirPasangan(e.target.value)}
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none"
-                      />
-                    </div>
-
-                    <div className="flex items-center pt-5">
-                      <label className="flex items-center space-x-2 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={tanggunganPasangan}
-                          onChange={(e) => setTanggunganPasangan(e.target.checked)}
-                          className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4"
-                        />
-                        <span className="text-xs font-bold text-blue-950">
-                          Tunjangan Pasangan Aktif (Masuk Daftar Gaji KP4)
-                        </span>
-                      </label>
-                    </div>
-                  </div>
-                )}
-
-                {/* Bagian Anak Tanggungan */}
-                <div className="space-y-2.5 pt-2 border-t border-blue-200">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-bold text-xs text-blue-950">
-                        Daftar Anak Tanggungan (KP4):
-                      </span>
-                      <p className="text-[10px] text-slate-500">
-                        Tunjangan anak berlaku s.d usia 21 thn (atau 25 thn dengan suket kuliah).
-                      </p>
-                    </div>
-                    <button
-                      type="button"
-                      onClick={handleAddChildRow}
-                      className="px-2.5 py-1 bg-blue-600 hover:bg-blue-700 text-white rounded-md text-xs font-bold flex items-center space-x-1"
-                    >
-                      <Plus className="w-3.5 h-3.5" />
-                      <span>+ Tambah Anak</span>
-                    </button>
-                  </div>
-
-                  {daftarAnak.length === 0 ? (
-                    <div className="bg-white/80 p-3 rounded-lg border border-dashed border-blue-200 text-center text-slate-500 text-xs italic">
-                      Belum ada anak yang ditambahkan. Klik tombol "+ Tambah Anak" jika memiliki anak tanggungan gaji.
-                    </div>
-                  ) : (
-                    <div className="space-y-2">
-                      {daftarAnak.map((anak, idx) => (
-                        <div
-                          key={idx}
-                          className="bg-white p-3 rounded-lg border border-slate-200 space-y-2 shadow-xs"
-                        >
-                          <div className="flex items-center justify-between">
-                            <span className="font-bold text-xs text-blue-900">
-                              Anak Ke-{idx + 1}
-                            </span>
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveChildRow(idx)}
-                              className="text-red-500 hover:text-red-700 p-1"
-                              title="Hapus baris anak"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
-                                Nama Lengkap Anak:*
-                              </label>
-                              <input
-                                type="text"
-                                value={anak.nama_keluarga}
-                                onChange={(e) =>
-                                  handleUpdateChildRow(idx, 'nama_keluarga', e.target.value)
-                                }
-                                placeholder="Nama anak"
-                                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs outline-none"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block text-[11px] font-bold text-slate-700 mb-0.5">
-                                Tanggal Lahir:*
-                              </label>
-                              <input
-                                type="date"
-                                value={anak.tanggal_lahir}
-                                onChange={(e) =>
-                                  handleUpdateChildRow(idx, 'tanggal_lahir', e.target.value)
-                                }
-                                className="w-full px-2.5 py-1.5 bg-slate-50 border border-slate-200 rounded text-xs outline-none"
-                              />
-                            </div>
-
-                            <div className="flex items-center pt-4">
-                              <label className="flex items-center space-x-1.5 cursor-pointer">
-                                <input
-                                  type="checkbox"
-                                  checked={anak.status_tanggungan}
-                                  onChange={(e) =>
-                                    handleUpdateChildRow(idx, 'status_tanggungan', e.target.checked)
-                                  }
-                                  className="rounded text-blue-600 focus:ring-blue-500"
-                                />
-                                <span className="text-xs font-semibold text-emerald-800">
-                                  Tunjangan Aktif
-                                </span>
-                              </label>
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 pt-1 border-t border-slate-100">
-                            <div>
-                              <input
-                                type="text"
-                                value={anak.nama_sekolah_pt || ''}
-                                onChange={(e) =>
-                                  handleUpdateChildRow(idx, 'nama_sekolah_pt', e.target.value)
-                                }
-                                placeholder="Sekolah / Perguruan Tinggi (opsional)"
-                                className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded text-xs outline-none"
-                              />
-                            </div>
-                            <div>
-                              <input
-                                type="text"
-                                value={anak.no_surat_kuliah || ''}
-                                onChange={(e) =>
-                                  handleUpdateChildRow(idx, 'no_surat_kuliah', e.target.value)
-                                }
-                                placeholder="Nomor Surat Keterangan Kuliah (opsional)"
-                                className="w-full px-2.5 py-1 bg-slate-50 border border-slate-200 rounded text-xs outline-none font-mono"
-                              />
-                            </div>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* Submit / Cancel Buttons */}
-              <div className="flex justify-end space-x-2 pt-3 border-t border-[#E2E8F0]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsAddModalOpen(false);
-                    setIsEditModalOpen(false);
-                  }}
-                  className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-[#1E293B] rounded-lg font-heading font-semibold text-xs transition-colors"
-                >
-                  Batal
-                </button>
-                <button
-                  type="submit"
-                  className="btn-success text-xs px-5 py-2"
-                >
-                  <CheckCircle2 className="w-4 h-4" />
-                  <span>Simpan Data Pegawai</span>
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
+      {/* ADD / EDIT MODAL (4-TAB NAVIGATION & STRUCTURED GRID) */}
+      <PegawaiAddEditModal
+        isOpen={isAddModalOpen || isEditModalOpen}
+        isAddModalOpen={isAddModalOpen}
+        isEditModalOpen={isEditModalOpen}
+        onClose={() => {
+          setIsAddModalOpen(false);
+          setIsEditModalOpen(false);
+        }}
+        formData={formData}
+        setFormData={setFormData}
+        activeFormTab={activeFormTab}
+        setActiveFormTab={setActiveFormTab}
+        nikValidationResult={nikValidationResult}
+        handleNikChange={handleNikChange}
+        nipValidationResult={nipValidationResult}
+        handleNipChange={handleNipChange}
+        handleStatusKepegawaianChange={handleStatusKepegawaianChange}
+        handleGolonganPnsChange={handleGolonganPnsChange}
+        synchronizedUnitOptions={synchronizedUnitOptions}
+        handleSubmitAdd={handleSubmitAdd}
+        handleSubmitEdit={handleSubmitEdit}
+        statusPerkawinan={statusPerkawinan}
+        setStatusPerkawinan={setStatusPerkawinan}
+        namaPasangan={namaPasangan}
+        setNamaPasangan={setNamaPasangan}
+        tglLahirPasangan={tglLahirPasangan}
+        setTglLahirPasangan={setTglLahirPasangan}
+        tanggunganPasangan={tanggunganPasangan}
+        setTanggunganPasangan={setTanggunganPasangan}
+        daftarAnak={daftarAnak}
+        handleAddChildRow={handleAddChildRow}
+        handleRemoveChildRow={handleRemoveChildRow}
+        handleUpdateChildRow={handleUpdateChildRow}
+      />
 
       {/* DETAIL VIEW KP4 MODAL: ADD / EDIT ANGGOTA KELUARGA */}
       {isDetailKp4ModalOpen && (
