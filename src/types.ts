@@ -116,25 +116,6 @@ export interface KeluargaKP4 {
   semester_kuliah?: string | null;
 }
 
-export interface AuditLog {
-  id: string;
-  admin_email: string;
-  aksi:
-    | 'Create'
-    | 'Update'
-    | 'Delete'
-    | 'Soft Delete'
-    | 'Restore'
-    | 'Upload SK'
-    | 'KP4 Update'
-    | 'Database Reset'
-    | 'Restore Sample Data'
-    | 'System Initialize';
-  tabel_terdampak: string;
-  deskripsi: string;
-  created_at: string;
-}
-
 export interface AlertKGBItem {
   nip: string;
   nama_lengkap: string;
@@ -257,3 +238,4 @@ export interface AplikasiKepegawaian {
   created_at: string;
   updated_at?: string;
 }
+
