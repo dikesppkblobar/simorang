@@ -131,7 +131,7 @@ export default function App() {
   const [alertsDefaultSubTab, setAlertsDefaultSubTab] = useState<
     'pangkat' | 'jafung' | 'ukom' | 'ujian_dinas' | 'kgb' | 'cuti' | 'pensiun' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4'
   >('pangkat');
-  const [isAlertsMenuExpanded, setIsAlertsMenuExpanded] = useState<boolean>(true);
+  const [isAlertsMenuExpanded, setIsAlertsMenuExpanded] = useState<boolean>(false);
   const [settingsDefaultSubTab, setSettingsDefaultSubTab] = useState<'users' | 'export' | 'scope'>('users');
   const [managementDefaultSubTab, setManagementDefaultSubTab] = useState<'users' | 'units' | 'database'>('units');
 
@@ -148,6 +148,7 @@ export default function App() {
       } else if (subTab) {
         setAlertsDefaultSubTab(subTab as any);
       }
+      setIsAlertsMenuExpanded(true);
       setActiveTab('alerts');
     } else if (tab === 'users_units' || tab === 'units' || tab === 'users' || subTab === 'units' || subTab === 'users') {
       setSettingsDefaultSubTab('users');
