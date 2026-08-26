@@ -1,12 +1,11 @@
 export const SUPABASE_SCHEMA_SQL = `-- ==============================================================================
--- SKEMA LENGKAP DATABASE DARI 0 (CLEAN PRODUCTION SCHEMA)
+-- SKEMA LENGKAP DATABASE DARI 0 (CLEAN PRODUCTION SCHEMA - SIMORANG DINKES-PPKB)
 -- SISTEM: SIMORANG DINKES-PPKB KABUPATEN LOMBOK BARAT
 -- (Sistem Monitoring Ruang Kepegawaian Dinas Kesehatan, Pengendalian Penduduk
 --  dan Keluarga Berencana Kab. Lombok Barat)
 -- ==============================================================================
 
 -- 0. HAPUS TABEL JIKA INGIN SETUP ULANG SECARA BERSIH DARI 0 (OPSIONAL)
--- DROP TABLE IF EXISTS audit_logs CASCADE;
 -- DROP TABLE IF EXISTS keluarga_kp4 CASCADE;
 -- DROP TABLE IF EXISTS sk_history CASCADE;
 -- DROP TABLE IF EXISTS pegawai CASCADE;
@@ -95,6 +94,7 @@ CREATE TABLE IF NOT EXISTS pegawai (
   progres_semester TEXT,
   akreditasi_pt TEXT,
   tmt_kgb_terakhir TEXT,
+  no_sk_kgb TEXT,
   tmt_pangkat_terakhir TEXT,
 
   -- Atribut Khusus PNS
@@ -128,7 +128,7 @@ CREATE TABLE IF NOT EXISTS pegawai (
   sumber_pembiayaan TEXT
 );
 
--- Indexing untuk query cepat
+-- Indexing untuk performa pencarian tinggi
 CREATE INDEX IF NOT EXISTS idx_pegawai_unit_kerja ON pegawai(unit_kerja);
 CREATE INDEX IF NOT EXISTS idx_pegawai_status_kepegawaian ON pegawai(status_kepegawaian);
 CREATE INDEX IF NOT EXISTS idx_pegawai_is_deleted ON pegawai(is_deleted);
@@ -188,26 +188,11 @@ CREATE TABLE IF NOT EXISTS aplikasi_kepegawaian (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Penyesuaian tipe kolom ID jika sebelumnya dibuat sebagai UUID
-ALTER TABLE IF EXISTS aplikasi_kepegawaian ALTER COLUMN id TYPE TEXT;
-
 CREATE INDEX IF NOT EXISTS idx_aplikasi_kategori ON aplikasi_kepegawaian(kategori);
 CREATE INDEX IF NOT EXISTS idx_aplikasi_unit_kerja ON aplikasi_kepegawaian(unit_kerja);
 
 -- ------------------------------------------------------------------------------
--- 7. TABEL AUDIT LOG AKTIVITAS SISTEM
--- ------------------------------------------------------------------------------
-CREATE TABLE IF NOT EXISTS audit_logs (
-  id TEXT PRIMARY KEY,
-  admin_email TEXT NOT NULL,
-  aksi TEXT NOT NULL,
-  tabel_terdampak TEXT NOT NULL,
-  deskripsi TEXT,
-  created_at TIMESTAMPTZ DEFAULT NOW()
-);
-
--- ------------------------------------------------------------------------------
--- 8. PENGATURAN AKSES SUPABASE (ROW LEVEL SECURITY)
+-- 7. PENGATURAN AKSES SUPABASE (ROW LEVEL SECURITY)
 -- ------------------------------------------------------------------------------
 ALTER TABLE units DISABLE ROW LEVEL SECURITY;
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
@@ -215,6 +200,5 @@ ALTER TABLE pegawai DISABLE ROW LEVEL SECURITY;
 ALTER TABLE sk_history DISABLE ROW LEVEL SECURITY;
 ALTER TABLE keluarga_kp4 DISABLE ROW LEVEL SECURITY;
 ALTER TABLE aplikasi_kepegawaian DISABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_logs DISABLE ROW LEVEL SECURITY;
 `;
 
