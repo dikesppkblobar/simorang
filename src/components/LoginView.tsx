@@ -9,6 +9,10 @@ import {
   AlertCircle,
   ChevronDown,
   ChevronUp,
+  Cake,
+  Award,
+  Sparkles,
+  X,
 } from 'lucide-react';
 import { UserAccount, Pegawai, RiwayatSK } from '../types';
 import { LoginBackground } from './LoginBackground';
@@ -23,6 +27,11 @@ interface LoginViewProps {
   onLoginSuccess: (user: UserAccount) => void;
 }
 
+const BULAN_INDONESIA = [
+  'Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni',
+  'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'
+];
+
 export const LoginView: React.FC<LoginViewProps> = ({
   usersList,
   pegawaiList,
@@ -34,8 +43,38 @@ export const LoginView: React.FC<LoginViewProps> = ({
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(true);
   const [isDemoOpen, setIsDemoOpen] = useState(false);
+  const [showCelebration, setShowCelebration] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [errorMessage, setErrorMessage] = useState('');
+
+  const today = new Date();
+  const currentMonth = today.getMonth() + 1; // 1-12
+  const currentMonthName = BULAN_INDONESIA[currentMonth - 1] || 'Bulan Ini';
+
+  // Count birthday celebrants this month
+  const birthdayCount = pegawaiList.filter((p) => {
+    if (p.is_deleted || !p.tanggal_lahir || !p.tanggal_lahir.includes('-')) return false;
+    const parts = p.tanggal_lahir.split('-');
+    const birthMonth = parseInt(parts[1] || '0', 10);
+    return birthMonth === currentMonth;
+  }).length;
+
+  // Count promotion celebrants this month
+  const promotionCount = pegawaiList.filter((p) => {
+    if (p.is_deleted) return false;
+    const skPangkat = skList.find(
+      (s) => s.nip_pegawai === p.nip && (s.jenis_sk?.toLowerCase().includes('pangkat') || s.jenis_sk === 'Pangkat')
+    );
+    const rawTmt = skPangkat?.tmt_berlaku || p.tmt_pangkat_terakhir || p.tmt_golongan || '';
+    if (rawTmt && rawTmt.includes('-')) {
+      const parts = rawTmt.split('-');
+      const tmtMonth = parseInt(parts[1] || '0', 10);
+      return tmtMonth === currentMonth;
+    }
+    return false;
+  }).length;
+
+  const totalCelebrants = birthdayCount + promotionCount;
 
   // Quick Demo Account selection
   const handleQuickLogin = (user: UserAccount) => {
@@ -74,7 +113,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
     setIsLoading(true);
 
     setTimeout(async () => {
-      // Find matching user in database by username, email, or nip
       const sourceList = (usersList && usersList.length > 0) ? usersList : dbStore.getAllUsers();
       const matchedUser = sourceList.find((u) => {
         const uUsername = (u.username || '').toLowerCase().trim();
@@ -90,14 +128,12 @@ export const LoginView: React.FC<LoginViewProps> = ({
       });
 
       if (matchedUser) {
-        // 1. Check if account is active
         if (matchedUser.status === 'Nonaktif') {
           setIsLoading(false);
           setErrorMessage('Akun ini berstatus Nonaktif. Silakan hubungi Administrator DINKES-PPKB untuk pengaktifan.');
           return;
         }
 
-        // 2. Validate Password
         const userPass = matchedUser.password;
         const enteredPass = password.trim();
 
@@ -121,7 +157,6 @@ export const LoginView: React.FC<LoginViewProps> = ({
         } catch (_) {}
         onLoginSuccess(matchedUser);
       } else {
-        // Fallback for demo or master login
         if (
           inputClean.includes('admin') ||
           inputClean.includes('dinkes') ||
@@ -159,19 +194,31 @@ export const LoginView: React.FC<LoginViewProps> = ({
       {/* Dynamic Background with Dark Overlay & Medical Grid */}
       <LoginBackground />
 
-      {/* MAIN SECTION: Dual Card Layout with Compact, Elevated Cards */}
-      <main className="relative z-20 flex-1 flex items-center justify-center p-3 sm:p-5 md:p-6 py-6 sm:py-8">
-        <div className="w-full max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch my-auto">
-          
-          {/* CARD 1: FORM LOGIN (Primary Focus - Clean Header & Collapsible Demo) */}
+      {/* MAIN SECTION: Centered Login and Smoothly Sliding Celebration Card */}
+      <main className="relative z-20 flex-1 flex flex-col items-center justify-center p-3 sm:p-5 md:p-6 py-6 sm:py-8">
+        
+        {/* CONTAINER: Dual Card or Single Form based on showCelebration with Smooth Layout Animation */}
+        <motion.div
+          layout
+          transition={{ type: 'spring', stiffness: 280, damping: 30 }}
+          className={`w-full transition-all duration-500 ${
+            showCelebration
+              ? 'max-w-5xl grid grid-cols-1 lg:grid-cols-12 gap-4 sm:gap-6 items-stretch'
+              : 'max-w-md flex flex-col items-center'
+          }`}
+        >
+          {/* CARD 1: FORM LOGIN */}
           <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut' }}
-            className="lg:col-span-7 bg-white/95 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl shadow-slate-950/25 ring-1 ring-slate-900/5 p-4 sm:p-6 md:p-7 flex flex-col justify-between relative z-10"
+            layout
+            initial={{ opacity: 0, scale: 0.98 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ type: 'spring', stiffness: 300, damping: 28 }}
+            className={`${
+              showCelebration ? 'lg:col-span-7' : 'w-full'
+            } bg-white/95 backdrop-blur-xl rounded-2xl border border-white/80 shadow-2xl shadow-slate-950/25 ring-1 ring-slate-900/5 p-4 sm:p-6 md:p-7 flex flex-col justify-between relative z-10`}
           >
             <div>
-              {/* BRANDING HEADER: Compact Logo + Nama Aplikasi Ringkas */}
+              {/* BRANDING HEADER: Compact Logo + Nama Aplikasi */}
               <div className="flex items-center space-x-3 pb-3 mb-3 sm:mb-4 border-b border-slate-100">
                 <img
                   src="/logo-lombok-barat.jpeg"
@@ -189,10 +236,15 @@ export const LoginView: React.FC<LoginViewProps> = ({
               </div>
 
               {/* Title: Direct & Focused "Selamat Datang" */}
-              <div className="mb-3.5 sm:mb-4">
-                <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 tracking-tight">
-                  Selamat Datang
-                </h2>
+              <div className="mb-3.5 sm:mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl sm:text-2xl font-heading font-extrabold text-slate-900 tracking-tight">
+                    Selamat Datang
+                  </h2>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Silakan masuk ke akun kepegawaian Anda
+                  </p>
+                </div>
               </div>
 
               {/* Error Notification */}
@@ -286,7 +338,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
               </form>
             </div>
 
-            {/* Collapsible Demo Mode Accordion (Saves vertical space on mobile) */}
+            {/* Collapsible Demo Mode Accordion */}
             <div className="pt-3 mt-3.5 border-t border-slate-100">
               <button
                 type="button"
@@ -344,20 +396,100 @@ export const LoginView: React.FC<LoginViewProps> = ({
             </div>
           </motion.div>
 
-          {/* CARD 2: CELEBRATION GREETINGS CARD (Informative Complement Card) */}
-          <motion.div
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, ease: 'easeOut', delay: 0.1 }}
-            className="lg:col-span-5 flex flex-col"
-          >
-            <CelebrationGreetingsCard
-              pegawaiList={pegawaiList}
-              skList={skList}
-            />
-          </motion.div>
+          {/* CARD 2: CELEBRATION GREETINGS CARD (Smoothly Sliding in from the side) */}
+          <AnimatePresence mode="wait">
+            {showCelebration && (
+              <motion.div
+                key="celebration-card-container"
+                layout
+                initial={{ opacity: 0, x: 50, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 50, scale: 0.95 }}
+                transition={{
+                  type: 'spring',
+                  stiffness: 260,
+                  damping: 24,
+                  mass: 0.8,
+                }}
+                className="lg:col-span-5 flex flex-col h-full"
+              >
+                <CelebrationGreetingsCard
+                  pegawaiList={pegawaiList}
+                  skList={skList}
+                  onClose={() => setShowCelebration(false)}
+                />
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
-        </div>
+        {/* CELEBRATION TOGGLE BUTTON: PLACED DIRECTLY BELOW THE LOGIN CARD */}
+        <motion.div
+          layout
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.35, delay: 0.1 }}
+          className={`w-full mt-4 transition-all ${
+            showCelebration ? 'max-w-5xl' : 'max-w-md'
+          }`}
+        >
+          <button
+            type="button"
+            onClick={() => setShowCelebration(!showCelebration)}
+            className={`w-full p-2.5 sm:p-3 rounded-2xl backdrop-blur-xl border transition-all flex items-center justify-between group cursor-pointer shadow-lg active:scale-[0.99] ${
+              showCelebration
+                ? 'bg-amber-500/90 hover:bg-amber-600/90 text-white border-amber-300/60 shadow-amber-950/20'
+                : 'bg-white/95 hover:bg-white text-slate-800 border-white/80 hover:border-amber-400/70 shadow-slate-950/20 ring-1 ring-slate-900/5'
+            }`}
+          >
+            <div className="flex items-center space-x-2.5 min-w-0">
+              {/* Icons Container (Cake + Award) */}
+              <div className="flex items-center space-x-1.5 shrink-0">
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                  showCelebration ? 'bg-white/20 text-white' : 'bg-gradient-to-tr from-amber-500 to-rose-500 text-white shadow-xs'
+                }`}>
+                  <Cake className="w-4 h-4" />
+                </div>
+                <div className={`w-8 h-8 rounded-xl flex items-center justify-center transition-transform group-hover:scale-110 ${
+                  showCelebration ? 'bg-white/20 text-white' : 'bg-gradient-to-tr from-[#004B87] to-[#00A3AD] text-white shadow-xs'
+                }`}>
+                  <Award className="w-4 h-4" />
+                </div>
+              </div>
+
+              {/* Text Label: Kartu Ucapan */}
+              <div className="text-left min-w-0">
+                <div className="flex items-center space-x-1.5">
+                  <span className={`text-xs sm:text-sm font-heading font-extrabold truncate ${
+                    showCelebration ? 'text-white' : 'text-slate-900 group-hover:text-amber-600'
+                  }`}>
+                    {showCelebration ? 'Tutup Kartu Ucapan' : 'Kartu Ucapan'}
+                  </span>
+                  <Sparkles className={`w-3.5 h-3.5 shrink-0 ${showCelebration ? 'text-amber-200' : 'text-amber-500 animate-pulse'}`} />
+                </div>
+                <p className={`text-[11px] truncate ${showCelebration ? 'text-amber-100' : 'text-slate-500'}`}>
+                  {showCelebration
+                    ? `Periode ${currentMonthName} ${today.getFullYear()} (${totalCelebrants} Pegawai)`
+                    : `Lihat ucapan selamat pegawai ulang tahun & naik pangkat bulan ini (${totalCelebrants > 0 ? `${birthdayCount} Ultah, ${promotionCount} Pangkat` : 'Bulan Ini'})`}
+                </p>
+              </div>
+            </div>
+
+            {/* Action State Badge */}
+            <div className="flex items-center space-x-2 shrink-0 ml-2">
+              <span className={`hidden sm:inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-heading font-bold ${
+                showCelebration
+                  ? 'bg-black/20 text-white'
+                  : 'bg-amber-100 text-amber-900 border border-amber-200'
+              }`}>
+                {showCelebration ? 'Tutup ✕' : 'Buka 🎉'}
+              </span>
+              <div className={`p-1 rounded-lg ${showCelebration ? 'bg-white/20 text-white' : 'bg-slate-100 text-slate-600 group-hover:bg-amber-100 group-hover:text-amber-700'}`}>
+                {showCelebration ? <X className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+              </div>
+            </div>
+          </button>
+        </motion.div>
       </main>
 
       {/* FOOTER BAR: Clean visual separation */}
