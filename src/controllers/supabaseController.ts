@@ -26,7 +26,6 @@ export async function syncSupabaseNow(req: Request, res: Response) {
       pegawai: dbStore.getPegawaiList(true),
       skHistory: dbStore.getAllSk(),
       keluarga: dbStore.getAllKeluarga(),
-      auditLogs: dbStore.getAuditLogs(),
       units: dbStore.getAllUnits(),
       users: dbStore.getAllUsers(),
       aplikasi: dbStore.getAllAplikasi(),
