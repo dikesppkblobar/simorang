@@ -3,15 +3,17 @@ import {
   Pegawai,
   RiwayatSK,
   KeluargaKP4,
-  AuditLog,
   UnitKerjaItem,
   UserAccount,
   AplikasiKepegawaian,
 } from '../types';
 
-// Helper to sanitize UserAccount for Supabase tables
-function cleanUserForSupabase(user: UserAccount, withPassword = true): Record<string, any> {
-  const clean: Record<string, any> = {
+// Track capability/schema state dynamically to prevent repetitive 400 network errors
+let userColumnMode: 'full' | 'standard' | 'minimal' = 'full';
+
+// Helper to sanitize UserAccount for Supabase tables based on supported schema
+function cleanUserForSupabase(user: UserAccount, mode: 'full' | 'standard' | 'minimal'): Record<string, any> {
+  const base: Record<string, any> = {
     id: user.id,
     username: user.username,
     nama_lengkap: user.nama_lengkap,
@@ -22,15 +24,24 @@ function cleanUserForSupabase(user: UserAccount, withPassword = true): Record<st
     created_at: user.created_at || new Date().toISOString(),
   };
 
-  if (user.nip) clean.nip = user.nip;
-  if (user.no_hp) clean.no_hp = user.no_hp;
-  if ((user as any).avatar_url) clean.avatar_url = (user as any).avatar_url;
-  if (user.terakhir_login) clean.terakhir_login = user.terakhir_login;
-  if (withPassword && user.password) {
-    clean.password = user.password;
+  if (mode === 'minimal') {
+    return base;
   }
 
-  return clean;
+  if (mode === 'standard') {
+    if (user.nip) base.nip = user.nip;
+    if (user.no_hp) base.no_hp = user.no_hp;
+    return base;
+  }
+
+  // mode === 'full'
+  if (user.nip) base.nip = user.nip;
+  if (user.no_hp) base.no_hp = user.no_hp;
+  if ((user as any).avatar_url) base.avatar_url = (user as any).avatar_url;
+  if (user.terakhir_login) base.terakhir_login = user.terakhir_login;
+  if (user.password) base.password = user.password;
+
+  return base;
 }
 
 export const supabaseService = {
@@ -61,7 +72,6 @@ export const supabaseService = {
         .select('*')
         .order('nama_lengkap', { ascending: true });
       if (error) {
-        console.warn('Supabase fetchAllPegawai error:', error.message);
         return null;
       }
       return data as Pegawai[];
@@ -77,8 +87,6 @@ export const supabaseService = {
       if (!error) {
         return true;
       }
-
-      console.warn('Supabase full upsertPegawai warning:', error.message, 'Trying sanitized upsert...');
 
       // Fallback attempt: core fields
       const fallbackPayload: Record<string, any> = {
@@ -104,12 +112,10 @@ export const supabaseService = {
 
       const { error: fbErr } = await supabase.from('pegawai').upsert(fallbackPayload, { onConflict: 'nip' });
       if (fbErr) {
-        console.error('Supabase fallback upsertPegawai error:', fbErr.message);
         return false;
       }
       return true;
     } catch (err: any) {
-      console.error('Supabase upsertPegawai exception:', err.message);
       return false;
     }
   },
@@ -120,11 +126,7 @@ export const supabaseService = {
         .from('pegawai')
         .update({ is_deleted: true })
         .eq('nip', nip);
-      if (error) {
-        console.warn('Supabase deletePegawaiSoft error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err: any) {
       return false;
     }
@@ -136,11 +138,7 @@ export const supabaseService = {
         .from('pegawai')
         .delete()
         .eq('nip', nip);
-      if (error) {
-        console.warn('Supabase deletePegawaiPermanent error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err: any) {
       return false;
     }
@@ -152,11 +150,7 @@ export const supabaseService = {
         .from('pegawai')
         .update({ is_deleted: false })
         .eq('nip', nip);
-      if (error) {
-        console.warn('Supabase restorePegawai error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err: any) {
       return false;
     }
@@ -170,7 +164,6 @@ export const supabaseService = {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) {
-        console.warn('Supabase fetchAllSk warning:', error.message);
         return null;
       }
       return data as RiwayatSK[];
@@ -182,11 +175,7 @@ export const supabaseService = {
   async insertSk(sk: RiwayatSK): Promise<boolean> {
     try {
       const { error } = await supabase.from('sk_history').upsert(sk, { onConflict: 'id' });
-      if (error) {
-        console.error('Supabase insertSk error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -195,11 +184,7 @@ export const supabaseService = {
   async deleteSk(id: string): Promise<boolean> {
     try {
       const { error } = await supabase.from('sk_history').delete().eq('id', id);
-      if (error) {
-        console.error('Supabase deleteSk error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -210,7 +195,6 @@ export const supabaseService = {
     try {
       const { data, error } = await supabase.from('keluarga_kp4').select('*');
       if (error) {
-        console.warn('Supabase fetchAllKeluarga warning:', error.message);
         return null;
       }
       return data as KeluargaKP4[];
@@ -222,11 +206,7 @@ export const supabaseService = {
   async upsertKeluarga(keluarga: KeluargaKP4): Promise<boolean> {
     try {
       const { error } = await supabase.from('keluarga_kp4').upsert(keluarga, { onConflict: 'id' });
-      if (error) {
-        console.error('Supabase upsertKeluarga error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -235,41 +215,7 @@ export const supabaseService = {
   async deleteKeluarga(id: string): Promise<boolean> {
     try {
       const { error } = await supabase.from('keluarga_kp4').delete().eq('id', id);
-      if (error) {
-        console.error('Supabase deleteKeluarga error:', error.message);
-        return false;
-      }
-      return true;
-    } catch (err) {
-      return false;
-    }
-  },
-
-  // AUDIT LOGS CRUD
-  async fetchAllAuditLogs(): Promise<AuditLog[] | null> {
-    try {
-      const { data, error } = await supabase
-        .from('audit_logs')
-        .select('*')
-        .order('created_at', { ascending: false });
-      if (error) {
-        console.warn('Supabase fetchAllAuditLogs warning:', error.message);
-        return null;
-      }
-      return data as AuditLog[];
-    } catch (err) {
-      return null;
-    }
-  },
-
-  async insertAuditLog(log: AuditLog): Promise<boolean> {
-    try {
-      const { error } = await supabase.from('audit_logs').upsert(log, { onConflict: 'id' });
-      if (error) {
-        console.error('Supabase insertAuditLog error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -280,7 +226,6 @@ export const supabaseService = {
     try {
       const { data, error } = await supabase.from('units').select('*').order('nama_unit', { ascending: true });
       if (error) {
-        console.warn('Supabase fetchAllUnits warning:', error.message);
         return null;
       }
       return data as UnitKerjaItem[];
@@ -292,11 +237,7 @@ export const supabaseService = {
   async upsertUnit(unit: UnitKerjaItem): Promise<boolean> {
     try {
       const { error } = await supabase.from('units').upsert(unit, { onConflict: 'id' });
-      if (error) {
-        console.error('Supabase upsertUnit error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -305,11 +246,7 @@ export const supabaseService = {
   async deleteUnit(id: string): Promise<boolean> {
     try {
       const { error } = await supabase.from('units').delete().eq('id', id);
-      if (error) {
-        console.error('Supabase deleteUnit error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -320,7 +257,6 @@ export const supabaseService = {
     try {
       const { data, error } = await supabase.from('users').select('*').order('nama_lengkap', { ascending: true });
       if (error) {
-        console.warn('Supabase fetchAllUsers warning:', error.message);
         return null;
       }
       return data as UserAccount[];
@@ -331,39 +267,36 @@ export const supabaseService = {
 
   async upsertUser(user: UserAccount): Promise<boolean> {
     try {
-      // 1. Try with password (sanitized object matching standard DDL, without extra fields like updated_at)
-      const payloadWithPass = cleanUserForSupabase(user, true);
-      const { error: err1 } = await supabase.from('users').upsert(payloadWithPass, { onConflict: 'id' });
-      if (!err1) {
+      // 1. Try current detected mode
+      const payload = cleanUserForSupabase(user, userColumnMode);
+      const { error } = await supabase.from('users').upsert(payload, { onConflict: 'id' });
+      
+      if (!error) {
         return true;
       }
 
-      // 2. If password column doesn't exist in user's Supabase schema cache, try sanitized payload without password
-      const payloadNoPass = cleanUserForSupabase(user, false);
-      const { error: err2 } = await supabase.from('users').upsert(payloadNoPass, { onConflict: 'id' });
-      if (!err2) {
-        return true;
+      // If 400 Bad Request (column mismatch), progressively fallback and remember compatible schema mode
+      if (userColumnMode === 'full') {
+        userColumnMode = 'standard';
+        const p2 = cleanUserForSupabase(user, 'standard');
+        const { error: err2 } = await supabase.from('users').upsert(p2, { onConflict: 'id' });
+        if (!err2) {
+          return true;
+        }
+
+        userColumnMode = 'minimal';
+        const p3 = cleanUserForSupabase(user, 'minimal');
+        const { error: err3 } = await supabase.from('users').upsert(p3, { onConflict: 'id' });
+        return !err3;
+      } else if (userColumnMode === 'standard') {
+        userColumnMode = 'minimal';
+        const p3 = cleanUserForSupabase(user, 'minimal');
+        const { error: err3 } = await supabase.from('users').upsert(p3, { onConflict: 'id' });
+        return !err3;
       }
 
-      // 3. Fallback: ultra-safe minimal columns
-      const minimalPayload: Record<string, any> = {
-        id: user.id,
-        username: user.username,
-        nama_lengkap: user.nama_lengkap,
-        role: user.role,
-        unit_kerja: user.unit_kerja,
-        status: user.status || 'Aktif',
-      };
-      if (user.email) minimalPayload.email = user.email;
-      const { error: err3 } = await supabase.from('users').upsert(minimalPayload, { onConflict: 'id' });
-      if (!err3) {
-        return true;
-      }
-
-      console.warn('Supabase upsertUser all attempts warning:', err3.message);
       return false;
     } catch (err: any) {
-      console.error('Supabase upsertUser exception:', err?.message || err);
       return false;
     }
   },
@@ -371,11 +304,7 @@ export const supabaseService = {
   async deleteUser(id: string): Promise<boolean> {
     try {
       const { error } = await supabase.from('users').delete().eq('id', id);
-      if (error) {
-        console.error('Supabase deleteUser error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -389,7 +318,6 @@ export const supabaseService = {
         .select('*')
         .order('created_at', { ascending: false });
       if (error) {
-        console.warn('Supabase fetchAllAplikasi warning:', error.message);
         return null;
       }
       return data as AplikasiKepegawaian[];
@@ -403,11 +331,7 @@ export const supabaseService = {
       const { error } = await supabase
         .from('aplikasi_kepegawaian')
         .upsert(aplikasi, { onConflict: 'id' });
-      if (error) {
-        console.warn('Supabase upsertAplikasi error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -419,11 +343,7 @@ export const supabaseService = {
         .from('aplikasi_kepegawaian')
         .delete()
         .eq('id', id);
-      if (error) {
-        console.warn('Supabase deleteAplikasi error:', error.message);
-        return false;
-      }
-      return true;
+      return !error;
     } catch (err) {
       return false;
     }
@@ -434,7 +354,6 @@ export const supabaseService = {
     pegawai: Pegawai[];
     skHistory: RiwayatSK[];
     keluarga: KeluargaKP4[];
-    auditLogs: AuditLog[];
     units: UnitKerjaItem[];
     users: UserAccount[];
     aplikasi?: AplikasiKepegawaian[];
@@ -453,21 +372,18 @@ export const supabaseService = {
         const { error: kErr } = await supabase.from('keluarga_kp4').upsert(payload.keluarga, { onConflict: 'id' });
         if (!kErr) syncedCount += payload.keluarga.length;
       }
-      if (payload.auditLogs.length > 0) {
-        const { error: lErr } = await supabase.from('audit_logs').upsert(payload.auditLogs, { onConflict: 'id' });
-        if (!lErr) syncedCount += payload.auditLogs.length;
-      }
       if (payload.units.length > 0) {
         const { error: uErr } = await supabase.from('units').upsert(payload.units, { onConflict: 'id' });
         if (!uErr) syncedCount += payload.units.length;
       }
       if (payload.users.length > 0) {
-        const cleanedUsersWithPass = payload.users.map((u) => cleanUserForSupabase(u, true));
-        const { error: usrErr } = await supabase.from('users').upsert(cleanedUsersWithPass, { onConflict: 'id' });
+        const cleanedUsers = payload.users.map((u) => cleanUserForSupabase(u, userColumnMode));
+        const { error: usrErr } = await supabase.from('users').upsert(cleanedUsers, { onConflict: 'id' });
         if (usrErr) {
-          const cleanedUsersNoPass = payload.users.map((u) => cleanUserForSupabase(u, false));
-          const { error: fbUsrErr } = await supabase.from('users').upsert(cleanedUsersNoPass, { onConflict: 'id' });
-          if (!fbUsrErr) syncedCount += payload.users.length;
+          userColumnMode = 'minimal';
+          const minimalUsers = payload.users.map((u) => cleanUserForSupabase(u, 'minimal'));
+          const { error: minErr } = await supabase.from('users').upsert(minimalUsers, { onConflict: 'id' });
+          if (!minErr) syncedCount += payload.users.length;
         } else {
           syncedCount += payload.users.length;
         }
