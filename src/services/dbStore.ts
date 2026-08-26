@@ -1,12 +1,11 @@
 import fs from 'fs';
 import path from 'path';
-import { Pegawai, RiwayatSK, KeluargaKP4, AuditLog, UnitKerjaItem, UserAccount, AplikasiKepegawaian } from '../types';
+import { Pegawai, RiwayatSK, KeluargaKP4, UnitKerjaItem, UserAccount, AplikasiKepegawaian } from '../types';
 import { supabaseService } from './supabaseService';
 import {
   INITIAL_PEGAWAI,
   INITIAL_SK_HISTORY,
   INITIAL_KELUARGA,
-  INITIAL_AUDIT_LOGS,
   INITIAL_UNITS,
   INITIAL_USERS,
   INITIAL_APLIKASI_KEPEGAWAIAN,
@@ -27,7 +26,6 @@ class DBStore {
   private pegawai: Pegawai[] = [];
   private skHistory: RiwayatSK[] = [];
   private keluarga: KeluargaKP4[] = [];
-  private auditLogs: AuditLog[] = [];
   private units: UnitKerjaItem[] = [];
   private users: UserAccount[] = [];
   private aplikasiList: AplikasiKepegawaian[] = [];
@@ -63,39 +61,43 @@ class DBStore {
   private initRealtimeSubscription() {
     if (typeof window === 'undefined') return;
     try {
+      let debounceTimer: any = null;
+      const triggerDebouncedFetch = () => {
+        if (debounceTimer) clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+          this.fetchAndMergeSupabaseData().catch(() => {});
+        }, 500);
+      };
+
       import('./supabaseClient').then(({ supabase }) => {
         if (!supabase) return;
-        this.realtimeChannel = supabase
-          .channel('db_realtime_sync_all')
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'pegawai' }, () => {
-            this.fetchAndMergeSupabaseData();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'aplikasi_kepegawaian' }, () => {
-            this.fetchAndMergeSupabaseData();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'units' }, () => {
-            this.fetchAndMergeSupabaseData();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
-            this.fetchAndMergeSupabaseData();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'sk_history' }, () => {
-            this.fetchAndMergeSupabaseData();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'keluarga_kp4' }, () => {
-            this.fetchAndMergeSupabaseData();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, () => {
-            this.fetchAndMergeSupabaseData();
-          })
-          .on('postgres_changes', { event: '*', schema: 'public' }, () => {
-            this.fetchAndMergeSupabaseData();
-          })
-          .subscribe((status) => {
-            if (status === 'SUBSCRIBED') {
-              console.log('Realtime database sync connected to Supabase Cloud');
-            }
-          });
+        try {
+          this.realtimeChannel = supabase
+            .channel('db_realtime_sync_all')
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'pegawai' }, () => {
+              triggerDebouncedFetch();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'aplikasi_kepegawaian' }, () => {
+              triggerDebouncedFetch();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'units' }, () => {
+              triggerDebouncedFetch();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+              triggerDebouncedFetch();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'sk_history' }, () => {
+              triggerDebouncedFetch();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'keluarga_kp4' }, () => {
+              triggerDebouncedFetch();
+            })
+            .subscribe((status) => {
+              if (status === 'SUBSCRIBED') {
+                console.log('Realtime database sync connected to Supabase Cloud');
+              }
+            });
+        } catch (_) {}
       }).catch(() => {});
     } catch (_) {}
   }
@@ -108,7 +110,6 @@ class DBStore {
           const p = window.localStorage.getItem('sipatuh_pegawai');
           const sk = window.localStorage.getItem('sipatuh_sk_history');
           const k = window.localStorage.getItem('sipatuh_keluarga');
-          const log = window.localStorage.getItem('sipatuh_audit_logs');
           const u = window.localStorage.getItem('sipatuh_units');
           const usr = window.localStorage.getItem('sipatuh_users');
           const app = window.localStorage.getItem('sipatuh_aplikasi');
@@ -116,7 +117,6 @@ class DBStore {
           this.pegawai = p !== null ? JSON.parse(p) : [...INITIAL_PEGAWAI];
           this.skHistory = sk !== null ? JSON.parse(sk) : [...INITIAL_SK_HISTORY];
           this.keluarga = k !== null ? JSON.parse(k) : [...INITIAL_KELUARGA];
-          this.auditLogs = log !== null ? JSON.parse(log) : [...INITIAL_AUDIT_LOGS];
           this.units = u !== null ? JSON.parse(u) : [...INITIAL_UNITS];
           this.users = usr !== null ? JSON.parse(usr) : [...INITIAL_USERS];
           
@@ -153,7 +153,6 @@ class DBStore {
           this.pegawai = parsed.pegawai && parsed.pegawai.length > 0 ? parsed.pegawai : [...INITIAL_PEGAWAI];
           this.skHistory = parsed.skHistory || [...INITIAL_SK_HISTORY];
           this.keluarga = parsed.keluarga || [...INITIAL_KELUARGA];
-          this.auditLogs = parsed.auditLogs || [...INITIAL_AUDIT_LOGS];
           this.units = parsed.units && parsed.units.length > 0 ? parsed.units : [...INITIAL_UNITS];
           this.users = parsed.users && parsed.users.length > 0 ? parsed.users : [...INITIAL_USERS];
           this.aplikasiList = parsed.aplikasiList || [];
@@ -168,7 +167,6 @@ class DBStore {
     this.pegawai = [...INITIAL_PEGAWAI];
     this.skHistory = [...INITIAL_SK_HISTORY];
     this.keluarga = [...INITIAL_KELUARGA];
-    this.auditLogs = [...INITIAL_AUDIT_LOGS];
     this.units = [...INITIAL_UNITS];
     this.users = [...INITIAL_USERS];
     this.aplikasiList = [];
@@ -181,7 +179,6 @@ class DBStore {
         window.localStorage.setItem('sipatuh_pegawai', JSON.stringify(this.pegawai));
         window.localStorage.setItem('sipatuh_sk_history', JSON.stringify(this.skHistory));
         window.localStorage.setItem('sipatuh_keluarga', JSON.stringify(this.keluarga));
-        window.localStorage.setItem('sipatuh_audit_logs', JSON.stringify(this.auditLogs));
         window.localStorage.setItem('sipatuh_units', JSON.stringify(this.units));
         window.localStorage.setItem('sipatuh_users', JSON.stringify(this.users));
         window.localStorage.setItem('sipatuh_aplikasi', JSON.stringify(this.aplikasiList));
@@ -201,7 +198,6 @@ class DBStore {
             pegawai: this.pegawai,
             skHistory: this.skHistory,
             keluarga: this.keluarga,
-            auditLogs: this.auditLogs,
             units: this.units,
             users: this.users,
             aplikasiList: this.aplikasiList,
@@ -221,7 +217,6 @@ class DBStore {
         pegawai: this.pegawai,
         skHistory: this.skHistory,
         keluarga: this.keluarga,
-        auditLogs: this.auditLogs,
         units: this.units,
         users: this.users,
         aplikasi: this.aplikasiList,
@@ -231,11 +226,10 @@ class DBStore {
 
   async fetchAndMergeSupabaseData() {
     try {
-      const [p, sk, k, log, u, usr, app] = await Promise.all([
+      const [p, sk, k, u, usr, app] = await Promise.all([
         supabaseService.fetchAllPegawai(),
         supabaseService.fetchAllSk(),
         supabaseService.fetchAllKeluarga(),
-        supabaseService.fetchAllAuditLogs(),
         supabaseService.fetchAllUnits(),
         supabaseService.fetchAllUsers(),
         supabaseService.fetchAllAplikasi(),
@@ -243,7 +237,6 @@ class DBStore {
       if (p !== null && Array.isArray(p)) this.pegawai = p;
       if (sk !== null && Array.isArray(sk)) this.skHistory = sk;
       if (k !== null && Array.isArray(k)) this.keluarga = k;
-      if (log !== null && Array.isArray(log)) this.auditLogs = log;
       if (u !== null && Array.isArray(u)) this.units = u;
 
       if (usr !== null && Array.isArray(usr)) {
@@ -295,16 +288,6 @@ class DBStore {
     this.pegawai = [];
     this.skHistory = [];
     this.keluarga = [];
-    this.auditLogs = [
-      {
-        id: `log-${Date.now()}`,
-        admin_email: adminEmail,
-        aksi: 'Database Reset',
-        tabel_terdampak: 'master_database',
-        deskripsi: 'Seluruh data dummy / sampel berhasil dibersihkan. Database SIMORANG DINKES-PPKB Lombok Barat siap digunakan untuk data real.',
-        created_at: new Date().toISOString(),
-      },
-    ];
     this.saveToStorage();
   }
 
@@ -313,15 +296,8 @@ class DBStore {
     this.pegawai = [...INITIAL_PEGAWAI];
     this.skHistory = [...INITIAL_SK_HISTORY];
     this.keluarga = [...INITIAL_KELUARGA];
-    this.auditLogs = [...INITIAL_AUDIT_LOGS];
     this.units = [...INITIAL_UNITS];
     this.users = [...INITIAL_USERS];
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Restore Sample Data',
-      tabel_terdampak: 'master_database',
-      deskripsi: 'Memuat ulang data sampel awal ke dalam database.',
-    });
     this.saveToStorage();
   }
 
@@ -336,12 +312,6 @@ class DBStore {
       throw new Error(`Unit kerja "${unit.nama_unit}" sudah terdaftar.`);
     }
     this.units.push(unit);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Create',
-      tabel_terdampak: 'unit_kerja',
-      deskripsi: `Menambahkan Unit Kerja baru: ${unit.nama_unit} (${unit.kategori})`,
-    });
     this.saveToStorage();
     supabaseService.upsertUnit(unit).catch((err) => {
       console.error('Supabase direct upsert on addUnit error:', err);
@@ -353,12 +323,6 @@ class DBStore {
     const idx = this.units.findIndex((u) => u.id === id);
     if (idx === -1) throw new Error('Unit kerja tidak ditemukan.');
     this.units[idx] = { ...this.units[idx], ...updates };
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Update',
-      tabel_terdampak: 'unit_kerja',
-      deskripsi: `Memperbarui data Unit Kerja: ${this.units[idx].nama_unit}`,
-    });
     this.saveToStorage();
     supabaseService.upsertUnit(this.units[idx]).catch((err) => {
       console.error('Supabase direct upsert on updateUnit error:', err);
@@ -369,14 +333,7 @@ class DBStore {
   deleteUnit(id: string, adminEmail: string) {
     const idx = this.units.findIndex((u) => u.id === id);
     if (idx === -1) throw new Error('Unit kerja tidak ditemukan.');
-    const deletedName = this.units[idx].nama_unit;
     this.units.splice(idx, 1);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Delete',
-      tabel_terdampak: 'unit_kerja',
-      deskripsi: `Menghapus Unit Kerja: ${deletedName}`,
-    });
     this.saveToStorage();
     supabaseService.deleteUnit(id).catch((err) => {
       console.error('Supabase direct delete on deleteUnit error:', err);
@@ -395,12 +352,6 @@ class DBStore {
       throw new Error(`Username "${user.username}" sudah digunakan.`);
     }
     this.users.unshift(user);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Create',
-      tabel_terdampak: 'user_account',
-      deskripsi: `Menambahkan Pengguna Baru: ${user.nama_lengkap} (${user.role} - ${user.unit_kerja})`,
-    });
     this.saveToStorage();
     supabaseService.upsertUser(user).catch((err) => {
       console.error('Supabase direct upsert on addUser error:', err);
@@ -424,12 +375,6 @@ class DBStore {
       ...updates,
       updated_at: new Date().toISOString(),
     };
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Update',
-      tabel_terdampak: 'user_account',
-      deskripsi: `Memperbarui data akun pengguna: ${this.users[idx].nama_lengkap} (${this.users[idx].username}) - Role: ${this.users[idx].role}, Unit: ${this.users[idx].unit_kerja}`,
-    });
     this.saveToStorage();
     supabaseService.upsertUser(this.users[idx]).catch((err) => {
       console.error('Supabase direct upsert on updateUser error:', err);
@@ -451,14 +396,7 @@ class DBStore {
   deleteUser(id: string, adminEmail: string) {
     const idx = this.users.findIndex((u) => u.id === id);
     if (idx === -1) throw new Error('Pengguna tidak ditemukan.');
-    const deletedName = this.users[idx].nama_lengkap;
     this.users.splice(idx, 1);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Delete',
-      tabel_terdampak: 'user_account',
-      deskripsi: `Menghapus akun pengguna: ${deletedName}`,
-    });
     this.saveToStorage();
     supabaseService.deleteUser(id).catch((err) => {
       console.error('Supabase direct delete on deleteUser error:', err);
@@ -498,12 +436,6 @@ class DBStore {
       throw new Error(`Pegawai dengan NIP ${p.nip} sudah terdaftar.`);
     }
     this.pegawai.unshift(p);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Create',
-      tabel_terdampak: 'pegawai',
-      deskripsi: `Menambahkan pegawai baru: ${p.nama_lengkap} (NIP: ${p.nip})`,
-    });
     this.saveToStorage();
     supabaseService.upsertPegawai(p).catch((err) => {
       console.error('Supabase direct upsert on addPegawai error:', err);
@@ -516,12 +448,6 @@ class DBStore {
     if (idx === -1) throw new Error(`Pegawai NIP ${nip} tidak ditemukan.`);
     
     this.pegawai[idx] = { ...this.pegawai[idx], ...updates };
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Update',
-      tabel_terdampak: 'pegawai',
-      deskripsi: `Memperbarui biodata pegawai NIP ${nip} (${this.pegawai[idx].nama_lengkap})`,
-    });
     this.saveToStorage();
     supabaseService.upsertPegawai(this.pegawai[idx]).catch((err) => {
       console.error('Supabase direct upsert on updatePegawai error:', err);
@@ -533,12 +459,6 @@ class DBStore {
     const p = this.getPegawaiByNip(nip);
     if (!p) throw new Error(`Pegawai NIP ${nip} tidak ditemukan.`);
     p.is_deleted = true;
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Soft Delete',
-      tabel_terdampak: 'pegawai',
-      deskripsi: `Melakukan soft-delete pegawai ${p.nama_lengkap} (NIP: ${nip})`,
-    });
     this.saveToStorage();
     supabaseService.deletePegawaiSoft(nip).catch((err) => {
       console.error('Supabase direct delete on softDeletePegawai error:', err);
@@ -549,14 +469,7 @@ class DBStore {
   deletePegawaiPermanent(nip: string, adminEmail: string) {
     const idx = this.pegawai.findIndex((p) => p.nip === nip);
     if (idx === -1) throw new Error(`Pegawai NIP ${nip} tidak ditemukan.`);
-    const deletedName = this.pegawai[idx].nama_lengkap;
     this.pegawai.splice(idx, 1);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Delete',
-      tabel_terdampak: 'pegawai',
-      deskripsi: `Menghapus permanen data pegawai: ${deletedName} (NIP: ${nip})`,
-    });
     this.saveToStorage();
     supabaseService.deletePegawaiPermanent(nip).catch((err) => {
       console.error('Supabase direct permanent delete error:', err);
@@ -568,12 +481,6 @@ class DBStore {
     const p = this.getPegawaiByNip(nip);
     if (!p) throw new Error(`Pegawai NIP ${nip} tidak ditemukan.`);
     p.is_deleted = false;
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Restore',
-      tabel_terdampak: 'pegawai',
-      deskripsi: `Mengaktifkan kembali pegawai ${p.nama_lengkap} (NIP: ${nip})`,
-    });
     this.saveToStorage();
     supabaseService.restorePegawai(nip).catch((err) => {
       console.error('Supabase direct restore error:', err);
@@ -628,12 +535,6 @@ class DBStore {
         console.error('Supabase direct upsert on addSk (pegawai update) error:', err);
       });
     }
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Upload SK',
-      tabel_terdampak: 'riwayat_sk',
-      deskripsi: `Menambahkan Berkas Digital ${sk.jenis_sk} (${sk.nomor_sk}) untuk ${p?.nama_lengkap || sk.nip_pegawai}. Dokumen terdahulu tetap diarsipkan.`,
-    });
     this.saveToStorage();
     supabaseService.insertSk(sk).catch((err) => {
       console.error('Supabase direct insert on addSk error:', err);
@@ -644,14 +545,7 @@ class DBStore {
   deleteSk(id: string, adminEmail: string) {
     const idx = this.skHistory.findIndex((s) => s.id === id);
     if (idx === -1) throw new Error('Berkas SK tidak ditemukan.');
-    const deletedSk = this.skHistory[idx];
     this.skHistory.splice(idx, 1);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Delete',
-      tabel_terdampak: 'riwayat_sk',
-      deskripsi: `Menghapus Berkas Digital ${deletedSk.jenis_sk} (${deletedSk.nomor_sk})`,
-    });
     this.saveToStorage();
     supabaseService.deleteSk(id).catch((err) => {
       console.error('Supabase direct delete on deleteSk error:', err);
@@ -670,12 +564,6 @@ class DBStore {
 
   addKeluarga(k: KeluargaKP4, adminEmail: string) {
     this.keluarga.push(k);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'KP4 Update',
-      tabel_terdampak: 'keluarga_kp4',
-      deskripsi: `Menambahkan anggota keluarga KP4: ${k.nama_keluarga} (${k.status_hubungan})`,
-    });
     this.saveToStorage();
     supabaseService.upsertKeluarga(k).catch((err) => {
       console.error('Supabase direct upsert on addKeluarga error:', err);
@@ -687,12 +575,6 @@ class DBStore {
     const idx = this.keluarga.findIndex((k) => k.id === id);
     if (idx === -1) throw new Error('Data keluarga KP4 tidak ditemukan.');
     this.keluarga[idx] = { ...this.keluarga[idx], ...updates };
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'KP4 Update',
-      tabel_terdampak: 'keluarga_kp4',
-      deskripsi: `Memperbarui data KP4 a.n ${this.keluarga[idx].nama_keluarga}`,
-    });
     this.saveToStorage();
     supabaseService.upsertKeluarga(this.keluarga[idx]).catch((err) => {
       console.error('Supabase direct upsert on updateKeluarga error:', err);
@@ -703,14 +585,7 @@ class DBStore {
   deleteKeluarga(id: string, adminEmail: string) {
     const idx = this.keluarga.findIndex((k) => k.id === id);
     if (idx === -1) throw new Error('Data keluarga KP4 tidak ditemukan.');
-    const deletedName = this.keluarga[idx].nama_keluarga;
     this.keluarga.splice(idx, 1);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Delete',
-      tabel_terdampak: 'keluarga_kp4',
-      deskripsi: `Menghapus anggota keluarga KP4: ${deletedName}`,
-    });
     this.saveToStorage();
     supabaseService.deleteKeluarga(id).catch((err) => {
       console.error('Supabase direct delete on deleteKeluarga error:', err);
@@ -739,12 +614,6 @@ class DBStore {
       created_at: new Date().toISOString(),
     };
     this.aplikasiList.push(newApp);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Create',
-      tabel_terdampak: 'aplikasi_kepegawaian',
-      deskripsi: `Menambahkan portal aplikasi kepegawaian: ${newApp.nama_aplikasi} (${newApp.kategori})`,
-    });
     this.saveToStorage();
     supabaseService.upsertAplikasi(newApp).catch((err) => {
       console.error('Supabase direct upsert on addAplikasi error:', err);
@@ -764,12 +633,6 @@ class DBStore {
       ...updates,
       updated_at: new Date().toISOString(),
     };
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Update',
-      tabel_terdampak: 'aplikasi_kepegawaian',
-      deskripsi: `Memperbarui info portal aplikasi kepegawaian: ${this.aplikasiList[idx].nama_aplikasi}`,
-    });
     this.saveToStorage();
     supabaseService.upsertAplikasi(this.aplikasiList[idx]).catch((err) => {
       console.error('Supabase direct upsert on updateAplikasi error:', err);
@@ -780,40 +643,12 @@ class DBStore {
   deleteAplikasi(id: string, adminEmail: string): boolean {
     const idx = this.aplikasiList.findIndex((a) => a.id === id);
     if (idx === -1) throw new Error('Aplikasi kepegawaian tidak ditemukan.');
-    const deletedName = this.aplikasiList[idx].nama_aplikasi;
     this.aplikasiList.splice(idx, 1);
-    this.addAuditLog({
-      admin_email: adminEmail,
-      aksi: 'Delete',
-      tabel_terdampak: 'aplikasi_kepegawaian',
-      deskripsi: `Menghapus portal aplikasi kepegawaian: ${deletedName}`,
-    });
     this.saveToStorage();
     supabaseService.deleteAplikasi(id).catch((err) => {
       console.error('Supabase direct delete on deleteAplikasi error:', err);
     });
     return true;
-  }
-
-  // Audit Logs Operations
-  getAuditLogs() {
-    return this.auditLogs.sort(
-      (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
-    );
-  }
-
-  addAuditLog(log: Omit<AuditLog, 'id' | 'created_at'>) {
-    const newLog: AuditLog = {
-      id: `log-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      ...log,
-      created_at: new Date().toISOString(),
-    };
-    this.auditLogs.unshift(newLog);
-    this.saveToStorage();
-    supabaseService.insertAuditLog(newLog).catch((err) => {
-      console.error('Supabase direct insert on addAuditLog error:', err);
-    });
-    return newLog;
   }
 }
 
