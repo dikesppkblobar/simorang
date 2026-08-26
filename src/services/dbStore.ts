@@ -66,11 +66,36 @@ class DBStore {
       import('./supabaseClient').then(({ supabase }) => {
         if (!supabase) return;
         this.realtimeChannel = supabase
-          .channel('db_realtime_sync')
+          .channel('db_realtime_sync_all')
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'pegawai' }, () => {
+            this.fetchAndMergeSupabaseData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'aplikasi_kepegawaian' }, () => {
+            this.fetchAndMergeSupabaseData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'units' }, () => {
+            this.fetchAndMergeSupabaseData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'users' }, () => {
+            this.fetchAndMergeSupabaseData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'sk_history' }, () => {
+            this.fetchAndMergeSupabaseData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'keluarga_kp4' }, () => {
+            this.fetchAndMergeSupabaseData();
+          })
+          .on('postgres_changes', { event: '*', schema: 'public', table: 'audit_logs' }, () => {
+            this.fetchAndMergeSupabaseData();
+          })
           .on('postgres_changes', { event: '*', schema: 'public' }, () => {
             this.fetchAndMergeSupabaseData();
           })
-          .subscribe();
+          .subscribe((status) => {
+            if (status === 'SUBSCRIBED') {
+              console.log('Realtime database sync connected to Supabase Cloud');
+            }
+          });
       }).catch(() => {});
     } catch (_) {}
   }
@@ -94,13 +119,25 @@ class DBStore {
           this.auditLogs = log !== null ? JSON.parse(log) : [...INITIAL_AUDIT_LOGS];
           this.units = u !== null ? JSON.parse(u) : [...INITIAL_UNITS];
           this.users = usr !== null ? JSON.parse(usr) : [...INITIAL_USERS];
-          this.aplikasiList = app !== null ? JSON.parse(app) : [...INITIAL_APLIKASI_KEPEGAWAIAN];
+          
+          // For aplikasi, parse from storage or start clean without mock apps
+          if (app !== null) {
+            try {
+              const parsedApp = JSON.parse(app);
+              // Clean out legacy mock data if present
+              this.aplikasiList = Array.isArray(parsedApp)
+                ? parsedApp.filter((item: any) => item && !['app-001', 'app-002', 'app-003', 'app-004', 'app-005'].includes(item.id))
+                : [];
+            } catch (_) {
+              this.aplikasiList = [];
+            }
+          } else {
+            this.aplikasiList = [];
+          }
 
-          // If any essential list is unexpectedly empty, restore baseline values
           if (this.users.length === 0) this.users = [...INITIAL_USERS];
           if (this.units.length === 0) this.units = [...INITIAL_UNITS];
           if (this.pegawai.length === 0) this.pegawai = [...INITIAL_PEGAWAI];
-          if (this.aplikasiList.length === 0) this.aplikasiList = [...INITIAL_APLIKASI_KEPEGAWAIAN];
           return;
         }
       } catch (err) {
@@ -119,7 +156,7 @@ class DBStore {
           this.auditLogs = parsed.auditLogs || [...INITIAL_AUDIT_LOGS];
           this.units = parsed.units && parsed.units.length > 0 ? parsed.units : [...INITIAL_UNITS];
           this.users = parsed.users && parsed.users.length > 0 ? parsed.users : [...INITIAL_USERS];
-          this.aplikasiList = parsed.aplikasiList && parsed.aplikasiList.length > 0 ? parsed.aplikasiList : [...INITIAL_APLIKASI_KEPEGAWAIAN];
+          this.aplikasiList = parsed.aplikasiList || [];
           return;
         }
       } catch (err) {
@@ -127,14 +164,14 @@ class DBStore {
       }
     }
 
-    // Default Baseline Initial (Instant populate on first load across all devices)
+    // Default Initial
     this.pegawai = [...INITIAL_PEGAWAI];
     this.skHistory = [...INITIAL_SK_HISTORY];
     this.keluarga = [...INITIAL_KELUARGA];
     this.auditLogs = [...INITIAL_AUDIT_LOGS];
     this.units = [...INITIAL_UNITS];
     this.users = [...INITIAL_USERS];
-    this.aplikasiList = [...INITIAL_APLIKASI_KEPEGAWAIAN];
+    this.aplikasiList = [];
     this.saveToStorage(false);
   }
 
