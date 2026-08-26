@@ -45,6 +45,8 @@ import {
   RiwayatSK,
   KeluargaKP4,
   UserAccount,
+  AppFeatureConfig,
+  DEFAULT_FEATURE_CONFIG,
 } from '../types';
 import { formatDateIndonesian } from '../services/dateCalculator';
 
@@ -57,6 +59,7 @@ interface AlertCenterViewProps {
   pangkatAlerts: AlertPangkatItem[];
   pensiunAlerts: AlertPensiunItem[];
   kp4Alerts: AlertKP4AnakItem[];
+  featureConfig?: AppFeatureConfig;
   onOpenUploadSkModal: (nip: string, defaultJenisSk: 'KGB' | 'Pangkat' | 'Mutasi' | 'Izin Belajar') => void;
   onUpdateKp4Tanggungan: (id: string, statusTanggungan: boolean) => void;
   onUpdatePegawai?: (nip: string, data: Partial<Pegawai>) => Promise<boolean> | boolean;
@@ -76,6 +79,7 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
   pangkatAlerts,
   pensiunAlerts,
   kp4Alerts,
+  featureConfig = DEFAULT_FEATURE_CONFIG,
   onOpenUploadSkModal,
   onUpdateKp4Tanggungan,
   onUpdatePegawai,
@@ -112,18 +116,6 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
 
   const [activeSubTab, setActiveSubTab] = useState<SubTabType>(defaultSubTab);
 
-  React.useEffect(() => {
-    if (defaultSubTab) {
-      setActiveSubTab(defaultSubTab);
-    }
-  }, [defaultSubTab]);
-
-  const handleSelectSubTab = (tab: SubTabType) => {
-    setActiveSubTab(tab);
-    if (onSubTabChange) {
-      onSubTabChange(tab);
-    }
-  };
   const [searchTerm, setSearchTerm] = useState('');
 
   // Notification Modal State for Admin Unit Kerja & Admin Dinkes
@@ -268,7 +260,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
 
   // Configuration for monitoring cards grid in requested order:
   // Kenaikan Pangkat, Jafung, KGB, UKOM, Ujian Dinas, Izin Belajar, Pencantuman Gelar, Mutasi, KP4, Cuti, Pensiun (paling kanan)
-  const monitoringCards: {
+  const allMonitoringCards: {
     id: SubTabType;
     title: string;
     count: number | string;
@@ -425,6 +417,36 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       regNote: 'Pengurusan DPCP & Evaluasi Kontrak',
     },
   ];
+
+  const monitoringCards = allMonitoringCards.filter((card) => {
+    if (card.id === 'pangkat' && !featureConfig.sub_pangkat) return false;
+    if (card.id === 'jafung' && !featureConfig.sub_jafung) return false;
+    if (card.id === 'kgb' && !featureConfig.sub_kgb) return false;
+    if (card.id === 'ukom' && !featureConfig.sub_ukom) return false;
+    if (card.id === 'ujian_dinas' && !featureConfig.sub_ujian_dinas) return false;
+    if (card.id === 'izin_belajar' && !featureConfig.sub_izin_belajar) return false;
+    if (card.id === 'pencantuman_gelar' && !featureConfig.sub_pencantuman_gelar) return false;
+    if (card.id === 'mutasi' && !featureConfig.sub_mutasi) return false;
+    if (card.id === 'kp4' && !featureConfig.sub_kp4) return false;
+    if (card.id === 'cuti' && !featureConfig.sub_cuti) return false;
+    if (card.id === 'pensiun' && !featureConfig.sub_pensiun) return false;
+    return true;
+  });
+
+  React.useEffect(() => {
+    if (defaultSubTab && monitoringCards.some((c) => c.id === defaultSubTab)) {
+      setActiveSubTab(defaultSubTab);
+    } else if (monitoringCards.length > 0 && !monitoringCards.some((c) => c.id === activeSubTab)) {
+      setActiveSubTab(monitoringCards[0].id);
+    }
+  }, [defaultSubTab, featureConfig]);
+
+  const handleSelectSubTab = (tab: SubTabType) => {
+    setActiveSubTab(tab);
+    if (onSubTabChange) {
+      onSubTabChange(tab);
+    }
+  };
 
   const [isAddKp4ModalOpen, setIsAddKp4ModalOpen] = useState(false);
   const [kp4FormData, setKp4FormData] = useState({
