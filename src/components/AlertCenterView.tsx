@@ -64,6 +64,7 @@ interface AlertCenterViewProps {
   onUpdateKeluarga?: (id: string, updates: Partial<KeluargaKP4>) => Promise<boolean> | boolean;
   onDeleteKeluarga?: (id: string) => Promise<boolean> | boolean;
   defaultSubTab?: 'pangkat' | 'jafung' | 'ukom' | 'ujian_dinas' | 'kgb' | 'cuti' | 'pensiun' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4';
+  onSubTabChange?: (subTab: 'pangkat' | 'jafung' | 'ukom' | 'ujian_dinas' | 'kgb' | 'cuti' | 'pensiun' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4') => void;
 }
 
 export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
@@ -82,6 +83,7 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
   onUpdateKeluarga,
   onDeleteKeluarga,
   defaultSubTab = 'pangkat',
+  onSubTabChange,
 }) => {
   const isSuperAdmin = currentUser?.role === 'Admin Dinkes';
   type SubTabType =
@@ -115,6 +117,13 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
       setActiveSubTab(defaultSubTab);
     }
   }, [defaultSubTab]);
+
+  const handleSelectSubTab = (tab: SubTabType) => {
+    setActiveSubTab(tab);
+    if (onSubTabChange) {
+      onSubTabChange(tab);
+    }
+  };
   const [searchTerm, setSearchTerm] = useState('');
 
   // Notification Modal State for Admin Unit Kerja & Admin Dinkes
@@ -597,78 +606,57 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
         </div>
       )}
 
-      {/* Horizontal & Mobile Navigation Bar */}
-      <div className="bg-white p-3 sm:p-3.5 rounded-2xl border border-[#E2E8F0] shadow-xs space-y-2.5">
-        {/* Mobile View: Quick Dropdown Selector */}
-        <div className="block sm:hidden space-y-1.5">
-          <div className="flex items-center justify-between">
-            <span className="text-[11px] font-heading font-bold text-slate-600 uppercase tracking-wider flex items-center gap-1.5">
-              <span className="w-2 h-2 rounded-full bg-[#004B87] animate-pulse" />
-              Pilih Modul Pemantauan:
-            </span>
-            <span className="text-[10px] bg-blue-50 text-[#004B87] font-extrabold px-2 py-0.5 rounded-full border border-blue-200">
-              11 Modul
-            </span>
-          </div>
-          <div className="relative">
-            <select
-              value={activeSubTab}
-              onChange={(e) => setActiveSubTab(e.target.value as SubTabType)}
-              className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 font-heading font-bold text-xs rounded-xl px-3.5 py-2.5 pr-9 focus:ring-2 focus:ring-[#004B87] focus:border-[#004B87] outline-none shadow-xs"
-            >
-              {monitoringCards.map((card) => (
-                <option key={card.id} value={card.id}>
-                  {card.title} ({card.count})
-                </option>
-              ))}
-            </select>
-            <ChevronDown className="w-4 h-4 text-slate-500 absolute right-3 top-3 pointer-events-none" />
-          </div>
-        </div>
+      {/* Active Module Header Bar */}
+      {(() => {
+        const currentModule = monitoringCards.find((c) => c.id === activeSubTab) || monitoringCards[0];
+        const ModuleIcon = currentModule.icon;
 
-        {/* Tablet & Desktop View: Horizontal Scrollable Tabs */}
-        <div className="hidden sm:block space-y-2">
-          <div className="flex items-center justify-between px-1 text-xs">
-            <div className="flex items-center space-x-2 text-[#1E293B] font-heading font-bold">
-              <span className="w-2.5 h-2.5 rounded-full bg-[#004B87] animate-pulse"></span>
-              <span>Navigasi Horizontal Modul Pemantauan (Geser Kiri/Kanan)</span>
-            </div>
-            <span className="text-[11px] text-[#64748B] font-medium hidden sm:inline">
-              Pilih modul untuk membuka data detail
-            </span>
-          </div>
-
-          <div className="flex items-center space-x-2 overflow-x-auto pb-1 pt-1 scroll-smooth no-scrollbar">
-            {monitoringCards.map((card) => {
-              const isActive = activeSubTab === card.id;
-
-              return (
-                <button
-                  key={card.id}
-                  type="button"
-                  onClick={() => setActiveSubTab(card.id)}
-                  className={`whitespace-nowrap px-4 py-2 rounded-xl text-xs font-heading font-bold transition-all flex items-center space-x-2 border shrink-0 cursor-pointer ${
-                    isActive
-                      ? 'bg-[#004B87] text-white border-[#004B87] shadow-sm ring-2 ring-blue-200'
-                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-[#E2E8F0] hover:border-slate-300'
-                  }`}
-                >
-                  <span>{card.title}</span>
-                  <span
-                    className={`text-[10px] px-2 py-0.5 rounded-full font-extrabold ${
-                      isActive
-                        ? 'bg-white/20 text-white'
-                        : 'bg-white text-slate-800 border border-slate-200'
-                    }`}
-                  >
-                    {card.count}
+        return (
+          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
+            <div className="flex items-center space-x-3">
+              <div className={`p-2.5 rounded-xl border ${currentModule.iconBg} ${currentModule.iconColor} shrink-0`}>
+                <ModuleIcon className="w-5 h-5" />
+              </div>
+              <div>
+                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <span className="text-[10px] font-heading font-extrabold uppercase tracking-wider text-[#004B87] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
+                    Pusat Pemantauan ASN › {currentModule.title}
                   </span>
-                </button>
-              );
-            })}
+                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
+                    {currentModule.regNote}
+                  </span>
+                </div>
+                <h3 className="font-heading font-extrabold text-sm text-slate-900 mt-1">
+                  {currentModule.description}
+                </h3>
+              </div>
+            </div>
+
+            {/* Mobile View: Quick Sub-Module Switcher */}
+            <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-2 shrink-0">
+              <span className={`px-3 py-1.5 rounded-xl text-xs font-heading font-extrabold border ${currentModule.badgeBg} ${currentModule.badgeText} border-current/20`}>
+                Total: {currentModule.count} {currentModule.countLabel}
+              </span>
+
+              {/* Mobile Quick Dropdown */}
+              <div className="block sm:hidden relative flex-1 max-w-[200px]">
+                <select
+                  value={activeSubTab}
+                  onChange={(e) => handleSelectSubTab(e.target.value as SubTabType)}
+                  className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 font-heading font-bold text-[11px] rounded-xl px-3 py-1.5 pr-8 focus:ring-2 focus:ring-[#004B87] outline-none shadow-xs"
+                >
+                  {monitoringCards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.title} ({card.count})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-2.5 pointer-events-none" />
+              </div>
+            </div>
           </div>
-        </div>
-      </div>
+        );
+      })()}
 
       {/* Content Section Container */}
       <div className="w-full space-y-4 pt-2">
