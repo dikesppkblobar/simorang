@@ -19,6 +19,18 @@ import {
   ToggleLeft,
   ToggleRight,
   Sliders,
+  Award,
+  Briefcase,
+  Clock,
+  BadgeCheck,
+  FileText,
+  BookOpen,
+  GraduationCap,
+  Layers,
+  Baby,
+  AlertTriangle,
+  ChevronDown,
+  ChevronUp,
 } from 'lucide-react';
 import { dbStore } from './services/dbStore';
 import { apiClient } from './services/apiClient';
@@ -118,7 +130,8 @@ export default function App() {
   // Subtab navigation states
   const [alertsDefaultSubTab, setAlertsDefaultSubTab] = useState<
     'pangkat' | 'jafung' | 'ukom' | 'ujian_dinas' | 'kgb' | 'cuti' | 'pensiun' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4'
-  >('jafung');
+  >('pangkat');
+  const [isAlertsMenuExpanded, setIsAlertsMenuExpanded] = useState<boolean>(true);
   const [settingsDefaultSubTab, setSettingsDefaultSubTab] = useState<'users' | 'export' | 'scope'>('users');
   const [managementDefaultSubTab, setManagementDefaultSubTab] = useState<'users' | 'units' | 'database'>('units');
 
@@ -597,10 +610,72 @@ export default function App() {
   const navItems = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, badge: null },
     { id: 'pegawai', label: 'Data Pegawai', icon: Users, badge: null },
-    { id: 'alerts', label: 'Pusat Pemantauan ASN', icon: Calendar, badge: grandTotalAlerts },
+    { id: 'alerts', label: 'Pusat Pemantauan ASN', icon: Calendar, badge: grandTotalAlerts, hasSubMenu: true },
     { id: 'arsip', label: 'Arsip Digital', icon: FolderOpen, badge: null },
     { id: 'aplikasi', label: 'Aplikasi Kepegawaian', icon: AppWindow, badge: aplikasiList.length },
     { id: 'settings', label: 'Pengaturan', icon: Settings, badge: null },
+  ];
+
+  const jafungPnsCount = activePegawai.filter(
+    (p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS'
+  ).length;
+
+  const pelaksanaPnsCount = activePegawai.filter(
+    (p) =>
+      p.jenis_jabatan === 'Pelaksana' &&
+      p.status_kepegawaian === 'PNS' &&
+      p.status_ujian_dinas !== 'Tidak ada' &&
+      p.status_ujian_dinas !== 'Bukan Pelaksana'
+  ).length;
+
+  const izinBelajarCount = activePegawai.filter((p) => Boolean(p.status_izin_belajar)).length;
+
+  const pencantumanGelarCount = activePegawai.filter(
+    (p) =>
+      Boolean(
+        p.status_pencantuman_gelar &&
+          p.status_pencantuman_gelar !== 'Tidak ada' &&
+          p.status_pencantuman_gelar !== 'Bukan Tugas Belajar' &&
+          (p.status_pencantuman_gelar.toLowerCase().includes('verval') ||
+            p.status_pencantuman_gelar.toLowerCase().includes('terverifikasi') ||
+            p.gelar_depan ||
+            p.gelar_belakang)
+      )
+  ).length;
+
+  const isPegawaiMutasi = (p: Pegawai) => {
+    const hasSkMutasi = scopedSkList.some((sk) => sk.nip === p.nip && sk.jenis_sk === 'Mutasi');
+    const hasJenisMutasi =
+      p.jenis_mutasi &&
+      p.jenis_mutasi !== 'Tidak ada' &&
+      p.jenis_mutasi !== 'Tidak Ada' &&
+      p.jenis_mutasi !== '-' &&
+      p.jenis_mutasi !== 'Kenaikan Pangkat Reguler' &&
+      (p.jenis_mutasi.toLowerCase().includes('mutasi') ||
+        p.jenis_mutasi.toLowerCase().includes('rotasi') ||
+        p.jenis_mutasi.toLowerCase().includes('pindah'));
+    return Boolean(hasSkMutasi || hasJenisMutasi);
+  };
+
+  const mutasiCount = activePegawai.filter(isPegawaiMutasi).length;
+
+  const monitoringSubItems: {
+    id: 'pangkat' | 'jafung' | 'kgb' | 'ukom' | 'ujian_dinas' | 'izin_belajar' | 'pencantuman_gelar' | 'mutasi' | 'kp4' | 'cuti' | 'pensiun';
+    label: string;
+    icon: React.ElementType;
+    count: number;
+  }[] = [
+    { id: 'pangkat', label: 'Kenaikan Pangkat (PNS)', icon: Award, count: totalPangkat },
+    { id: 'jafung', label: 'Jabatan Fungsional (PNS)', icon: Briefcase, count: jafungPnsCount },
+    { id: 'kgb', label: 'KGB Gaji Berkala', icon: Clock, count: totalKgb },
+    { id: 'ukom', label: 'Uji Kompetensi (UKKJ)', icon: BadgeCheck, count: jafungPnsCount },
+    { id: 'ujian_dinas', label: 'Ujian Dinas Pelaksana', icon: FileText, count: pelaksanaPnsCount },
+    { id: 'izin_belajar', label: 'Izin & Tugas Belajar', icon: BookOpen, count: izinBelajarCount },
+    { id: 'pencantuman_gelar', label: 'Pencantuman Gelar', icon: GraduationCap, count: pencantumanGelarCount },
+    { id: 'mutasi', label: 'Mutasi Kepegawaian', icon: Layers, count: mutasiCount },
+    { id: 'kp4', label: 'Tunjangan KP4 Anak', icon: Baby, count: totalKp4 },
+    { id: 'cuti', label: 'Hak & Sisa Cuti', icon: Calendar, count: activePegawai.length },
+    { id: 'pensiun', label: 'BUP & Pensiun', icon: AlertTriangle, count: totalPensiun },
   ];
 
   const getScopeLabel = (scope: string) => {
@@ -706,6 +781,93 @@ export default function App() {
                       {navItems.map((item) => {
                         const Icon = item.icon;
                         const isActive = activeTab === item.id;
+
+                        if (item.id === 'alerts') {
+                          return (
+                            <div key={item.id} className="space-y-1">
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (activeTab !== 'alerts') {
+                                    setActiveTab('alerts');
+                                    setIsAlertsMenuExpanded(true);
+                                  } else {
+                                    setIsAlertsMenuExpanded(!isAlertsMenuExpanded);
+                                  }
+                                }}
+                                className={`w-full px-3.5 py-3 rounded-xl flex items-center justify-between text-xs font-heading font-bold transition-all cursor-pointer ${
+                                  isActive
+                                    ? 'bg-[#004B87] text-white shadow-sm'
+                                    : 'text-slate-700 hover:bg-slate-100 active:bg-slate-200'
+                                }`}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                                  <span>{item.label}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  {item.badge !== null && item.badge > 0 && (
+                                    <span
+                                      className={`px-2 py-0.5 rounded-full text-[10px] font-heading font-extrabold ${
+                                        isActive
+                                          ? 'bg-white text-[#004B87]'
+                                          : 'bg-emerald-100 text-[#003663] border border-emerald-300'
+                                      }`}
+                                    >
+                                      {item.badge}
+                                    </span>
+                                  )}
+                                  <ChevronDown
+                                    className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                                      isAlertsMenuExpanded ? 'rotate-180' : ''
+                                    } ${isActive ? 'text-white' : 'text-slate-400'}`}
+                                  />
+                                </div>
+                              </button>
+
+                              {/* Mobile Sub-Items for Monitoring Center */}
+                              {isAlertsMenuExpanded && (
+                                <div className="pl-3.5 pr-1 py-1 space-y-0.5 border-l-2 border-blue-200 ml-4 my-1">
+                                  {monitoringSubItems.map((sub) => {
+                                    const SubIcon = sub.icon;
+                                    const isSubActive = activeTab === 'alerts' && alertsDefaultSubTab === sub.id;
+
+                                    return (
+                                      <button
+                                        key={sub.id}
+                                        type="button"
+                                        onClick={() => {
+                                          setActiveTab('alerts');
+                                          setAlertsDefaultSubTab(sub.id);
+                                          setIsMobileDrawerOpen(false);
+                                        }}
+                                        className={`w-full px-2.5 py-2 rounded-lg flex items-center justify-between text-[11px] font-heading font-semibold transition-all cursor-pointer ${
+                                          isSubActive
+                                            ? 'bg-[#004B87] text-white shadow-xs'
+                                            : 'text-slate-600 hover:bg-slate-100 active:bg-slate-200'
+                                        }`}
+                                      >
+                                        <div className="flex items-center gap-2 truncate">
+                                          <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                          <span className="truncate">{sub.label}</span>
+                                        </div>
+                                        <span
+                                          className={`px-1.5 py-0.5 rounded-full text-[9px] font-extrabold shrink-0 ml-1 ${
+                                            isSubActive
+                                              ? 'bg-white/20 text-white'
+                                              : 'bg-slate-100 text-slate-700 border border-slate-200'
+                                          }`}
+                                        >
+                                          {sub.count}
+                                        </span>
+                                      </button>
+                                    );
+                                  })}
+                                </div>
+                              )}
+                            </div>
+                          );
+                        }
 
                         return (
                           <button
@@ -831,6 +993,92 @@ export default function App() {
                   );
                 }
 
+                if (item.id === 'alerts') {
+                  return (
+                    <div key={item.id} className="space-y-0.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          if (activeTab !== 'alerts') {
+                            setActiveTab('alerts');
+                            setIsAlertsMenuExpanded(true);
+                          } else {
+                            setIsAlertsMenuExpanded(!isAlertsMenuExpanded);
+                          }
+                        }}
+                        className={`w-full px-3.5 py-2.5 rounded-xl flex items-center justify-between text-xs font-heading font-semibold transition-all cursor-pointer ${
+                          isActive
+                            ? 'bg-[#004B87] text-white shadow-sm'
+                            : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                        }`}
+                      >
+                        <div className="flex items-center gap-2.5">
+                          <Icon className={`w-4 h-4 ${isActive ? 'text-white' : 'text-slate-500'}`} />
+                          <span>{item.label}</span>
+                        </div>
+                        <div className="flex items-center gap-1.5">
+                          {item.badge !== null && item.badge > 0 && (
+                            <span
+                              className={`px-2 py-0.5 rounded-full text-[10px] font-heading font-bold ${
+                                isActive
+                                  ? 'bg-white text-[#004B87]'
+                                  : 'bg-emerald-100 text-[#003663] border border-emerald-300'
+                              }`}
+                            >
+                              {item.badge}
+                            </span>
+                          )}
+                          <ChevronDown
+                            className={`w-3.5 h-3.5 transition-transform duration-200 ${
+                              isAlertsMenuExpanded ? 'rotate-180' : ''
+                            } ${isActive ? 'text-white' : 'text-slate-400'}`}
+                          />
+                        </div>
+                      </button>
+
+                      {/* Sub Items for Alert Center in Desktop Sidebar */}
+                      {isAlertsMenuExpanded && (
+                        <div className="pl-3 pr-1 py-1 space-y-0.5 border-l-2 border-blue-200 ml-4 my-1">
+                          {monitoringSubItems.map((sub) => {
+                            const SubIcon = sub.icon;
+                            const isSubActive = activeTab === 'alerts' && alertsDefaultSubTab === sub.id;
+
+                            return (
+                              <button
+                                key={sub.id}
+                                type="button"
+                                onClick={() => {
+                                  setActiveTab('alerts');
+                                  setAlertsDefaultSubTab(sub.id);
+                                }}
+                                className={`w-full px-2.5 py-1.5 rounded-lg flex items-center justify-between text-[11px] font-heading font-semibold transition-all cursor-pointer ${
+                                  isSubActive
+                                    ? 'bg-[#004B87] text-white shadow-xs font-bold'
+                                    : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                                }`}
+                              >
+                                <div className="flex items-center gap-2 truncate">
+                                  <SubIcon className={`w-3.5 h-3.5 shrink-0 ${isSubActive ? 'text-white' : 'text-slate-500'}`} />
+                                  <span className="truncate">{sub.label}</span>
+                                </div>
+                                <span
+                                  className={`px-1.5 py-0.5 rounded-full text-[9px] font-extrabold shrink-0 ml-1 ${
+                                    isSubActive
+                                      ? 'bg-white/20 text-white'
+                                      : 'bg-slate-100 text-slate-700 border border-slate-200'
+                                  }`}
+                                >
+                                  {sub.count}
+                                </span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 return (
                   <button
                     key={item.id}
@@ -925,6 +1173,7 @@ export default function App() {
                   pensiunAlerts={scopedPensiunAlerts}
                   kp4Alerts={scopedKp4Alerts}
                   defaultSubTab={alertsDefaultSubTab}
+                  onSubTabChange={(sub) => setAlertsDefaultSubTab(sub as any)}
                   onOpenUploadSkModal={handleOpenUploadSkModal}
                   onUpdateKp4Tanggungan={handleUpdateTanggungan}
                   onUpdatePegawai={handleUpdatePegawai}
