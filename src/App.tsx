@@ -50,7 +50,6 @@ import { PegawaiSimpegView } from './components/PegawaiSimpegView';
 import { Kp4TunjanganView } from './components/Kp4TunjanganView';
 import { ArsipDigitalView } from './components/ArsipDigitalView';
 import { EksporLaporanView } from './components/EksporLaporanView';
-import { AuditLogsView } from './components/AuditLogsView';
 import { UserAndUnitManagementView } from './components/UserAndUnitManagementView';
 import { AplikasiKepegawaianView } from './components/AplikasiKepegawaianView';
 import { SettingsView } from './components/SettingsView';
@@ -61,7 +60,6 @@ import {
   Pegawai,
   RiwayatSK,
   KeluargaKP4,
-  AuditLog,
   JenisSK,
   UserAccount,
   UnitKerjaItem,
@@ -77,7 +75,6 @@ export default function App() {
   const [pegawaiList, setPegawaiList] = useState<Pegawai[]>(() => dbStore.getPegawaiList(true));
   const [skList, setSkList] = useState<RiwayatSK[]>(() => dbStore.getAllSk());
   const [keluargaList, setKeluargaList] = useState<KeluargaKP4[]>(() => dbStore.getAllKeluarga());
-  const [auditLogs, setAuditLogs] = useState<AuditLog[]>(() => dbStore.getAuditLogs());
   const [usersList, setUsersList] = useState<UserAccount[]>(() => dbStore.getAllUsers());
   const [unitsList, setUnitsList] = useState<UnitKerjaItem[]>(() => dbStore.getAllUnits());
   const [aplikasiList, setAplikasiList] = useState<AplikasiKepegawaian[]>(() => dbStore.getAllAplikasi());
@@ -171,11 +168,10 @@ export default function App() {
   // Load Data
   const refreshData = async () => {
     try {
-      const [p, sk, k, log, usr, unit, apps] = await Promise.all([
+      const [p, sk, k, usr, unit, apps] = await Promise.all([
         apiClient.getPegawaiList(true),
         apiClient.getAllSk(),
         apiClient.getAllKeluarga(),
-        apiClient.getAuditLogs(),
         apiClient.getAllUsers(),
         apiClient.getAllUnits(),
         apiClient.getAplikasiList(),
@@ -183,7 +179,6 @@ export default function App() {
       setPegawaiList(p);
       setSkList(sk);
       setKeluargaList(k);
-      setAuditLogs(log);
       setUsersList(usr);
       setUnitsList(unit);
       setAplikasiList(apps);
@@ -211,7 +206,6 @@ export default function App() {
       setPegawaiList([...dbStore.getPegawaiList(true)]);
       setSkList([...dbStore.getAllSk()]);
       setKeluargaList([...dbStore.getAllKeluarga()]);
-      setAuditLogs([...dbStore.getAuditLogs()]);
       const localUsers = dbStore.getAllUsers();
       setUsersList([...localUsers]);
       setUnitsList([...dbStore.getAllUnits()]);
@@ -245,7 +239,6 @@ export default function App() {
       setPegawaiList([...dbStore.getPegawaiList(true)]);
       setSkList([...dbStore.getAllSk()]);
       setKeluargaList([...dbStore.getAllKeluarga()]);
-      setAuditLogs([...dbStore.getAuditLogs()]);
       const currentUsers = dbStore.getAllUsers();
       setUsersList([...currentUsers]);
       setUnitsList([...dbStore.getAllUnits()]);
@@ -277,7 +270,6 @@ export default function App() {
     setPegawaiList([...dbStore.getPegawaiList(true)]);
     setSkList([...dbStore.getAllSk()]);
     setKeluargaList([...dbStore.getAllKeluarga()]);
-    setAuditLogs([...dbStore.getAuditLogs()]);
     setUsersList([...dbStore.getAllUsers()]);
     setUnitsList([...dbStore.getAllUnits()]);
     setAplikasiList([...dbStore.getAllAplikasi()]);
@@ -1243,7 +1235,6 @@ export default function App() {
                   scopedPegawaiList={scopedPegawaiList}
                   skList={skList}
                   keluargaList={keluargaList}
-                  auditLogs={auditLogs}
                   onAddUser={handleAddUser}
                   onUpdateUser={handleUpdateUser}
                   onDeleteUser={handleDeleteUser}
@@ -1267,7 +1258,6 @@ export default function App() {
                   scopedPegawaiList={scopedPegawaiList}
                   skList={skList}
                   keluargaList={keluargaList}
-                  auditLogs={auditLogs}
                   onAddUser={handleAddUser}
                   onUpdateUser={handleUpdateUser}
                   onDeleteUser={handleDeleteUser}
@@ -1291,7 +1281,6 @@ export default function App() {
                   scopedPegawaiList={scopedPegawaiList}
                   skList={skList}
                   keluargaList={keluargaList}
-                  auditLogs={auditLogs}
                   onAddUser={handleAddUser}
                   onUpdateUser={handleUpdateUser}
                   onDeleteUser={handleDeleteUser}
