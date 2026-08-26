@@ -1,6 +1,6 @@
 import fs from 'fs';
 import path from 'path';
-import { Pegawai, RiwayatSK, KeluargaKP4, UnitKerjaItem, UserAccount, AplikasiKepegawaian } from '../types';
+import { Pegawai, RiwayatSK, KeluargaKP4, UnitKerjaItem, UserAccount, AplikasiKepegawaian, AppFeatureConfig, DEFAULT_FEATURE_CONFIG } from '../types';
 import { supabaseService } from './supabaseService';
 import {
   INITIAL_PEGAWAI,
@@ -29,6 +29,7 @@ class DBStore {
   private units: UnitKerjaItem[] = [];
   private users: UserAccount[] = [];
   private aplikasiList: AplikasiKepegawaian[] = [];
+  private featureConfig: AppFeatureConfig = { ...DEFAULT_FEATURE_CONFIG };
   private subscribers: Set<() => void> = new Set();
   private realtimeChannel: any = null;
 
@@ -113,12 +114,14 @@ class DBStore {
           const u = window.localStorage.getItem('sipatuh_units');
           const usr = window.localStorage.getItem('sipatuh_users');
           const app = window.localStorage.getItem('sipatuh_aplikasi');
+          const fc = window.localStorage.getItem('sipatuh_feature_config');
 
           this.pegawai = p !== null ? JSON.parse(p) : [...INITIAL_PEGAWAI];
           this.skHistory = sk !== null ? JSON.parse(sk) : [...INITIAL_SK_HISTORY];
           this.keluarga = k !== null ? JSON.parse(k) : [...INITIAL_KELUARGA];
           this.units = u !== null ? JSON.parse(u) : [...INITIAL_UNITS];
           this.users = usr !== null ? JSON.parse(usr) : [...INITIAL_USERS];
+          this.featureConfig = fc !== null ? { ...DEFAULT_FEATURE_CONFIG, ...JSON.parse(fc) } : { ...DEFAULT_FEATURE_CONFIG };
           
           // For aplikasi, parse from storage or start clean without mock apps
           if (app !== null) {
@@ -182,6 +185,7 @@ class DBStore {
         window.localStorage.setItem('sipatuh_units', JSON.stringify(this.units));
         window.localStorage.setItem('sipatuh_users', JSON.stringify(this.users));
         window.localStorage.setItem('sipatuh_aplikasi', JSON.stringify(this.aplikasiList));
+        window.localStorage.setItem('sipatuh_feature_config', JSON.stringify(this.featureConfig));
         window.localStorage.setItem('sipatuh_db_initialized', 'true');
       } catch (err) {
         console.error('Error saving dbStore to storage:', err);
@@ -649,6 +653,47 @@ class DBStore {
       console.error('Supabase direct delete on deleteAplikasi error:', err);
     });
     return true;
+  }
+
+  // Master Feature Flags Operations
+  getFeatureConfig(): AppFeatureConfig {
+    return { ...this.featureConfig };
+  }
+
+  updateFeatureConfig(
+    updates: Partial<AppFeatureConfig>,
+    adminRoleOrEmail?: string
+  ): AppFeatureConfig {
+    if (adminRoleOrEmail) {
+      const isRoleAdminDinkes = adminRoleOrEmail === 'Admin Dinkes' || adminRoleOrEmail.toLowerCase().includes('dinkes');
+      const isEmailAdminDinkes = this.users.some(
+        (u) => (u.email === adminRoleOrEmail || u.username === adminRoleOrEmail) && u.role === 'Admin Dinkes'
+      );
+      if (!isRoleAdminDinkes && !isEmailAdminDinkes) {
+        throw new Error('Hanya Admin Dinkes yang memiliki hak akses untuk mengubah status fitur.');
+      }
+    }
+    this.featureConfig = {
+      ...this.featureConfig,
+      ...updates,
+    };
+    this.saveToStorage(false);
+    return { ...this.featureConfig };
+  }
+
+  resetFeatureConfig(adminRoleOrEmail?: string): AppFeatureConfig {
+    if (adminRoleOrEmail) {
+      const isRoleAdminDinkes = adminRoleOrEmail === 'Admin Dinkes' || adminRoleOrEmail.toLowerCase().includes('dinkes');
+      const isEmailAdminDinkes = this.users.some(
+        (u) => (u.email === adminRoleOrEmail || u.username === adminRoleOrEmail) && u.role === 'Admin Dinkes'
+      );
+      if (!isRoleAdminDinkes && !isEmailAdminDinkes) {
+        throw new Error('Hanya Admin Dinkes yang memiliki hak akses untuk mengubah status fitur.');
+      }
+    }
+    this.featureConfig = { ...DEFAULT_FEATURE_CONFIG };
+    this.saveToStorage(false);
+    return { ...this.featureConfig };
   }
 }
 
