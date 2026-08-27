@@ -236,6 +236,9 @@ export interface AppFeatureConfig {
   sub_kp4: boolean;
   sub_cuti: boolean;
   sub_pensiun: boolean;
+
+  // Allow dynamic / legacy keys
+  [key: string]: boolean | undefined;
 }
 
 export const DEFAULT_FEATURE_CONFIG: AppFeatureConfig = {
