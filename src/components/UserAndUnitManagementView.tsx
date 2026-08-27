@@ -58,6 +58,8 @@ interface UserAndUnitManagementViewProps {
   onDeleteUnit: (id: string) => Promise<boolean>;
   onSwitchUser: (user: UserAccount) => void;
   defaultSubTab?: 'users' | 'features' | 'units' | 'database';
+  hideHeader?: boolean;
+  forcedTab?: 'users' | 'features' | 'units' | 'database';
 }
 
 export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps> = ({
@@ -76,12 +78,19 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
   onDeleteUnit,
   onSwitchUser,
   defaultSubTab = 'users',
+  hideHeader = false,
+  forcedTab,
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'users' | 'features' | 'units' | 'database'>(defaultSubTab);
+  const [internalSubTab, setInternalSubTab] = useState<'users' | 'features' | 'units' | 'database'>(defaultSubTab);
+  const activeSubTab = forcedTab || internalSubTab;
+
+  const setActiveSubTab = (tab: 'users' | 'features' | 'units' | 'database') => {
+    setInternalSubTab(tab);
+  };
 
   useEffect(() => {
     if (defaultSubTab) {
-      setActiveSubTab(defaultSubTab);
+      setInternalSubTab(defaultSubTab);
     }
   }, [defaultSubTab]);
 
@@ -408,95 +417,97 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
   return (
     <div className="space-y-5 pb-12 font-body">
-      {/* 1. Header Minimalis & Ramping */}
-      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="flex items-start space-x-3.5">
-            <div className="p-3 bg-blue-50 border border-blue-200/80 rounded-xl text-[#004B87] shrink-0">
-              <KeyRound className="w-5 h-5" />
+      {/* 1. Header Minimalis & Ramping (Hanya jika tidak disembunyikan oleh parent view) */}
+      {!hideHeader && (
+        <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-xs">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+            <div className="flex items-start space-x-3.5">
+              <div className="p-3 bg-blue-50 border border-blue-200/80 rounded-xl text-[#004B87] shrink-0">
+                <KeyRound className="w-5 h-5" />
+              </div>
+              <div>
+                <h1 className="text-lg md:text-xl font-heading font-extrabold text-[#004B87] tracking-tight">
+                  Manajemen User & Master Unit Kerja
+                </h1>
+                <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                  Atur otentikasi hak akses akun administrator dan master data unit kerja SIMORANG DINKES-PPKB.
+                </p>
+              </div>
             </div>
-            <div>
-              <h1 className="text-lg md:text-xl font-heading font-extrabold text-[#004B87] tracking-tight">
-                Manajemen User & Master Unit Kerja
-              </h1>
-              <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                Atur otentikasi hak akses akun administrator dan master data unit kerja SIMORANG DINKES-PPKB.
-              </p>
+
+            {/* Sesi Pengguna Aktif Kompak */}
+            <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center space-x-3 shrink-0 self-start md:self-auto">
+              <div className="w-8 h-8 rounded-lg bg-[#004B87] text-white flex items-center justify-center font-heading font-bold text-xs shrink-0">
+                {currentUser.role === 'Admin Dinkes' ? 'AD' : 'UK'}
+              </div>
+              <div className="min-w-0">
+                <div className="text-xs font-heading font-bold text-slate-800 truncate">{currentUser.nama_lengkap}</div>
+                <div className="text-[11px] text-slate-500 truncate">{currentUser.role} &bull; {currentUser.unit_kerja}</div>
+              </div>
             </div>
           </div>
 
-          {/* Sesi Pengguna Aktif Kompak */}
-          <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2.5 rounded-xl flex items-center space-x-3 shrink-0 self-start md:self-auto">
-            <div className="w-8 h-8 rounded-lg bg-[#004B87] text-white flex items-center justify-center font-heading font-bold text-xs shrink-0">
-              {currentUser.role === 'Admin Dinkes' ? 'AD' : 'UK'}
-            </div>
-            <div className="min-w-0">
-              <div className="text-xs font-heading font-bold text-slate-800 truncate">{currentUser.nama_lengkap}</div>
-              <div className="text-[11px] text-slate-500 truncate">{currentUser.role} &bull; {currentUser.unit_kerja}</div>
-            </div>
+          {/* Sub-Tabs Navigasi Bersih */}
+          <div className="flex items-center space-x-2 mt-5 pt-4 border-t border-slate-100 overflow-x-auto">
+            <button
+              type="button"
+              id="tab-mgmt-users"
+              onClick={() => setActiveSubTab('users')}
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                activeSubTab === 'users'
+                  ? 'bg-[#004B87] text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <Users className="w-4 h-4" />
+              <span>Hak Akses & Pengguna ({filteredUsers.length})</span>
+            </button>
+
+            {/* Tab Master Fitur di samping kiri Master Unit Kerja */}
+            <button
+              type="button"
+              id="tab-mgmt-features"
+              onClick={() => setActiveSubTab('features')}
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                activeSubTab === 'features'
+                  ? 'bg-[#004B87] text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <Sliders className="w-4 h-4" />
+              <span>Master Fitur</span>
+            </button>
+
+            <button
+              type="button"
+              id="tab-mgmt-units"
+              onClick={() => setActiveSubTab('units')}
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                activeSubTab === 'units'
+                  ? 'bg-[#004B87] text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <Building2 className="w-4 h-4" />
+              <span>Master Unit Kerja ({unitsList.length})</span>
+            </button>
+
+            <button
+              type="button"
+              id="tab-mgmt-database"
+              onClick={() => setActiveSubTab('database')}
+              className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                activeSubTab === 'database'
+                  ? 'bg-[#004B87] text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+              }`}
+            >
+              <Database className="w-4 h-4" />
+              <span>Database & Sinkronisasi Cloud</span>
+            </button>
           </div>
         </div>
-
-        {/* Sub-Tabs Navigasi Bersih */}
-        <div className="flex items-center space-x-2 mt-5 pt-4 border-t border-slate-100 overflow-x-auto">
-          <button
-            type="button"
-            id="tab-mgmt-users"
-            onClick={() => setActiveSubTab('users')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeSubTab === 'users'
-                ? 'bg-[#004B87] text-white shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Hak Akses & Pengguna ({filteredUsers.length})</span>
-          </button>
-
-          {/* Tab Master Fitur di samping kiri Master Unit Kerja */}
-          <button
-            type="button"
-            id="tab-mgmt-features"
-            onClick={() => setActiveSubTab('features')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeSubTab === 'features'
-                ? 'bg-[#004B87] text-white shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <Sliders className="w-4 h-4" />
-            <span>Master Fitur</span>
-          </button>
-
-          <button
-            type="button"
-            id="tab-mgmt-units"
-            onClick={() => setActiveSubTab('units')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeSubTab === 'units'
-                ? 'bg-[#004B87] text-white shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <Building2 className="w-4 h-4" />
-            <span>Master Unit Kerja ({unitsList.length})</span>
-          </button>
-
-          <button
-            type="button"
-            id="tab-mgmt-database"
-            onClick={() => setActiveSubTab('database')}
-            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
-              activeSubTab === 'database'
-                ? 'bg-[#004B87] text-white shadow-2xs'
-                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
-            }`}
-          >
-            <Database className="w-4 h-4" />
-            <span>Database & Sinkronisasi Cloud</span>
-          </button>
-        </div>
-      </div>
+      )}
 
       {/* SUB-TAB: MASTER FITUR */}
       {activeSubTab === 'features' && (
