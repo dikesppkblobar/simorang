@@ -571,45 +571,76 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
 
   return (
     <div className="space-y-6 font-body text-[#1E293B]">
-      {/* Alert Header Banner with Role Differentiation */}
-      <div className="bg-[#004B87] text-white p-5 rounded-2xl border border-[#003663] shadow-md flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-        <div className="flex items-start space-x-3.5">
-          <div className={`p-3 rounded-xl shrink-0 mt-0.5 ${isSuperAdmin ? 'bg-white/15 border border-white/25 text-white' : 'bg-[#82BE00]/30 border border-[#82BE00]/40 text-white'}`}>
-            {isSuperAdmin ? <ShieldCheck className="w-6 h-6" /> : <Bell className="w-6 h-6" />}
-          </div>
-          <div>
-            <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-              <h2 className="text-base font-heading font-extrabold text-white">
-                Pusat Pemantauan Kepegawaian & Alert Center SDMK
-              </h2>
-              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-heading font-bold uppercase tracking-wide border ${
-                isSuperAdmin
-                  ? 'bg-white/20 text-white border-white/30'
-                  : 'bg-[#82BE00] text-white border-[#6ea000]'
-              }`}>
-                {isSuperAdmin ? 'Super Admin Dinkes (Full Control Update)' : 'Admin Unit Kerja (Mode Pemberitahuan Pemantauan)'}
-              </span>
-            </div>
-            {!isSuperAdmin && (
-              <p className="text-xs text-blue-100 mt-1 max-w-3xl leading-relaxed">
-                Sebagai Admin Unit Kerja ({currentUser?.unit_kerja || 'Unit'}), Anda dapat memantau indikator jatuh tempo dan mengirimkan Pemberitahuan/Imbauan Pemantauan resmi dari semua modul kepada pegawai & Dinkes.
-              </p>
-            )}
-          </div>
-        </div>
+      {/* Single Unified Header for Alert Center */}
+      {(() => {
+        const currentModule = monitoringCards.find((c) => c.id === activeSubTab) || monitoringCards[0];
+        const ModuleIcon = currentModule.icon;
 
-        {/* Global Search inside Monitoring Center */}
-        <div className="relative w-full xl:w-72 shrink-0">
-          <Search className="w-4 h-4 text-blue-200 absolute left-3 top-2.5" />
-          <input
-            type="text"
-            placeholder="Cari NIP / Nama / Unit..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-9 pr-3 py-2 bg-white/10 border border-white/20 rounded-xl text-xs focus:ring-2 focus:ring-[#82BE00] focus:bg-white/20 outline-none font-medium text-white placeholder:text-blue-200"
-          />
-        </div>
-      </div>
+        return (
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+            <div className="flex items-start space-x-3.5 min-w-0">
+              <div className={`p-3 rounded-xl border ${currentModule.iconBg} ${currentModule.iconColor} shrink-0 shadow-2xs`}>
+                <ModuleIcon className="w-6 h-6" />
+              </div>
+              <div className="min-w-0">
+                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                  <span className="text-[11px] font-heading font-extrabold uppercase tracking-wider text-[#004B87] bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
+                    Pemantauan ASN › {currentModule.title}
+                  </span>
+                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                    {currentModule.regNote}
+                  </span>
+                  <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-heading font-bold uppercase tracking-wide border ${
+                    isSuperAdmin
+                      ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                      : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                  }`}>
+                    {isSuperAdmin ? 'Admin Dinkes (Full Control)' : `${currentUser?.unit_kerja || 'Unit Kerja'}`}
+                  </span>
+                </div>
+                <h2 className="text-base sm:text-lg font-heading font-extrabold text-[#004B87] mt-1">
+                  {currentModule.description}
+                </h2>
+              </div>
+            </div>
+
+            {/* Right Controls: Count Badge, Search Input & Mobile Dropdown */}
+            <div className="w-full xl:w-auto flex flex-wrap sm:flex-nowrap items-center justify-start xl:justify-end gap-2.5 shrink-0">
+              <span className={`px-3.5 py-2 rounded-xl text-xs font-heading font-extrabold border ${currentModule.badgeBg} ${currentModule.badgeText} border-current/20 shadow-2xs whitespace-nowrap`}>
+                Total: {currentModule.count} {currentModule.countLabel}
+              </span>
+
+              {/* Search Bar */}
+              <div className="relative flex-1 sm:w-64">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                <input
+                  type="text"
+                  placeholder="Cari NIP / Nama / Unit..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all"
+                />
+              </div>
+
+              {/* Mobile Quick Dropdown */}
+              <div className="block sm:hidden relative w-full mt-1">
+                <select
+                  value={activeSubTab}
+                  onChange={(e) => handleSelectSubTab(e.target.value as SubTabType)}
+                  className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 font-heading font-bold text-xs rounded-xl px-3 py-2 pr-8 focus:ring-2 focus:ring-[#004B87] outline-none shadow-xs"
+                >
+                  {monitoringCards.map((card) => (
+                    <option key={card.id} value={card.id}>
+                      {card.title} ({card.count})
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3 pointer-events-none" />
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       {/* Toast Notification for Sent Messages */}
       {notificationToast && (
@@ -627,58 +658,6 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
           </button>
         </div>
       )}
-
-      {/* Active Module Header Bar */}
-      {(() => {
-        const currentModule = monitoringCards.find((c) => c.id === activeSubTab) || monitoringCards[0];
-        const ModuleIcon = currentModule.icon;
-
-        return (
-          <div className="bg-white p-4 rounded-2xl border border-[#E2E8F0] shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-3">
-            <div className="flex items-center space-x-3">
-              <div className={`p-2.5 rounded-xl border ${currentModule.iconBg} ${currentModule.iconColor} shrink-0`}>
-                <ModuleIcon className="w-5 h-5" />
-              </div>
-              <div>
-                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                  <span className="text-[10px] font-heading font-extrabold uppercase tracking-wider text-[#004B87] bg-blue-50 px-2 py-0.5 rounded-md border border-blue-200">
-                    Pusat Pemantauan ASN › {currentModule.title}
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded-md">
-                    {currentModule.regNote}
-                  </span>
-                </div>
-                <h3 className="font-heading font-extrabold text-sm text-slate-900 mt-1">
-                  {currentModule.description}
-                </h3>
-              </div>
-            </div>
-
-            {/* Mobile View: Quick Sub-Module Switcher */}
-            <div className="w-full md:w-auto flex items-center justify-between md:justify-end gap-2 shrink-0">
-              <span className={`px-3 py-1.5 rounded-xl text-xs font-heading font-extrabold border ${currentModule.badgeBg} ${currentModule.badgeText} border-current/20`}>
-                Total: {currentModule.count} {currentModule.countLabel}
-              </span>
-
-              {/* Mobile Quick Dropdown */}
-              <div className="block sm:hidden relative flex-1 max-w-[200px]">
-                <select
-                  value={activeSubTab}
-                  onChange={(e) => handleSelectSubTab(e.target.value as SubTabType)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 font-heading font-bold text-[11px] rounded-xl px-3 py-1.5 pr-8 focus:ring-2 focus:ring-[#004B87] outline-none shadow-xs"
-                >
-                  {monitoringCards.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.title} ({card.count})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-2.5 top-2.5 pointer-events-none" />
-              </div>
-            </div>
-          </div>
-        );
-      })()}
 
       {/* Content Section Container */}
       <div className="w-full space-y-4 pt-2">
