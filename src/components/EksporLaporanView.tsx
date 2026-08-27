@@ -30,12 +30,14 @@ interface EksporLaporanViewProps {
   pegawaiList: Pegawai[];
   skList: RiwayatSK[];
   keluargaList: KeluargaKP4[];
+  hideHeader?: boolean;
 }
 
 export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
   pegawaiList,
   skList,
   keluargaList,
+  hideHeader = false,
 }) => {
   const [isExporting, setIsExporting] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
@@ -445,37 +447,61 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
   return (
     <div className="space-y-6 font-body">
       {/* Header Banner Bersih, Profesional & Terstandarisasi */}
-      <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
-        <div className="flex items-start space-x-3.5">
-          <div className="p-3 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-700 shrink-0 shadow-2xs">
-            <FileSpreadsheet className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center space-x-2">
-              <h2 className="text-lg md:text-xl font-heading font-extrabold text-[#004B87]">
-                Ekspor Laporan Kepegawaian (.XLSX)
-              </h2>
-              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-heading font-bold uppercase tracking-wider border border-emerald-200">
-                Lengkap & Terverifikasi
-              </span>
+      {!hideHeader ? (
+        <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start space-x-3.5">
+            <div className="p-3 bg-emerald-50 border border-emerald-200/80 rounded-xl text-emerald-700 shrink-0 shadow-2xs">
+              <FileSpreadsheet className="w-6 h-6" />
             </div>
-            <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-              Unduh rekapitulasi data SIMORANG DINKES-PPKB lengkap mencakup <strong>KP4 Keluarga</strong>, <strong>Pangkat (Sebelumnya & Selanjutnya)</strong>, <strong>Jafung (Sebelumnya & Selanjutnya)</strong>, <strong>Masa Kerja (MKG)</strong>, dan <strong>KGB (Sebelumnya & Selanjutnya)</strong>.
-            </p>
+            <div>
+              <div className="flex items-center space-x-2">
+                <h2 className="text-lg md:text-xl font-heading font-extrabold text-[#004B87]">
+                  Ekspor Laporan Kepegawaian (.XLSX)
+                </h2>
+                <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-heading font-bold uppercase tracking-wider border border-emerald-200">
+                  Lengkap & Terverifikasi
+                </span>
+              </div>
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
+                Unduh rekapitulasi data SIMORANG DINKES-PPKB lengkap mencakup <strong>KP4 Keluarga</strong>, <strong>Pangkat (Sebelumnya & Selanjutnya)</strong>, <strong>Jafung (Sebelumnya & Selanjutnya)</strong>, <strong>Masa Kerja (MKG)</strong>, dan <strong>KGB (Sebelumnya & Selanjutnya)</strong>.
+              </p>
+            </div>
           </div>
-        </div>
 
-        <button
-          type="button"
-          id="btn-export-all-in-one"
-          onClick={exportAllInOneWorkbook}
-          disabled={isExporting}
-          className="w-full md:w-auto shrink-0 flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003866] text-white font-heading font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
-        >
-          <Layers className="w-4 h-4 text-cyan-300" />
-          <span>{isExporting ? 'Sedang Memproses Excel...' : 'Ekspor Paket Lengkap (3 Sheet)'}</span>
-        </button>
-      </div>
+          <button
+            type="button"
+            id="btn-export-all-in-one"
+            onClick={exportAllInOneWorkbook}
+            disabled={isExporting}
+            className="w-full md:w-auto shrink-0 flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003866] text-white font-heading font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+          >
+            <Layers className="w-4 h-4 text-cyan-300" />
+            <span>{isExporting ? 'Sedang Memproses Excel...' : 'Ekspor Paket Lengkap (3 Sheet)'}</span>
+          </button>
+        </div>
+      ) : (
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white p-4 rounded-2xl border border-slate-200/90 shadow-2xs">
+          <div className="flex items-center space-x-2">
+            <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 text-emerald-800 text-[10px] font-heading font-bold uppercase tracking-wider border border-emerald-200">
+              Format Standar BKN / SIASN & SAPK
+            </span>
+            <span className="text-xs text-slate-500 hidden md:inline">
+              Data terintegrasi KP4, Pangkat, Jafung, MKG, dan KGB.
+            </span>
+          </div>
+
+          <button
+            type="button"
+            id="btn-export-all-in-one"
+            onClick={exportAllInOneWorkbook}
+            disabled={isExporting}
+            className="w-full sm:w-auto shrink-0 flex items-center justify-center space-x-2 bg-[#004B87] hover:bg-[#003866] text-white font-heading font-extrabold text-xs px-4 py-2.5 rounded-xl transition-all shadow-md hover:shadow-lg cursor-pointer"
+          >
+            <Layers className="w-4 h-4 text-cyan-300" />
+            <span>{isExporting ? 'Sedang Memproses Excel...' : 'Ekspor Paket Lengkap (3 Sheet)'}</span>
+          </button>
+        </div>
+      )}
 
       {/* 4 Cards Ekspor Modul Terintegrasi */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
