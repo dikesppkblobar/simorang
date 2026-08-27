@@ -93,6 +93,12 @@ class DBStore {
             .on('postgres_changes', { event: '*', schema: 'public', table: 'keluarga_kp4' }, () => {
               triggerDebouncedFetch();
             })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'app_settings' }, () => {
+              triggerDebouncedFetch();
+            })
+            .on('postgres_changes', { event: '*', schema: 'public', table: 'feature_config' }, () => {
+              triggerDebouncedFetch();
+            })
             .subscribe((status) => {
               if (status === 'SUBSCRIBED') {
                 console.log('Realtime database sync connected to Supabase Cloud');
@@ -159,6 +165,7 @@ class DBStore {
           this.units = parsed.units && parsed.units.length > 0 ? parsed.units : [...INITIAL_UNITS];
           this.users = parsed.users && parsed.users.length > 0 ? parsed.users : [...INITIAL_USERS];
           this.aplikasiList = parsed.aplikasiList || [];
+          this.featureConfig = parsed.featureConfig ? { ...DEFAULT_FEATURE_CONFIG, ...parsed.featureConfig } : { ...DEFAULT_FEATURE_CONFIG };
           return;
         }
       } catch (err) {
@@ -173,6 +180,7 @@ class DBStore {
     this.units = [...INITIAL_UNITS];
     this.users = [...INITIAL_USERS];
     this.aplikasiList = [];
+    this.featureConfig = { ...DEFAULT_FEATURE_CONFIG };
     this.saveToStorage(false);
   }
 
@@ -205,6 +213,7 @@ class DBStore {
             units: this.units,
             users: this.users,
             aplikasiList: this.aplikasiList,
+            featureConfig: this.featureConfig,
           };
           fs.writeFileSync(filePath, JSON.stringify(payload, null, 2), 'utf-8');
         }
@@ -224,19 +233,21 @@ class DBStore {
         units: this.units,
         users: this.users,
         aplikasi: this.aplikasiList,
+        featureConfig: this.featureConfig,
       }).catch(() => {});
     }
   }
 
   async fetchAndMergeSupabaseData() {
     try {
-      const [p, sk, k, u, usr, app] = await Promise.all([
+      const [p, sk, k, u, usr, app, feat] = await Promise.all([
         supabaseService.fetchAllPegawai(),
         supabaseService.fetchAllSk(),
         supabaseService.fetchAllKeluarga(),
         supabaseService.fetchAllUnits(),
         supabaseService.fetchAllUsers(),
         supabaseService.fetchAllAplikasi(),
+        supabaseService.fetchFeatureConfig(),
       ]);
       if (p !== null && Array.isArray(p)) this.pegawai = p;
       if (sk !== null && Array.isArray(sk)) this.skHistory = sk;
@@ -277,6 +288,13 @@ class DBStore {
 
       if (app !== null && Array.isArray(app)) {
         this.aplikasiList = app;
+      }
+
+      if (feat && typeof feat === 'object') {
+        this.featureConfig = {
+          ...DEFAULT_FEATURE_CONFIG,
+          ...feat,
+        };
       }
 
       this.saveToStorage(false);
@@ -677,7 +695,10 @@ class DBStore {
       ...this.featureConfig,
       ...updates,
     };
-    this.saveToStorage(false);
+    this.saveToStorage(true);
+    supabaseService.upsertFeatureConfig(this.featureConfig).catch((err) => {
+      console.error('Supabase direct upsert on updateFeatureConfig error:', err);
+    });
     return { ...this.featureConfig };
   }
 
@@ -692,7 +713,10 @@ class DBStore {
       }
     }
     this.featureConfig = { ...DEFAULT_FEATURE_CONFIG };
-    this.saveToStorage(false);
+    this.saveToStorage(true);
+    supabaseService.upsertFeatureConfig(this.featureConfig).catch((err) => {
+      console.error('Supabase direct upsert on resetFeatureConfig error:', err);
+    });
     return { ...this.featureConfig };
   }
 }
