@@ -1,20 +1,19 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   Settings,
-  Building,
   Globe,
   Users,
   FileSpreadsheet,
   Sliders,
-  CheckCircle2,
-  XCircle,
+  Building2,
+  Database,
   ToggleLeft,
   ToggleRight,
-  Sparkles,
   Info,
 } from 'lucide-react';
 import { UserAndUnitManagementView } from './UserAndUnitManagementView';
 import { EksporLaporanView } from './EksporLaporanView';
+import { MasterFiturTab } from './MasterFiturTab';
 import {
   Pegawai,
   RiwayatSK,
@@ -25,6 +24,8 @@ import {
   DEFAULT_FEATURE_CONFIG,
 } from '../types';
 import { isDinasScope } from '../services/dateCalculator';
+
+export type SettingsUnifiedTab = 'users' | 'features' | 'units' | 'database' | 'export' | 'scope';
 
 interface SettingsViewProps {
   currentUser: UserAccount;
@@ -46,8 +47,8 @@ interface SettingsViewProps {
   onUpdateUnit: (id: string, updates: any) => Promise<boolean>;
   onDeleteUnit: (id: string) => Promise<boolean>;
   onSwitchUser: (user: UserAccount) => void;
-  defaultSubTab?: 'users' | 'export' | 'scope';
-  defaultManagementSubTab?: 'users' | 'features' | 'units' | 'database';
+  defaultSubTab?: 'users' | 'export' | 'scope' | 'features' | 'units' | 'database' | string;
+  defaultManagementSubTab?: 'users' | 'features' | 'units' | 'database' | string;
 }
 
 export const SettingsView: React.FC<SettingsViewProps> = ({
@@ -73,18 +74,33 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
   defaultSubTab = 'users',
   defaultManagementSubTab = 'users',
 }) => {
-  const [activeSubTab, setActiveSubTab] = useState<'users' | 'export' | 'scope'>(() => {
-    if (defaultSubTab && (defaultSubTab === 'users' || defaultSubTab === 'export' || defaultSubTab === 'scope')) {
-      return defaultSubTab;
+  const resolveInitialTab = (): SettingsUnifiedTab => {
+    if (currentUser.role !== 'Admin Dinkes') {
+      if (defaultSubTab === 'scope') return 'scope';
+      return 'export';
     }
-    return currentUser.role === 'Admin Dinkes' ? 'users' : 'export';
-  });
 
-  React.useEffect(() => {
-    if (defaultSubTab && (defaultSubTab === 'users' || defaultSubTab === 'export' || defaultSubTab === 'scope')) {
-      setActiveSubTab(defaultSubTab);
+    if (defaultSubTab === 'export') return 'export';
+    if (defaultSubTab === 'scope') return 'scope';
+    if (defaultSubTab === 'features') return 'features';
+    if (defaultSubTab === 'units') return 'units';
+    if (defaultSubTab === 'database') return 'database';
+
+    if (defaultSubTab === 'users') {
+      if (defaultManagementSubTab === 'features') return 'features';
+      if (defaultManagementSubTab === 'units') return 'units';
+      if (defaultManagementSubTab === 'database') return 'database';
+      return 'users';
     }
-  }, [defaultSubTab]);
+
+    return 'users';
+  };
+
+  const [activeTab, setActiveTab] = useState<SettingsUnifiedTab>(resolveInitialTab);
+
+  useEffect(() => {
+    setActiveTab(resolveInitialTab());
+  }, [defaultSubTab, defaultManagementSubTab, currentUser.role]);
 
   const isAllUnitsActive = selectedUnitScope === 'SEMUA_UNIT';
   const activePegawaiCount = scopedPegawaiList.filter((p) => !p.is_deleted).length;
@@ -109,69 +125,215 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
 
   return (
     <div className="space-y-6 font-body text-[#1E293B] pb-12">
-      {/* Header Banner */}
-      <div className="bg-white p-5 md:p-6 rounded-2xl border border-slate-200 shadow-xs flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div className="flex items-center space-x-3">
-          <div className="w-11 h-11 bg-slate-100 border border-slate-200 rounded-xl flex items-center justify-center text-[#004B87] shadow-2xs">
-            <Settings className="w-6 h-6" />
+      {/* 1 Single Consolidated Header for Settings */}
+      <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-xs space-y-4">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="flex items-start space-x-3.5">
+            <div className="p-3 bg-blue-50 border border-blue-200/80 rounded-xl text-[#004B87] shrink-0 shadow-2xs">
+              <Settings className="w-6 h-6" />
+            </div>
+            <div>
+              <h1 className="text-lg md:text-xl font-heading font-extrabold text-[#004B87] tracking-tight">
+                Pengaturan & Konfigurasi Sistem
+              </h1>
+              <p className="text-xs text-slate-500 mt-1 max-w-2xl">
+                Kelola hak akses pengguna, master fitur, master unit kerja, database cloud, ekspor laporan, dan cakupan data (<em>scope</em>).
+              </p>
+            </div>
           </div>
-          <div>
-            <h1 className="text-xl font-heading font-extrabold text-[#004B87]">
-              Pengaturan & Konfigurasi Sistem
-            </h1>
-            <p className="text-xs text-slate-500 mt-0.5">
-              Kelola manajemen akun pengguna, unit kerja, ekspor laporan, dan cakupan data (*scope*).
-            </p>
+
+          {/* Sesi Pengguna Aktif */}
+          <div className="bg-slate-50 border border-slate-200/80 px-3.5 py-2 rounded-xl flex items-center space-x-3 shrink-0 self-start md:self-auto">
+            <div className="w-8 h-8 rounded-lg bg-[#004B87] text-white flex items-center justify-center font-heading font-bold text-xs shrink-0">
+              {currentUser.role === 'Admin Dinkes' ? 'AD' : 'UK'}
+            </div>
+            <div className="min-w-0">
+              <div className="text-xs font-heading font-bold text-slate-800 truncate">{currentUser.nama_lengkap}</div>
+              <div className="text-[11px] text-slate-500 truncate">{currentUser.role} &bull; {currentUser.unit_kerja}</div>
+            </div>
           </div>
+        </div>
+
+        {/* Unified Single Navigation Tab Bar */}
+        <div className="flex items-center space-x-2 pt-3 border-t border-slate-100 overflow-x-auto">
+          {currentUser.role === 'Admin Dinkes' && (
+            <>
+              <button
+                type="button"
+                id="tab-settings-users"
+                onClick={() => setActiveTab('users')}
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === 'users'
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <Users className="w-4 h-4" />
+                <span>Hak Akses & Pengguna ({usersList.length})</span>
+              </button>
+
+              <button
+                type="button"
+                id="tab-settings-features"
+                onClick={() => setActiveTab('features')}
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === 'features'
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <Sliders className="w-4 h-4" />
+                <span>Master Fitur</span>
+              </button>
+
+              <button
+                type="button"
+                id="tab-settings-units"
+                onClick={() => setActiveTab('units')}
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === 'units'
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <Building2 className="w-4 h-4" />
+                <span>Master Unit Kerja ({unitsList.length})</span>
+              </button>
+
+              <button
+                type="button"
+                id="tab-settings-database"
+                onClick={() => setActiveTab('database')}
+                className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+                  activeTab === 'database'
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+                }`}
+              >
+                <Database className="w-4 h-4" />
+                <span>Database Cloud</span>
+              </button>
+            </>
+          )}
+
+          <button
+            type="button"
+            id="tab-settings-export"
+            onClick={() => setActiveTab('export')}
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === 'export'
+                ? 'bg-[#004B87] text-white shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+          >
+            <FileSpreadsheet className="w-4 h-4" />
+            <span>Ekspor Laporan</span>
+          </button>
+
+          <button
+            type="button"
+            id="tab-settings-scope"
+            onClick={() => setActiveTab('scope')}
+            className={`flex items-center space-x-2 px-3.5 py-2 rounded-xl text-xs font-heading font-bold transition-all whitespace-nowrap cursor-pointer ${
+              activeTab === 'scope'
+                ? 'bg-[#004B87] text-white shadow-2xs'
+                : 'bg-slate-100 text-slate-600 hover:bg-slate-200 hover:text-slate-900'
+            }`}
+          >
+            <Globe className="w-4 h-4" />
+            <span>Scope Data Disajikan</span>
+          </button>
         </div>
       </div>
 
-      {/* Sub Tabs Navigation */}
-      <div className="flex items-center gap-2 border-b border-slate-200 overflow-x-auto pb-2">
-        {currentUser.role === 'Admin Dinkes' && (
-          <button
-            type="button"
-            onClick={() => setActiveSubTab('users')}
-            className={`px-4 py-2.5 rounded-xl text-xs font-heading font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-              activeSubTab === 'users'
-                ? 'bg-[#004B87] text-white shadow-xs'
-                : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-            }`}
-          >
-            <Users className="w-4 h-4" />
-            <span>Manajemen User & Unit</span>
-          </button>
-        )}
+      {/* Tab Content 1: Hak Akses & Pengguna */}
+      {activeTab === 'users' && currentUser.role === 'Admin Dinkes' && (
+        <UserAndUnitManagementView
+          usersList={usersList}
+          unitsList={unitsList}
+          pegawaiList={pegawaiList}
+          currentUser={currentUser}
+          featureConfig={featureConfig}
+          onUpdateFeatureConfig={onUpdateFeatureConfig}
+          onResetFeatureConfig={onResetFeatureConfig}
+          forcedTab="users"
+          hideHeader={true}
+          onAddUser={onAddUser}
+          onUpdateUser={onUpdateUser}
+          onDeleteUser={onDeleteUser}
+          onAddUnit={onAddUnit}
+          onUpdateUnit={onUpdateUnit}
+          onDeleteUnit={onDeleteUnit}
+          onSwitchUser={onSwitchUser}
+        />
+      )}
 
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('export')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-heading font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-            activeSubTab === 'export'
-              ? 'bg-[#004B87] text-white shadow-xs'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <FileSpreadsheet className="w-4 h-4" />
-          <span>Ekspor Laporan</span>
-        </button>
+      {/* Tab Content 2: Master Fitur */}
+      {activeTab === 'features' && currentUser.role === 'Admin Dinkes' && (
+        <MasterFiturTab
+          featureConfig={featureConfig}
+          currentUser={currentUser}
+          onUpdateFeatureConfig={onUpdateFeatureConfig}
+          onResetFeatureConfig={onResetFeatureConfig}
+        />
+      )}
 
-        <button
-          type="button"
-          onClick={() => setActiveSubTab('scope')}
-          className={`px-4 py-2.5 rounded-xl text-xs font-heading font-bold flex items-center gap-2 transition-all cursor-pointer shrink-0 ${
-            activeSubTab === 'scope'
-              ? 'bg-[#004B87] text-white shadow-xs'
-              : 'bg-white text-slate-600 hover:bg-slate-100 border border-slate-200'
-          }`}
-        >
-          <Sliders className="w-4 h-4" />
-          <span>Scope Data Disajikan</span>
-        </button>
-      </div>
+      {/* Tab Content 3: Master Unit Kerja */}
+      {activeTab === 'units' && currentUser.role === 'Admin Dinkes' && (
+        <UserAndUnitManagementView
+          usersList={usersList}
+          unitsList={unitsList}
+          pegawaiList={pegawaiList}
+          currentUser={currentUser}
+          featureConfig={featureConfig}
+          onUpdateFeatureConfig={onUpdateFeatureConfig}
+          onResetFeatureConfig={onResetFeatureConfig}
+          forcedTab="units"
+          hideHeader={true}
+          onAddUser={onAddUser}
+          onUpdateUser={onUpdateUser}
+          onDeleteUser={onDeleteUser}
+          onAddUnit={onAddUnit}
+          onUpdateUnit={onUpdateUnit}
+          onDeleteUnit={onDeleteUnit}
+          onSwitchUser={onSwitchUser}
+        />
+      )}
 
-      {/* SUB TAB 1: SCOPE DATA DISAJIKAN */}
-      {activeSubTab === 'scope' && (
+      {/* Tab Content 4: Database Cloud */}
+      {activeTab === 'database' && currentUser.role === 'Admin Dinkes' && (
+        <UserAndUnitManagementView
+          usersList={usersList}
+          unitsList={unitsList}
+          pegawaiList={pegawaiList}
+          currentUser={currentUser}
+          featureConfig={featureConfig}
+          onUpdateFeatureConfig={onUpdateFeatureConfig}
+          onResetFeatureConfig={onResetFeatureConfig}
+          forcedTab="database"
+          hideHeader={true}
+          onAddUser={onAddUser}
+          onUpdateUser={onUpdateUser}
+          onDeleteUser={onDeleteUser}
+          onAddUnit={onAddUnit}
+          onUpdateUnit={onUpdateUnit}
+          onDeleteUnit={onDeleteUnit}
+          onSwitchUser={onSwitchUser}
+        />
+      )}
+
+      {/* Tab Content 5: Ekspor Laporan */}
+      {activeTab === 'export' && (
+        <EksporLaporanView
+          pegawaiList={scopedPegawaiList}
+          skList={skList}
+          keluargaList={keluargaList}
+          hideHeader={true}
+        />
+      )}
+
+      {/* Tab Content 6: Scope Data Disajikan */}
+      {activeTab === 'scope' && (
         <div className="space-y-4 font-body">
           {/* Unified Scope Control Card */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-xs space-y-5">
@@ -184,7 +346,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
                 <div>
                   <div className="flex items-center space-x-2 flex-wrap">
                     <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-slate-500">
-                      Cakupan Data Disajikan (*Scope Data*)
+                      Cakupan Data Disajikan (<em>Scope Data</em>)
                     </span>
                     <span className="px-2 py-0.5 rounded-md text-[10px] font-heading font-bold bg-blue-50 text-[#004B87] border border-blue-200">
                       {activePegawaiCount} Pegawai Tampil
@@ -311,7 +473,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
           <div className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-2 text-xs text-slate-500">
             <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
             <span>
-              <strong>Petunjuk:</strong> Cakupan data (*scope*) ini membatasi data yang ditampilkan di Dashboard, Data Pegawai, Notifikasi KGB & Pangkat, serta Laporan. Anda juga dapat menggantinya melalui tombol *scope* di navbar atas.
+              <strong>Petunjuk:</strong> Cakupan data (<em>scope</em>) ini membatasi data yang ditampilkan di Dashboard, Data Pegawai, Notifikasi KGB & Pangkat, serta Laporan. Anda juga dapat menggantinya melalui tombol <em>scope</em> di navbar atas.
             </span>
           </div>
 
@@ -324,36 +486,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
             </div>
           )}
         </div>
-      )}
-
-      {/* SUB TAB 2: MANAJEMEN USER & UNIT */}
-      {activeSubTab === 'users' && currentUser.role === 'Admin Dinkes' && (
-        <UserAndUnitManagementView
-          usersList={usersList}
-          unitsList={unitsList}
-          pegawaiList={pegawaiList}
-          currentUser={currentUser}
-          featureConfig={featureConfig}
-          onUpdateFeatureConfig={onUpdateFeatureConfig}
-          onResetFeatureConfig={onResetFeatureConfig}
-          defaultSubTab={defaultManagementSubTab}
-          onAddUser={onAddUser}
-          onUpdateUser={onUpdateUser}
-          onDeleteUser={onDeleteUser}
-          onAddUnit={onAddUnit}
-          onUpdateUnit={onUpdateUnit}
-          onDeleteUnit={onDeleteUnit}
-          onSwitchUser={onSwitchUser}
-        />
-      )}
-
-      {/* SUB TAB 3: EKSPOR LAPORAN */}
-      {activeSubTab === 'export' && (
-        <EksporLaporanView
-          pegawaiList={scopedPegawaiList}
-          skList={skList}
-          keluargaList={keluargaList}
-        />
       )}
     </div>
   );
