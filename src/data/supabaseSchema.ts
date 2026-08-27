@@ -192,7 +192,22 @@ CREATE INDEX IF NOT EXISTS idx_aplikasi_kategori ON aplikasi_kepegawaian(kategor
 CREATE INDEX IF NOT EXISTS idx_aplikasi_unit_kerja ON aplikasi_kepegawaian(unit_kerja);
 
 -- ------------------------------------------------------------------------------
--- 7. PENGATURAN AKSES SUPABASE (ROW LEVEL SECURITY)
+-- 7. TABEL PENGATURAN APLIKASI & MASTER FITUR (APP SETTINGS & FEATURE FLAGS)
+-- ------------------------------------------------------------------------------
+CREATE TABLE IF NOT EXISTS app_settings (
+  key TEXT PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+CREATE TABLE IF NOT EXISTS feature_config (
+  id TEXT PRIMARY KEY DEFAULT 'default',
+  config JSONB,
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- ------------------------------------------------------------------------------
+-- 8. PENGATURAN AKSES SUPABASE (ROW LEVEL SECURITY)
 -- ------------------------------------------------------------------------------
 ALTER TABLE units DISABLE ROW LEVEL SECURITY;
 ALTER TABLE users DISABLE ROW LEVEL SECURITY;
@@ -200,5 +215,7 @@ ALTER TABLE pegawai DISABLE ROW LEVEL SECURITY;
 ALTER TABLE sk_history DISABLE ROW LEVEL SECURITY;
 ALTER TABLE keluarga_kp4 DISABLE ROW LEVEL SECURITY;
 ALTER TABLE aplikasi_kepegawaian DISABLE ROW LEVEL SECURITY;
+ALTER TABLE app_settings DISABLE ROW LEVEL SECURITY;
+ALTER TABLE feature_config DISABLE ROW LEVEL SECURITY;
 `;
 
