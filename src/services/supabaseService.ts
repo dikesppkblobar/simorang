@@ -6,6 +6,7 @@ import {
   UnitKerjaItem,
   UserAccount,
   AplikasiKepegawaian,
+  AppFeatureConfig,
 } from '../types';
 
 // Track capability/schema state dynamically to prevent repetitive 400 network errors
@@ -349,6 +350,78 @@ export const supabaseService = {
     }
   },
 
+  // FEATURE CONFIG / APP SETTINGS CRUD
+  async fetchFeatureConfig(): Promise<AppFeatureConfig | null> {
+    try {
+      // 1. Try app_settings table first
+      const { data: settingData, error: settingError } = await supabase
+        .from('app_settings')
+        .select('value')
+        .eq('key', 'feature_config')
+        .maybeSingle();
+
+      if (!settingError && settingData && settingData.value) {
+        return typeof settingData.value === 'string'
+          ? JSON.parse(settingData.value)
+          : (settingData.value as AppFeatureConfig);
+      }
+
+      // 2. Try feature_config table
+      const { data: featData, error: featError } = await supabase
+        .from('feature_config')
+        .select('*')
+        .eq('id', 'default')
+        .maybeSingle();
+
+      if (!featError && featData) {
+        if (featData.config) {
+          return typeof featData.config === 'string'
+            ? JSON.parse(featData.config)
+            : (featData.config as AppFeatureConfig);
+        }
+        return featData as unknown as AppFeatureConfig;
+      }
+
+      return null;
+    } catch (err) {
+      return null;
+    }
+  },
+
+  async upsertFeatureConfig(config: AppFeatureConfig): Promise<boolean> {
+    try {
+      // 1. Upsert to app_settings table
+      const { error: err1 } = await supabase
+        .from('app_settings')
+        .upsert(
+          {
+            key: 'feature_config',
+            value: config,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'key' }
+        );
+
+      if (!err1) return true;
+
+      // 2. Upsert to feature_config table as fallback
+      const { error: err2 } = await supabase
+        .from('feature_config')
+        .upsert(
+          {
+            id: 'default',
+            config: config,
+            updated_at: new Date().toISOString(),
+          },
+          { onConflict: 'id' }
+        );
+
+      return !err2;
+    } catch (err) {
+      return false;
+    }
+  },
+
   // Sync state to Supabase
   async syncBulkToSupabase(payload: {
     pegawai: Pegawai[];
@@ -357,6 +430,7 @@ export const supabaseService = {
     units: UnitKerjaItem[];
     users: UserAccount[];
     aplikasi?: AplikasiKepegawaian[];
+    featureConfig?: AppFeatureConfig;
   }): Promise<{ success: boolean; details: string }> {
     try {
       let syncedCount = 0;
@@ -391,6 +465,9 @@ export const supabaseService = {
       if (payload.aplikasi && payload.aplikasi.length > 0) {
         const { error: appErr } = await supabase.from('aplikasi_kepegawaian').upsert(payload.aplikasi, { onConflict: 'id' });
         if (!appErr) syncedCount += payload.aplikasi.length;
+      }
+      if (payload.featureConfig) {
+        await this.upsertFeatureConfig(payload.featureConfig);
       }
       return { success: true, details: `Berhasil menyinkronkan data ke Supabase (${syncedCount} entitas disinkronkan).` };
     } catch (err: any) {
