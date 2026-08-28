@@ -891,7 +891,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                     const globalIndex = startIndex + index + 1;
 
                     // TMT Golongan / Pangkat Calculation (Lama & Baru: +4 Tahun)
-                    const basePangkatDateStr = p.tmt_golongan || p.tmt_cpns || p.tmt_perjanjian_mulai;
+                    const basePangkatDateStr = p.tmt_pangkat_terakhir || p.tmt_golongan || p.tmt_cpns || p.tmt_perjanjian_mulai;
                     let tmtPangkatDisplay = <span className="text-slate-400">-</span>;
                     if (p.status_kepegawaian !== 'Non-ASN' && basePangkatDateStr) {
                       const dLama = parseDate(basePangkatDateStr);
@@ -914,7 +914,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                     }
 
                     // TMT KGB Calculation (Lama & Baru: +2 Tahun)
-                    const baseKgbDateStr = p.tmt_cpns || p.tmt_golongan || p.tmt_perjanjian_mulai;
+                    const baseKgbDateStr = p.tmt_kgb_terakhir || p.tmt_golongan || p.tmt_pangkat_terakhir || p.tmt_perjanjian_mulai || p.tmt_cpns;
                     let tmtKgbDisplay = <span className="text-slate-400">-</span>;
                     if (p.status_kepegawaian !== 'Non-ASN' && baseKgbDateStr) {
                       const dLama = parseDate(baseKgbDateStr);
@@ -938,8 +938,8 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
 
                     // TMT Jabatan (Jafung)
                     let tmtJabatanDisplay = <span className="text-slate-400">-</span>;
-                    const tmtJabatanVal = p.tmt_jabatan_pns || p.tmt_golongan || p.tmt_cpns;
-                    if (tmtJabatanVal && (p.jenis_jabatan === 'Fungsional' || p.tmt_jabatan_pns)) {
+                    const tmtJabatanVal = (p as any).tmt_jafung || p.tmt_jabatan_pns || p.tmt_golongan || p.tmt_cpns;
+                    if (tmtJabatanVal && (p.jenis_jabatan === 'Fungsional' || p.tmt_jabatan_pns || (p as any).tmt_jafung)) {
                       tmtJabatanDisplay = (
                         <span className="font-medium text-slate-800 text-[11px]">
                           {formatDateIndonesian(tmtJabatanVal)}
@@ -1071,7 +1071,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
             <div className="lg:hidden divide-y divide-slate-100">
               {paginatedPegawai.map((p, index) => {
                 const globalIndex = startIndex + index + 1;
-                const basePangkatDateStr = p.tmt_golongan || p.tmt_cpns || p.tmt_perjanjian_mulai;
+                const basePangkatDateStr = p.tmt_pangkat_terakhir || p.tmt_golongan || p.tmt_cpns || p.tmt_perjanjian_mulai;
                 let nextPangkatStr = '-';
                 if (p.status_kepegawaian !== 'Non-ASN' && basePangkatDateStr) {
                   const d = parseDate(basePangkatDateStr);
@@ -1082,7 +1082,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                   }
                 }
 
-                const baseKgbDateStr = p.tmt_cpns || p.tmt_golongan || p.tmt_perjanjian_mulai;
+                const baseKgbDateStr = p.tmt_kgb_terakhir || p.tmt_golongan || p.tmt_pangkat_terakhir || p.tmt_perjanjian_mulai || p.tmt_cpns;
                 let nextKgbStr = '-';
                 if (p.status_kepegawaian !== 'Non-ASN' && baseKgbDateStr) {
                   const d = parseDate(baseKgbDateStr);
@@ -1697,6 +1697,27 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                         </div>
 
                         <div>
+                          <span className="text-[#64748B] text-[11px] block">TMT Gaji Berkala (KGB) Terakhir:</span>
+                          <span className="font-bold text-emerald-800">
+                            {formatDateIndonesian(
+                              selectedPegawaiDetail.pegawai.tmt_kgb_terakhir ||
+                                selectedPegawaiDetail.pegawai.tmt_golongan ||
+                                selectedPegawaiDetail.pegawai.tmt_cpns
+                            )}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[#64748B] text-[11px] block">Nomor & Tgl SK KGB:</span>
+                          <span className="font-bold text-[#1E293B]">
+                            {selectedPegawaiDetail.pegawai.no_sk_kgb || '-'}{' '}
+                            {selectedPegawaiDetail.pegawai.tgl_sk_kgb
+                              ? `(${formatDateIndonesian(selectedPegawaiDetail.pegawai.tgl_sk_kgb)})`
+                              : ''}
+                          </span>
+                        </div>
+
+                        <div>
                           <span className="text-[#64748B] text-[11px] block">TMT CPNS / Pengangkatan:</span>
                           <span className="font-bold text-[#1E293B]">
                             {formatDateIndonesian(selectedPegawaiDetail.pegawai.tmt_cpns)}
@@ -1715,7 +1736,8 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                             <p className="text-amber-800 text-xs mt-0.5 font-medium">
                               {getProyeksiKenaikanPangkat(
                                 selectedPegawaiDetail.pegawai.golongan_pangkat,
-                                selectedPegawaiDetail.pegawai.tmt_golongan ||
+                                selectedPegawaiDetail.pegawai.tmt_pangkat_terakhir ||
+                                  selectedPegawaiDetail.pegawai.tmt_golongan ||
                                   selectedPegawaiDetail.pegawai.tmt_cpns
                               )}
                             </p>
@@ -1731,6 +1753,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                             <p className="text-emerald-800 text-xs mt-0.5 font-medium">
                               {(() => {
                                 const baseDateStr =
+                                  selectedPegawaiDetail.pegawai.tmt_kgb_terakhir ||
                                   selectedPegawaiDetail.pegawai.tmt_golongan ||
                                   selectedPegawaiDetail.pegawai.tmt_cpns;
                                 if (!baseDateStr) return 'TMT belum diset';
@@ -1815,6 +1838,27 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                         </div>
 
                         <div>
+                          <span className="text-[#64748B] text-[11px] block">TMT Gaji Berkala (KGB) Terakhir:</span>
+                          <span className="font-bold text-emerald-800">
+                            {formatDateIndonesian(
+                              selectedPegawaiDetail.pegawai.tmt_kgb_terakhir ||
+                                selectedPegawaiDetail.pegawai.tmt_perjanjian_mulai ||
+                                selectedPegawaiDetail.pegawai.tmt_cpns
+                            )}
+                          </span>
+                        </div>
+
+                        <div>
+                          <span className="text-[#64748B] text-[11px] block">Nomor & Tgl SK KGB:</span>
+                          <span className="font-bold text-[#1E293B]">
+                            {selectedPegawaiDetail.pegawai.no_sk_kgb || '-'}{' '}
+                            {selectedPegawaiDetail.pegawai.tgl_sk_kgb
+                              ? `(${formatDateIndonesian(selectedPegawaiDetail.pegawai.tgl_sk_kgb)})`
+                              : ''}
+                          </span>
+                        </div>
+
+                        <div>
                           <span className="text-[#64748B] text-[11px] block">TMT Pengangkat / Awal:</span>
                           <span className="font-bold text-[#1E293B]">
                             {formatDateIndonesian(selectedPegawaiDetail.pegawai.tmt_cpns)}
@@ -1832,6 +1876,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                           <p className="text-emerald-800 text-xs mt-0.5 font-medium">
                             {(() => {
                               const baseDateStr =
+                                selectedPegawaiDetail.pegawai.tmt_kgb_terakhir ||
                                 selectedPegawaiDetail.pegawai.tmt_perjanjian_mulai ||
                                 selectedPegawaiDetail.pegawai.tmt_cpns;
                               if (!baseDateStr) return 'TMT Perjanjian belum diset';
