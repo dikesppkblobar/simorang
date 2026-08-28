@@ -5,6 +5,7 @@ import {
   AlertKGBItem,
   AlertPangkatItem,
   AlertPensiunItem,
+  AlertJafungItem,
   AlertKP4AnakItem,
 } from '../types';
 
@@ -96,8 +97,64 @@ export function getDaysBetween(startDate: Date, endDate: Date): number {
 }
 
 /**
+ * Mengambil TMT Pangkat / Golongan yang akurat dan tersinkronisasi
+ * Prioritas: SK Pangkat Terakhir -> tmt_golongan -> tmt_pangkat_terakhir -> tmt_cpns
+ */
+export function getPegawaiTmtPangkat(pegawai: Pegawai, skList: RiwayatSK[] = []): string {
+  const pangkatSkList = skList
+    .filter((s) => s.nip_pegawai === pegawai.nip && s.jenis_sk === 'Pangkat' && s.tmt_berlaku)
+    .sort((a, b) => new Date(b.tmt_berlaku).getTime() - new Date(a.tmt_berlaku).getTime());
+
+  if (pangkatSkList.length > 0 && pangkatSkList[0].tmt_berlaku) {
+    return pangkatSkList[0].tmt_berlaku;
+  }
+  if (pegawai.tmt_golongan) return pegawai.tmt_golongan;
+  if (pegawai.tmt_pangkat_terakhir) return pegawai.tmt_pangkat_terakhir;
+  if (pegawai.tmt_cpns) return pegawai.tmt_cpns;
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Mengambil TMT Kenaikan Gaji Berkala (KGB) yang akurat dan tersinkronisasi
+ * Prioritas: SK KGB Terakhir -> tmt_kgb_terakhir -> tmt_golongan -> tmt_pangkat_terakhir -> tmt_perjanjian_mulai -> tmt_cpns
+ */
+export function getPegawaiTmtKgb(pegawai: Pegawai, skList: RiwayatSK[] = []): string {
+  const kgbSkList = skList
+    .filter((s) => s.nip_pegawai === pegawai.nip && s.jenis_sk === 'KGB' && s.tmt_berlaku)
+    .sort((a, b) => new Date(b.tmt_berlaku).getTime() - new Date(a.tmt_berlaku).getTime());
+
+  if (kgbSkList.length > 0 && kgbSkList[0].tmt_berlaku) {
+    return kgbSkList[0].tmt_berlaku;
+  }
+  if (pegawai.tmt_kgb_terakhir) return pegawai.tmt_kgb_terakhir;
+  if (pegawai.tmt_golongan) return pegawai.tmt_golongan;
+  if (pegawai.tmt_pangkat_terakhir) return pegawai.tmt_pangkat_terakhir;
+  if (pegawai.tmt_perjanjian_mulai) return pegawai.tmt_perjanjian_mulai;
+  if (pegawai.tmt_cpns) return pegawai.tmt_cpns;
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
+ * Mengambil TMT Jabatan Fungsional yang tersinkronisasi
+ */
+export function getPegawaiTmtJafung(pegawai: Pegawai, skList: RiwayatSK[] = []): string {
+  const jafungSkList = skList
+    .filter((s) => s.nip_pegawai === pegawai.nip && s.jenis_sk === 'Jafung_PAK' && s.tmt_berlaku)
+    .sort((a, b) => new Date(b.tmt_berlaku).getTime() - new Date(a.tmt_berlaku).getTime());
+
+  if (jafungSkList.length > 0 && jafungSkList[0].tmt_berlaku) {
+    return jafungSkList[0].tmt_berlaku;
+  }
+  if (pegawai.tmt_jafung) return pegawai.tmt_jafung;
+  if (pegawai.tmt_jabatan_pns) return pegawai.tmt_jabatan_pns;
+  if (pegawai.tmt_golongan) return pegawai.tmt_golongan;
+  if (pegawai.tmt_cpns) return pegawai.tmt_cpns;
+  return new Date().toISOString().slice(0, 10);
+}
+
+/**
  * Menghitung Daftar Alert KGB (Siklus 2 Tahun / 24 Bulan)
- * Alert terpicu jika TMT KGB terakhir > 21 bulan yang lalu (H-3 Bulan)
+ * HANYA menampilkan alert yang jatuh tempo di Tahun Berjalan (currentYear) atau yang sudah jatuh tempo sebelumnya.
  */
 export function calculateKgbAlerts(
   pegawaiList: Pegawai[],
@@ -105,16 +162,12 @@ export function calculateKgbAlerts(
   referenceDateStr?: string
 ): AlertKGBItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
+  const currentYear = refDate.getFullYear();
   const activePegawai = pegawaiList.filter((p) => !p.is_deleted);
   const alerts: AlertKGBItem[] = [];
 
   for (const pegawai of activePegawai) {
-    // Cari SK KGB terakhir
-    const kgbSkList = skList
-      .filter((s) => s.nip_pegawai === pegawai.nip && s.jenis_sk === 'KGB')
-      .sort((a, b) => new Date(b.tmt_berlaku).getTime() - new Date(a.tmt_berlaku).getTime());
-
-    const tmtKgbTerakhir = kgbSkList.length > 0 ? kgbSkList[0].tmt_berlaku : pegawai.tmt_cpns;
+    const tmtKgbTerakhir = getPegawaiTmtKgb(pegawai, skList);
     const tmtDate = parseDate(tmtKgbTerakhir);
 
     // Tanggal jatuh tempo = TMT + 2 Tahun
@@ -125,8 +178,10 @@ export function calculateKgbAlerts(
     const sisaBulan = getMonthsBetween(refDate, jatuhTempoDate);
     const sisaHari = getDaysBetween(refDate, jatuhTempoDate);
 
-    // Terpicu jika sudah berjalan >= 21 bulan (sisa_bulan <= 3)
-    if (elapsedMonths >= 21 || sisaBulan <= 3) {
+    // Saring hanya untuk tahun berjalan (Jatuh tempo pada tahun berjalan atau overdue sebelumnya)
+    const isTahunBerjalan = jatuhTempoDate.getFullYear() === currentYear || (jatuhTempoDate.getFullYear() < currentYear && sisaBulan <= 0);
+
+    if (isTahunBerjalan && (elapsedMonths >= 21 || sisaBulan <= 3)) {
       let status: 'Bahaya' | 'Peringatan' | 'Aman' = 'Peringatan';
       if (sisaBulan <= 0) {
         status = 'Bahaya'; // Sudah lewat jatuh tempo
@@ -171,7 +226,7 @@ export function getPeriodeBknTerdekat(targetDate: Date): string {
 
 /**
  * Menghitung Daftar Alert Kenaikan Pangkat (Siklus 4 Tahun / 48 Bulan)
- * Alert terpicu jika TMT Pangkat terakhir > 45 bulan yang lalu (H-3 Bulan)
+ * HANYA menampilkan alert yang akan naik pangkat pada Tahun Berjalan (currentYear) atau yang sudah lewat/overdue.
  */
 export function calculatePangkatAlerts(
   pegawaiList: Pegawai[],
@@ -179,15 +234,12 @@ export function calculatePangkatAlerts(
   referenceDateStr?: string
 ): AlertPangkatItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
+  const currentYear = refDate.getFullYear();
   const activePegawai = pegawaiList.filter((p) => !p.is_deleted && p.status_kepegawaian === 'PNS');
   const alerts: AlertPangkatItem[] = [];
 
   for (const pegawai of activePegawai) {
-    const pangkatSkList = skList
-      .filter((s) => s.nip_pegawai === pegawai.nip && s.jenis_sk === 'Pangkat')
-      .sort((a, b) => new Date(b.tmt_berlaku).getTime() - new Date(a.tmt_berlaku).getTime());
-
-    const tmtPangkatTerakhir = pangkatSkList.length > 0 ? pangkatSkList[0].tmt_berlaku : pegawai.tmt_cpns;
+    const tmtPangkatTerakhir = getPegawaiTmtPangkat(pegawai, skList);
     const tmtDate = parseDate(tmtPangkatTerakhir);
 
     // Tanggal jatuh tempo = TMT + 4 Tahun
@@ -197,8 +249,10 @@ export function calculatePangkatAlerts(
     const elapsedMonths = getMonthsBetween(tmtDate, refDate);
     const sisaBulan = getMonthsBetween(refDate, jatuhTempoDate);
 
-    // Alert terpicu jika elapsed >= 45 bulan (H-3 Bulan)
-    if (elapsedMonths >= 45 || sisaBulan <= 3) {
+    // Saring hanya untuk tahun berjalan (Jatuh tempo pada tahun berjalan atau overdue sebelumnya)
+    const isTahunBerjalan = jatuhTempoDate.getFullYear() === currentYear || (jatuhTempoDate.getFullYear() < currentYear && sisaBulan <= 0);
+
+    if (isTahunBerjalan && (elapsedMonths >= 45 || sisaBulan <= 3)) {
       let status: 'Bahaya' | 'Peringatan' | 'Aman' = 'Peringatan';
       if (sisaBulan <= 0) {
         status = 'Bahaya';
@@ -209,7 +263,7 @@ export function calculatePangkatAlerts(
         nama_lengkap: pegawai.nama_lengkap,
         unit_kerja: pegawai.unit_kerja,
         jenis_jabatan: pegawai.jenis_jabatan,
-        status_ukom: pegawai.status_ukom,
+        status_ukom: Boolean(pegawai.status_ukom || pegawai.status_ukkj === 'Lulus UKKJ'),
         tmt_pangkat_terakhir: tmtPangkatTerakhir,
         tanggal_jatuh_tempo: formatDate(jatuhTempoDate),
         periode_bkn_terdekat: getPeriodeBknTerdekat(jatuhTempoDate),
@@ -220,6 +274,77 @@ export function calculatePangkatAlerts(
   }
 
   return alerts.sort((a, b) => a.sisa_bulan - b.sisa_bulan);
+}
+
+/**
+ * Menghitung Daftar Alert Kenaikan Jabatan Fungsional (Jafung) di Tahun Berjalan
+ * Menampilkan ASN Fungsional PNS yang siap UKKJ / memenuhi target AK Kumulatif / jatuh tempo evaluasi jenjang di tahun berjalan.
+ */
+export function calculateJafungAlerts(
+  pegawaiList: Pegawai[],
+  skList: RiwayatSK[] = [],
+  referenceDateStr?: string
+): AlertJafungItem[] {
+  const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
+  const currentYear = refDate.getFullYear();
+  const activePnsJafung = pegawaiList.filter(
+    (p) => !p.is_deleted && p.status_kepegawaian === 'PNS' && p.jenis_jabatan === 'Fungsional'
+  );
+  const alerts: AlertJafungItem[] = [];
+
+  for (const pegawai of activePnsJafung) {
+    const rawJabatan = (pegawai.jabatan_spesifik || '').toLowerCase();
+    const isMadya = rawJabatan.includes('madya');
+    const isMuda = rawJabatan.includes('muda');
+    const isPertama = rawJabatan.includes('pertama');
+
+    const currentJenjang =
+      pegawai.jenjang_jabatan ||
+      (isMadya ? 'Ahli Madya' : isMuda ? 'Ahli Muda' : isPertama ? 'Ahli Pertama' : 'Kategori Keterampilan');
+    const targetJenjang =
+      currentJenjang === 'Ahli Madya'
+        ? 'Ahli Utama'
+        : currentJenjang === 'Ahli Muda'
+        ? 'Ahli Madya'
+        : currentJenjang === 'Ahli Pertama'
+        ? 'Ahli Muda'
+        : 'Alih Kategori / Penyelia';
+    const estAngkaKredit = pegawai.total_ak_kumulatif ?? (isMadya ? 187.5 : isMuda ? 125.0 : 87.5);
+    const targetAk = currentJenjang === 'Ahli Madya' ? 225 : currentJenjang === 'Ahli Muda' ? 150 : 100;
+    const akKonversi = pegawai.ak_konversi_skp ?? 12.5;
+
+    const tmtJafungStr = getPegawaiTmtJafung(pegawai, skList);
+    const tmtDate = parseDate(tmtJafungStr);
+
+    // Evaluasi jenjang: siklus 2-3 tahun TMT Jafung
+    const evaluasiDate = new Date(tmtDate);
+    evaluasiDate.setFullYear(evaluasiDate.getFullYear() + 2);
+
+    const siapUkkj = estAngkaKredit >= targetAk || pegawai.status_ukkj === 'Lulus UKKJ' || Boolean(pegawai.status_ukom);
+    const isTahunBerjalan = evaluasiDate.getFullYear() <= currentYear || siapUkkj;
+
+    if (isTahunBerjalan) {
+      alerts.push({
+        nip: pegawai.nip,
+        nama_lengkap: pegawai.nama_lengkap,
+        unit_kerja: pegawai.unit_kerja,
+        jenis_jabatan: pegawai.jenis_jabatan,
+        jabatan_spesifik: pegawai.jabatan_spesifik || currentJenjang,
+        jenjang_jabatan: currentJenjang,
+        target_jenjang: targetJenjang,
+        golongan_pangkat: pegawai.golongan_pangkat || 'III/a',
+        nama_pangkat: pegawai.nama_pangkat || 'Penata Muda',
+        total_ak_kumulatif: estAngkaKredit,
+        target_ak: targetAk,
+        ak_konversi_skp: akKonversi,
+        tmt_jafung: tmtJafungStr,
+        status_siap_ukkj: siapUkkj,
+        status_alert: siapUkkj ? 'Bahaya' : 'Peringatan',
+      });
+    }
+  }
+
+  return alerts.sort((a, b) => (b.status_siap_ukkj ? 1 : 0) - (a.status_siap_ukkj ? 1 : 0));
 }
 
 /**
@@ -241,13 +366,14 @@ export function getBUP(jenisJabatan: string, jabatanSpesifik: string): number {
 }
 
 /**
- * Menghitung Alert Pensiun & Akhir Masa Kontrak (PNS, PPPK, Non-ASN)
+ * Menghitung Alert Pensiun (BUP) & Akhir Masa Kontrak di TAHUN BERJALAN
  */
 export function calculatePensiunAlerts(
   pegawaiList: Pegawai[],
   referenceDateStr?: string
 ): AlertPensiunItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
+  const currentYear = refDate.getFullYear();
   const activePegawai = pegawaiList.filter((p) => !p.is_deleted);
   const alerts: AlertPensiunItem[] = [];
 
@@ -261,9 +387,12 @@ export function calculatePensiunAlerts(
       pensiunDate.setFullYear(pensiunDate.getFullYear() + bup);
 
       const sisaBulan = getMonthsBetween(refDate, pensiunDate);
+      const pensiunYear = pensiunDate.getFullYear();
 
-      // Terpicu jika sisa waktu pensiun <= 18 bulan
-      if (sisaBulan <= 18) {
+      // Saring hanya untuk tahun berjalan (BUP di tahun ini atau overdue sebelumnya)
+      const isTahunBerjalan = pensiunYear === currentYear || (pensiunYear < currentYear && sisaBulan <= 0);
+
+      if (isTahunBerjalan && sisaBulan <= 18) {
         alerts.push({
           nip: pegawai.nip,
           nama_lengkap: pegawai.nama_lengkap,
@@ -298,8 +427,12 @@ export function calculatePensiunAlerts(
 
       const expDate = parseDate(expiryDateStr);
       const sisaBulan = getMonthsBetween(refDate, expDate);
+      const expYear = expDate.getFullYear();
 
-      if (sisaBulan <= 18) {
+      // Saring hanya untuk tahun berjalan
+      const isTahunBerjalan = expYear === currentYear || (expYear < currentYear && sisaBulan <= 0);
+
+      if (isTahunBerjalan && sisaBulan <= 18) {
         alerts.push({
           nip: pegawai.nip,
           nama_lengkap: pegawai.nama_lengkap,
@@ -331,8 +464,12 @@ export function calculatePensiunAlerts(
 
       const expDate = parseDate(expiryDateStr);
       const sisaBulan = getMonthsBetween(refDate, expDate);
+      const expYear = expDate.getFullYear();
 
-      if (sisaBulan <= 18) {
+      // Saring hanya untuk tahun berjalan
+      const isTahunBerjalan = expYear === currentYear || (expYear < currentYear && sisaBulan <= 0);
+
+      if (isTahunBerjalan && sisaBulan <= 18) {
         alerts.push({
           nip: pegawai.nip,
           nama_lengkap: pegawai.nama_lengkap,
@@ -354,7 +491,7 @@ export function calculatePensiunAlerts(
 }
 
 /**
- * Menghitung Alert KP4 Anak (Batas 21 Tahun tanpa surat kuliah, Batas 25 Tahun batas maksimal)
+ * Menghitung Alert KP4 Anak di TAHUN BERJALAN (Batas 21 Tahun tanpa surat kuliah, Batas 25 Tahun batas maksimal)
  */
 export function calculateKp4AnakAlerts(
   pegawaiList: Pegawai[],
@@ -362,6 +499,7 @@ export function calculateKp4AnakAlerts(
   referenceDateStr?: string
 ): AlertKP4AnakItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
+  const currentYear = refDate.getFullYear();
   const activePegawaiMap = new Map(
     pegawaiList.filter((p) => !p.is_deleted).map((p) => [p.nip, p])
   );
@@ -380,10 +518,13 @@ export function calculateKp4AnakAlerts(
     const umurTahun = Math.floor(totalMonths / 12);
     const umurBulan = totalMonths % 12;
 
+    const umur21Year = birthDate.getFullYear() + 21;
+    const umur25Year = birthDate.getFullYear() + 25;
+
     const hasSuratKuliah = Boolean(anak.surat_ket_kuliah_url && anak.surat_ket_kuliah_url.trim().length > 0);
 
-    // Kasus 1: Tanpa Surat Kuliah & Umur > 20 Tahun 9 Bulan (249 Bulan)
-    if (!hasSuratKuliah && totalMonths >= 249) {
+    // Kasus 1: Tanpa Surat Kuliah & Umur mendekati / melewati 21 Tahun di Tahun Berjalan
+    if (!hasSuratKuliah && totalMonths >= 249 && umur21Year <= currentYear) {
       alerts.push({
         id: anak.id,
         nip_pegawai: pegawai.nip,
@@ -399,8 +540,8 @@ export function calculateKp4AnakAlerts(
           'Unggah Surat Keterangan Kuliah aktif jika anak masih berkuliah, atau ubah status tanggungan menjadi non-aktif untuk mencegah temuan BPK.',
       });
     }
-    // Kasus 2: Ada Surat Kuliah & Umur > 24 Tahun 9 Bulan (297 Bulan) - Batas Maksimal 25 Thn
-    else if (hasSuratKuliah && totalMonths >= 297) {
+    // Kasus 2: Ada Surat Kuliah & Umur mendekati / melewati 25 Tahun di Tahun Berjalan - Batas Maksimal 25 Thn
+    else if (hasSuratKuliah && totalMonths >= 297 && umur25Year <= currentYear) {
       alerts.push({
         id: anak.id,
         nip_pegawai: pegawai.nip,
