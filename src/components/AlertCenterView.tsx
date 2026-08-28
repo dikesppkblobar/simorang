@@ -511,6 +511,8 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       progres_semester: pegawai.progres_semester || (pegawai.status_izin_belajar ? 'Semester 4' : 'Pendidikan Selesai'),
       akreditasi_pt: pegawai.akreditasi_pt || 'Unggul (A)',
       tmt_kgb_terakhir: pegawai.tmt_kgb_terakhir || new Date().toISOString().split('T')[0],
+      no_sk_kgb: pegawai.no_sk_kgb || (pegawai as any).nomor_sk_kgb || '',
+      tgl_sk_kgb: (pegawai as any).tgl_sk_kgb || (pegawai as any).tanggal_sk_kgb || pegawai.tmt_kgb_terakhir || '',
       tmt_pangkat_terakhir: pegawai.tmt_pangkat_terakhir || new Date().toISOString().split('T')[0],
       golongan_pangkat: pegawai.golongan_pangkat || 'III/a',
       nama_pangkat: pegawai.nama_pangkat || 'Penata Muda',
@@ -583,8 +585,15 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       }
     } else if (modalType === 'kgb') {
       updatePayload.tmt_kgb_terakhir = modalFormData.tmt_kgb_terakhir;
+      if (modalFormData.no_sk_kgb) {
+        updatePayload.no_sk_kgb = modalFormData.no_sk_kgb;
+      }
+      if (modalFormData.tgl_sk_kgb) {
+        updatePayload.tgl_sk_kgb = modalFormData.tgl_sk_kgb;
+      }
       updatePayload.masa_kerja_tahun = Number.isNaN(Number(modalFormData.masa_kerja_tahun)) ? 0 : Number(modalFormData.masa_kerja_tahun);
       updatePayload.masa_kerja_bulan = Number.isNaN(Number(modalFormData.masa_kerja_bulan)) ? 0 : Number(modalFormData.masa_kerja_bulan);
+      updatePayload.updated_at = new Date().toISOString();
     } else if (modalType === 'pangkat') {
       updatePayload.tmt_pangkat_terakhir = modalFormData.tmt_pangkat_terakhir;
       updatePayload.tmt_golongan = modalFormData.tmt_pangkat_terakhir;
@@ -1221,19 +1230,11 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                             <div className="flex items-center justify-end space-x-1.5">
                               <button
                                 onClick={() => handleOpenActionModal(pegawai, 'pak_jafung')}
-                                className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                                className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
                                 title="Update Kenaikan Jabatan Fungsional"
                               >
                                 <Edit3 className="w-3.5 h-3.5" />
                                 <span>Update</span>
-                              </button>
-                              <button
-                                onClick={() => onOpenUploadSkModal(pegawai.nip, 'Pangkat')}
-                                className="inline-flex items-center space-x-1 bg-[#004B87] hover:bg-blue-800 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
-                                title="Upload SK Jabatan Fungsional"
-                              >
-                                <FileUp className="w-3.5 h-3.5" />
-                                <span>SK Jafung</span>
                               </button>
                             </div>
                           ) : (
@@ -1311,22 +1312,13 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
 
                     <div className="pt-1">
                       {isSuperAdmin ? (
-                        <div className="grid grid-cols-2 gap-2">
-                          <button
-                            onClick={() => handleOpenActionModal(pegawai, 'pak_jafung')}
-                            className="py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span>Update</span>
-                          </button>
-                          <button
-                            onClick={() => onOpenUploadSkModal(pegawai.nip, 'Pangkat')}
-                            className="py-2 bg-[#004B87] hover:bg-blue-800 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                          >
-                            <FileUp className="w-3.5 h-3.5" />
-                            <span>SK Jafung</span>
-                          </button>
-                        </div>
+                        <button
+                          onClick={() => handleOpenActionModal(pegawai, 'pak_jafung')}
+                          className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+                        >
+                          <Edit3 className="w-3.5 h-3.5" />
+                          <span>Update Kenaikan Jabatan</span>
+                        </button>
                       ) : (
                         <button
                           onClick={() => handleOpenSendNotification(pegawai, 'Jabatan Fungsional & PAK', `Pemberitahuan evaluasi Angka Kredit (AK) Konversi SKP & Jenjang ${pegawai.jenjang_jabatan || 'Jafung'}.`)}
@@ -1912,9 +1904,9 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                         const isApproaching = diffDays <= 90;
 
                         // Find latest KGB SK if any
-                        const kgbSk = skList.find((s) => s.nip === pegawai.nip && s.jenis_sk === 'KGB');
-                        const noSkKgb = pegawai.nomor_sk_kgb || kgbSk?.nomor_sk || '-';
-                        const tglSkKgb = pegawai.tanggal_sk_kgb || kgbSk?.tanggal_sk;
+                        const kgbSk = skList.find((s) => (s.nip_pegawai === pegawai.nip || (s as any).nip === pegawai.nip) && s.jenis_sk === 'KGB');
+                        const noSkKgb = pegawai.no_sk_kgb || (pegawai as any).nomor_sk_kgb || kgbSk?.nomor_sk || '-';
+                        const tglSkKgb = pegawai.tgl_sk_kgb || (pegawai as any).tanggal_sk_kgb || kgbSk?.tmt_berlaku;
 
                         return (
                           <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
@@ -1993,8 +1985,8 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                     const tmtStr = getPegawaiTmtKgb(pegawai, skList);
                     const tmtDate = new Date(tmtStr);
                     const nextKgbDate = new Date(tmtDate.getFullYear() + 2, tmtDate.getMonth(), tmtDate.getDate());
-                    const kgbSk = skList.find((s) => s.nip === pegawai.nip && s.jenis_sk === 'KGB');
-                    const noSkKgb = pegawai.nomor_sk_kgb || kgbSk?.nomor_sk || '-';
+                    const kgbSk = skList.find((s) => (s.nip_pegawai === pegawai.nip || (s as any).nip === pegawai.nip) && s.jenis_sk === 'KGB');
+                    const noSkKgb = pegawai.no_sk_kgb || (pegawai as any).nomor_sk_kgb || kgbSk?.nomor_sk || '-';
                     return (
                       <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
                         <div className="flex items-start justify-between gap-2">
@@ -3318,13 +3310,35 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
               {modalType === 'kgb' && (
                 <div className="space-y-3">
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">TMT KGB Terakhir</label>
+                    <label className="text-xs font-bold text-slate-700">TMT Gaji Berkala (KGB) Terakhir:*</label>
                     <input
                       type="date"
                       value={modalFormData.tmt_kgb_terakhir}
                       onChange={(e) => setModalFormData({ ...modalFormData, tmt_kgb_terakhir: e.target.value })}
                       className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
                     />
+                  </div>
+
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Nomor SK KGB:</label>
+                      <input
+                        type="text"
+                        placeholder="Contoh: 822/012/KGB/2026"
+                        value={modalFormData.no_sk_kgb || ''}
+                        onChange={(e) => setModalFormData({ ...modalFormData, no_sk_kgb: e.target.value })}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-mono font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Tanggal SK KGB:</label>
+                      <input
+                        type="date"
+                        value={modalFormData.tgl_sk_kgb || ''}
+                        onChange={(e) => setModalFormData({ ...modalFormData, tgl_sk_kgb: e.target.value })}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
                   </div>
 
                   <div className="grid grid-cols-2 gap-3">
