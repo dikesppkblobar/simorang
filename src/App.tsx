@@ -254,8 +254,39 @@ export default function App() {
       setFeatureConfig({ ...dbStore.getFeatureConfig() });
     });
 
+    // 3. Periodic Background Mirror Polling (Sync across Computer A & Computer B every 3.5 seconds)
+    const mirrorInterval = setInterval(() => {
+      refreshData();
+    }, 3500);
+
+    // 4. Instant sync when tab gains focus or user switches back to window
+    const handleFocusOrVisible = () => {
+      if (typeof document !== 'undefined' && !document.hidden) {
+        refreshData();
+      }
+    };
+
+    // 5. Instant multi-tab synchronization on the same computer
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key && e.key.startsWith('sipatuh_')) {
+        refreshData();
+      }
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('focus', handleFocusOrVisible);
+      document.addEventListener('visibilitychange', handleFocusOrVisible);
+      window.addEventListener('storage', handleStorageChange);
+    }
+
     return () => {
       unsubscribe();
+      clearInterval(mirrorInterval);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('focus', handleFocusOrVisible);
+        document.removeEventListener('visibilitychange', handleFocusOrVisible);
+        window.removeEventListener('storage', handleStorageChange);
+      }
     };
   }, []);
 
@@ -1234,6 +1265,7 @@ export default function App() {
                 <PegawaiSimpegView
                   pegawaiList={scopedPegawaiList}
                   unitsList={unitsList}
+                  featureConfig={featureConfig}
                   onAddPegawai={handleAddPegawai}
                   onUpdatePegawai={handleUpdatePegawai}
                   onSoftDeletePegawai={handleSoftDeletePegawai}
