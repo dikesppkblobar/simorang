@@ -18,9 +18,9 @@ async function startServer() {
     console.warn('[Supabase] Warning during initial sync:', err);
   }
 
-  // Middleware JSON
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // Middleware JSON with increased payload limits for bulk imports and file uploads
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // Register master API routes
   app.use('/api', routes);
