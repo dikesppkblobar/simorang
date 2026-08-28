@@ -39,6 +39,7 @@ import {
 import {
   AlertKGBItem,
   AlertPangkatItem,
+  AlertJafungItem,
   AlertPensiunItem,
   AlertKP4AnakItem,
   Pegawai,
@@ -48,7 +49,14 @@ import {
   AppFeatureConfig,
   DEFAULT_FEATURE_CONFIG,
 } from '../types';
-import { formatDateIndonesian } from '../services/dateCalculator';
+import {
+  formatDateIndonesian,
+  getPegawaiTmtPangkat,
+  getPegawaiTmtKgb,
+  getPegawaiTmtJafung,
+  getPeriodeBknTerdekat,
+  calculateJafungAlerts,
+} from '../services/dateCalculator';
 
 interface AlertCenterViewProps {
   currentUser?: UserAccount;
@@ -117,6 +125,9 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<SubTabType>(defaultSubTab);
 
   const [searchTerm, setSearchTerm] = useState('');
+  const [pangkatViewMode, setPangkatViewMode] = useState<'semua' | 'usulan'>('semua');
+  const [kgbViewMode, setKgbViewMode] = useState<'semua' | 'jatuh_tempo'>('semua');
+  const [jafungViewMode, setJafungViewMode] = useState<'semua' | 'usulan'>('semua');
 
   // Notification Modal State for Admin Unit Kerja & Admin Dinkes
   const [notificationModalData, setNotificationModalData] = useState<{
@@ -214,6 +225,17 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
     (item) =>
       item.nama_anak.toLowerCase().includes(searchTerm.toLowerCase()) ||
       item.nip_pegawai.includes(searchTerm)
+  );
+
+  const jafungAlerts = React.useMemo(() => {
+    return calculateJafungAlerts(pegawaiList, skList);
+  }, [pegawaiList, skList]);
+
+  const filteredJafungAlerts = jafungAlerts.filter(
+    (item) =>
+      item.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      item.nip.includes(searchTerm) ||
+      item.unit_kerja.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   // Helper counters (Khusus PNS untuk Pemantauan Pangkat, JF, UKOM, Ujian Dinas)
@@ -473,6 +495,9 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       angka_kredit_konversi: pegawai.ak_konversi_skp ?? (pegawai.status_kepegawaian === 'Non-ASN' ? 0 : 12.5),
       total_ak_kumulatif: pegawai.total_ak_kumulatif ?? (pegawai.status_kepegawaian === 'PNS' || pegawai.status_kepegawaian === 'PPPK Penuh Waktu' ? 37.5 : 0),
       jenjang_jabatan: pegawai.jenjang_jabatan || 'Ahli Pertama',
+      jabatan_spesifik: pegawai.jabatan_spesifik || '',
+      tmt_jabatan_pns: pegawai.tmt_jabatan_pns || pegawai.tmt_pangkat_terakhir || new Date().toISOString().split('T')[0],
+      no_sk_jafung: (pegawai as any).no_sk_jafung || (pegawai as any).no_sk_jabatan_pns || '',
       status_ukom: pegawai.status_ukkj || (pegawai.status_ukom ? 'Lulus UKKJ' : 'Belum UKKJ'),
       status_ujian_dinas: pegawai.status_ujian_dinas || (pegawai.status_kepegawaian === 'PNS' ? 'Lulus STLUD' : 'Bukan Pelaksana'),
       status_pencantuman_gelar: pegawai.status_pencantuman_gelar || 'Terverifikasi BKN',
@@ -510,6 +535,27 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
         updatePayload.ak_konversi_skp = Number.isNaN(Number(modalFormData.angka_kredit_konversi)) ? 0 : Number(modalFormData.angka_kredit_konversi);
         updatePayload.total_ak_kumulatif = Number.isNaN(Number(modalFormData.total_ak_kumulatif)) ? 0 : Number(modalFormData.total_ak_kumulatif);
         updatePayload.jenjang_jabatan = modalFormData.jenjang_jabatan;
+        if (modalFormData.jabatan_spesifik) {
+          updatePayload.jabatan_spesifik = modalFormData.jabatan_spesifik;
+        }
+        if (modalFormData.tmt_jabatan_pns) {
+          updatePayload.tmt_jabatan_pns = modalFormData.tmt_jabatan_pns;
+          (updatePayload as any).tmt_jafung = modalFormData.tmt_jabatan_pns;
+        }
+        if (modalFormData.status_ukom) {
+          updatePayload.status_ukkj = modalFormData.status_ukom;
+          updatePayload.status_ukom = modalFormData.status_ukom === 'Lulus UKKJ';
+        }
+        if (modalFormData.no_sk_jafung) {
+          (updatePayload as any).no_sk_jabatan_pns = modalFormData.no_sk_jafung;
+        }
+        if (modalFormData.golongan_pangkat) {
+          updatePayload.golongan_pangkat = modalFormData.golongan_pangkat;
+        }
+        if (modalFormData.nama_pangkat) {
+          updatePayload.nama_pangkat = modalFormData.nama_pangkat;
+        }
+        updatePayload.updated_at = new Date().toISOString();
       } else if (status === 'PPPK Paruh Waktu') {
         updatePayload.ak_konversi_skp = Number.isNaN(Number(modalFormData.angka_kredit_konversi)) ? 0 : Number(modalFormData.angka_kredit_konversi);
         updatePayload.total_ak_kumulatif = 0;
@@ -571,71 +617,58 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
 
   return (
     <div className="space-y-6 font-body text-[#1E293B]">
-      {/* Single Unified Header for Alert Center */}
+      {/* 1 Single Consolidated Header for Alert Center */}
       {(() => {
         const currentModule = monitoringCards.find((c) => c.id === activeSubTab) || monitoringCards[0];
         const ModuleIcon = currentModule.icon;
 
         return (
-          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
-            <div className="flex items-start space-x-3.5 min-w-0">
-              <div className={`p-3 rounded-xl border ${currentModule.iconBg} ${currentModule.iconColor} shrink-0 shadow-2xs`}>
-                <ModuleIcon className="w-6 h-6" />
-              </div>
-              <div className="min-w-0">
-                <div className="flex items-center space-x-2 flex-wrap gap-y-1">
-                  <span className="text-[11px] font-heading font-extrabold uppercase tracking-wider text-[#004B87] bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
-                    Pemantauan ASN › {currentModule.title}
-                  </span>
-                  <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
-                    {currentModule.regNote}
-                  </span>
-                  <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-heading font-bold uppercase tracking-wide border ${
-                    isSuperAdmin
-                      ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
-                      : 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                  }`}>
-                    {isSuperAdmin ? 'Admin Dinkes (Full Control)' : `${currentUser?.unit_kerja || 'Unit Kerja'}`}
-                  </span>
+          <div className="bg-white p-5 rounded-2xl border border-slate-200/90 shadow-xs space-y-4">
+            {/* Top row: Title, Module Breadcrumb, Scope Badge, Count Badge & Search Bar */}
+            <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4">
+              <div className="flex items-start space-x-3.5 min-w-0">
+                <div className={`p-3 rounded-xl border ${currentModule.iconBg} ${currentModule.iconColor} shrink-0 shadow-2xs`}>
+                  <ModuleIcon className="w-6 h-6" />
                 </div>
-                <h2 className="text-base sm:text-lg font-heading font-extrabold text-[#004B87] mt-1">
-                  {currentModule.description}
-                </h2>
-              </div>
-            </div>
-
-            {/* Right Controls: Count Badge, Search Input & Mobile Dropdown */}
-            <div className="w-full xl:w-auto flex flex-wrap sm:flex-nowrap items-center justify-start xl:justify-end gap-2.5 shrink-0">
-              <span className={`px-3.5 py-2 rounded-xl text-xs font-heading font-extrabold border ${currentModule.badgeBg} ${currentModule.badgeText} border-current/20 shadow-2xs whitespace-nowrap`}>
-                Total: {currentModule.count} {currentModule.countLabel}
-              </span>
-
-              {/* Search Bar */}
-              <div className="relative flex-1 sm:w-64">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
-                <input
-                  type="text"
-                  placeholder="Cari NIP / Nama / Unit..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all"
-                />
+                <div className="min-w-0">
+                  <div className="flex items-center space-x-2 flex-wrap gap-y-1">
+                    <span className="text-[11px] font-heading font-extrabold uppercase tracking-wider text-[#004B87] bg-blue-50 px-2.5 py-0.5 rounded-md border border-blue-200">
+                      Pemantauan ASN › {currentModule.title}
+                    </span>
+                    <span className="text-[10px] font-bold text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-200">
+                      {currentModule.regNote}
+                    </span>
+                    <span className={`px-2.5 py-0.5 rounded-md text-[10px] font-heading font-bold uppercase tracking-wide border ${
+                      isSuperAdmin
+                        ? 'bg-indigo-50 text-indigo-800 border-indigo-200'
+                        : 'bg-emerald-50 text-emerald-800 border-emerald-200'
+                    }`}>
+                      {isSuperAdmin ? 'Admin Dinkes (Full Control)' : `${currentUser?.unit_kerja || 'Unit Kerja'}`}
+                    </span>
+                  </div>
+                  <h1 className="text-base sm:text-lg font-heading font-extrabold text-[#004B87] mt-1">
+                    {currentModule.description}
+                  </h1>
+                </div>
               </div>
 
-              {/* Mobile Quick Dropdown */}
-              <div className="block sm:hidden relative w-full mt-1">
-                <select
-                  value={activeSubTab}
-                  onChange={(e) => handleSelectSubTab(e.target.value as SubTabType)}
-                  className="w-full appearance-none bg-slate-50 border border-slate-300 text-slate-900 font-heading font-bold text-xs rounded-xl px-3 py-2 pr-8 focus:ring-2 focus:ring-[#004B87] outline-none shadow-xs"
-                >
-                  {monitoringCards.map((card) => (
-                    <option key={card.id} value={card.id}>
-                      {card.title} ({card.count})
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-slate-500 absolute right-3 top-3 pointer-events-none" />
+              {/* Right Controls: Count Badge & Search Bar */}
+              <div className="w-full xl:w-auto flex flex-wrap sm:flex-nowrap items-center justify-start xl:justify-end gap-2.5 shrink-0">
+                <span className={`px-3.5 py-2 rounded-xl text-xs font-heading font-extrabold border ${currentModule.badgeBg} ${currentModule.badgeText} border-current/20 shadow-2xs whitespace-nowrap`}>
+                  Total: {currentModule.count} {currentModule.countLabel}
+                </span>
+
+                {/* Search Bar */}
+                <div className="relative flex-1 sm:w-64">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+                  <input
+                    type="text"
+                    placeholder="Cari NIP / Nama / Unit..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-medium text-slate-800 placeholder:text-slate-400 focus:bg-white focus:ring-2 focus:ring-[#004B87] focus:border-transparent outline-none transition-all"
+                  />
+                </div>
               </div>
             </div>
           </div>
@@ -660,193 +693,394 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       )}
 
       {/* Content Section Container */}
-      <div className="w-full space-y-4 pt-2">
+      <div className="w-full space-y-4 pt-1">
 
       {/* SUB-TAB 1: KENAIKAN PANGKAT */}
       {activeSubTab === 'pangkat' && (
         <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-4 sm:p-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200 pb-4 gap-2">
-            <div>
-              <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <Award className="w-5 h-5 text-blue-600 shrink-0" />
-                <span>Pemantauan Kenaikan Pangkat / Golongan ASN (Siklus 4 Tahun)</span>
-              </h3>
-              <p className="text-xs text-[#64748B] mt-1">
-                Berdasarkan Peraturan BKN Terbaru dengan 6 Periode Kenaikan Pangkat Per Tahun (Februari, April, Juni, Agustus, Oktober, Desember).
-              </p>
+          {/* Sub-toolbar: View Filter Toggle & Info */}
+          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
+            <div className="flex items-center space-x-2">
+              <button
+                type="button"
+                id="btn-pangkat-view-all"
+                onClick={() => setPangkatViewMode('semua')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
+                  pangkatViewMode === 'semua'
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Semua Pegawai PNS ({filteredPegawai.filter((p) => p.status_kepegawaian === 'PNS').length})
+              </button>
+              <button
+                type="button"
+                id="btn-pangkat-view-alerts"
+                onClick={() => setPangkatViewMode('usulan')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
+                  pangkatViewMode === 'usulan'
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Mendekati Usulan BKN ({pangkatAlerts.length})
+              </button>
             </div>
-            <span className="bg-amber-100 text-amber-900 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
-              {pangkatAlerts.length} Usulan Pangkat Mendekati
+            <span className="text-[11px] text-slate-500 font-medium">
+              Siklus 4 Tahun terhitung dari <strong>TMT Golongan / Pangkat Terakhir</strong>
             </span>
           </div>
 
-          {filteredPangkatAlerts.length === 0 ? (
-            <div className="p-8 text-center text-slate-500">
-              <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-              Semua pegawai berada dalam masa berlaku pangkat normal.
-            </div>
+          {pangkatViewMode === 'usulan' ? (
+            filteredPangkatAlerts.length === 0 ? (
+              <div className="p-8 text-center text-slate-500">
+                <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                Semua pegawai berada dalam masa berlaku pangkat normal (belum mendekati H-3 bulan periode BKN).
+              </div>
+            ) : (
+              <>
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
+                  <table className="w-full text-left border-collapse text-xs">
+                    <thead>
+                      <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
+                        <th className="p-3.5">Pegawai</th>
+                        <th className="p-3.5">Golongan & TMT Pangkat</th>
+                        <th className="p-3.5">Periode BKN Terdekat</th>
+                        <th className="p-3.5">Status Syarat UKOM</th>
+                        <th className="p-3.5">Status Alert</th>
+                        <th className="p-3.5 text-right">Aksi Admin</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-slate-100">
+                      {filteredPangkatAlerts.map((item) => (
+                        <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="p-3.5">
+                            <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
+                            <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
+                            <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
+                          </td>
+                          <td className="p-3.5 font-medium text-[#334155]">
+                            <div className="font-bold text-blue-900">{formatDateIndonesian(item.tmt_pangkat_terakhir)}</div>
+                            <div className="text-[11px] text-slate-500">Target Jatuh Tempo: {formatDateIndonesian(item.tanggal_jatuh_tempo)}</div>
+                          </td>
+                          <td className="p-3.5 font-bold text-indigo-900 bg-indigo-50/50 rounded-lg">
+                            {item.periode_bkn_terdekat}
+                          </td>
+                          <td className="p-3.5">
+                            {item.status_ukom ? (
+                              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                                Lulus UKOM
+                              </span>
+                            ) : (
+                              <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                                Perlu UKOM / Syarat
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5">
+                            <span className="inline-flex items-center bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
+                              <span>Mendekati H-3 Bln</span>
+                            </span>
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <div className="flex items-center justify-end space-x-1.5">
+                              {isSuperAdmin ? (
+                                <>
+                                  {activePegawai.find((p) => p.nip === item.nip) && (
+                                    <button
+                                      onClick={() => {
+                                        const peg = activePegawai.find((p) => p.nip === item.nip);
+                                        if (peg) handleOpenActionModal(peg, 'pangkat');
+                                      }}
+                                      className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                      <span>Update</span>
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
+                                    className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors"
+                                  >
+                                    <FileUp className="w-3.5 h-3.5" />
+                                    <span>SK Pangkat</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <button
+                                  onClick={() => {
+                                    const peg = activePegawai.find((p) => p.nip === item.nip);
+                                    if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
+                                  }}
+                                  className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                                >
+                                  <Send className="w-3.5 h-3.5" />
+                                  <span>Kirim Pemberitahuan</span>
+                                </button>
+                              )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Mobile Card List */}
+                <div className="md:hidden space-y-3">
+                  {filteredPangkatAlerts.map((item) => (
+                    <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                            {item.nama_lengkap}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
+                          <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
+                        </div>
+                        <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                          H-3 Bln
+                        </span>
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Periode BKN</span>
+                          <span className="font-bold text-indigo-700">{item.periode_bkn_terdekat}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Status UKOM</span>
+                          <span className={`text-[11px] font-bold ${item.status_ukom ? 'text-emerald-700' : 'text-amber-700'}`}>
+                            {item.status_ukom ? 'Lulus UKOM' : 'Perlu UKOM'}
+                          </span>
+                        </div>
+                        <div className="col-span-2">
+                          <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo Pangkat</span>
+                          <span className="font-semibold text-slate-800 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-1 flex items-center justify-end gap-1.5">
+                        {isSuperAdmin ? (
+                          <>
+                            {activePegawai.find((p) => p.nip === item.nip) && (
+                              <button
+                                onClick={() => {
+                                  const peg = activePegawai.find((p) => p.nip === item.nip);
+                                  if (peg) handleOpenActionModal(peg, 'pangkat');
+                                }}
+                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Update</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
+                              className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                            >
+                              <FileUp className="w-3.5 h-3.5" />
+                              <span>SK Pangkat</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              const peg = activePegawai.find((p) => p.nip === item.nip);
+                              if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
+                            }}
+                            className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Kirim Pemberitahuan</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
+            )
           ) : (
+            /* Mode 'semua': Full List of PNS Synchronized with TMT Golongan / Pangkat */
             <>
-              {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
-                      <th className="p-3.5">Pegawai</th>
-                      <th className="p-3.5">Golongan & TMT Pangkat</th>
+                      <th className="p-3.5">Pegawai PNS</th>
+                      <th className="p-3.5">Golongan & Pangkat</th>
+                      <th className="p-3.5">TMT Golongan / Pangkat</th>
+                      <th className="p-3.5">Target Jatuh Tempo (4 Thn)</th>
                       <th className="p-3.5">Periode BKN Terdekat</th>
                       <th className="p-3.5">Status Syarat UKOM</th>
-                      <th className="p-3.5">Status Alert</th>
                       <th className="p-3.5 text-right">Aksi Admin</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredPangkatAlerts.map((item) => (
-                      <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
-                        <td className="p-3.5">
-                          <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
-                          <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
-                          <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
-                        </td>
-                        <td className="p-3.5 font-medium text-[#334155]">
-                          <div className="font-bold text-blue-900">{formatDateIndonesian(item.tmt_pangkat_terakhir)}</div>
-                          <div className="text-[11px] text-slate-500">Target Jatuh Tempo: {formatDateIndonesian(item.tanggal_jatuh_tempo)}</div>
-                        </td>
-                        <td className="p-3.5 font-bold text-indigo-900 bg-indigo-50/50 rounded-lg">
-                          {item.periode_bkn_terdekat}
-                        </td>
-                        <td className="p-3.5">
-                          {item.status_ukom ? (
-                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                              Lulus UKOM
-                            </span>
-                          ) : (
-                            <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                              Perlu UKOM / Syarat
-                            </span>
-                          )}
-                        </td>
-                        <td className="p-3.5">
-                          <span className="inline-flex items-center bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
-                            <span>Mendekati H-3 Bln</span>
-                          </span>
-                        </td>
-                        <td className="p-3.5 text-right">
-                          <div className="flex items-center justify-end space-x-1.5">
-                            {isSuperAdmin ? (
-                              <>
-                                {activePegawai.find((p) => p.nip === item.nip) && (
+                    {filteredPegawai
+                      .filter((p) => p.status_kepegawaian === 'PNS')
+                      .map((pegawai) => {
+                        const tmtStr = getPegawaiTmtPangkat(pegawai, skList);
+                        const tmtDate = new Date(tmtStr);
+                        const targetDate = new Date(tmtDate.getFullYear() + 4, tmtDate.getMonth(), tmtDate.getDate());
+                        const periodeBkn = getPeriodeBknTerdekat(targetDate);
+                        const isUkomLulus = pegawai.status_ukkj === 'Lulus UKKJ' || pegawai.status_ukom;
+
+                        // Check alert status
+                        const now = new Date();
+                        const diffTime = targetDate.getTime() - now.getTime();
+                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+                        const isApproaching = diffDays <= 90;
+
+                        return (
+                          <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="p-3.5">
+                              <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
+                              <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
+                              <div className="text-[11px] text-slate-500">{pegawai.unit_kerja}</div>
+                            </td>
+                            <td className="p-3.5">
+                              <span className="font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                                {pegawai.golongan_pangkat || 'III/a'}
+                              </span>
+                              <div className="text-[11px] text-slate-600 mt-1 font-medium">
+                                {pegawai.nama_pangkat || 'Penata Muda'}
+                              </div>
+                            </td>
+                            <td className="p-3.5 font-bold text-slate-800">
+                              {formatDateIndonesian(tmtStr)}
+                            </td>
+                            <td className="p-3.5 font-bold text-indigo-900">
+                              <div>{formatDateIndonesian(targetDate.toISOString().split('T')[0])}</div>
+                              {isApproaching && (
+                                <span className="inline-block bg-red-100 text-red-800 text-[10px] font-bold px-1.5 py-0.2 rounded mt-0.5">
+                                  H-3 Bln
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3.5 font-bold text-slate-700">
+                              {periodeBkn}
+                            </td>
+                            <td className="p-3.5">
+                              {isUkomLulus ? (
+                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                                  Lulus UKOM
+                                </span>
+                              ) : (
+                                <span className="bg-slate-100 text-slate-700 text-[10px] font-medium px-2 py-0.5 rounded">
+                                  Sesuai Jenjang
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end space-x-1.5">
+                                {isSuperAdmin ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleOpenActionModal(pegawai, 'pangkat')}
+                                      className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                      <span>Update</span>
+                                    </button>
+                                    <button
+                                      onClick={() => onOpenUploadSkModal(pegawai.nip, 'Pangkat')}
+                                      className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+                                    >
+                                      <FileUp className="w-3.5 h-3.5" />
+                                      <span>SK Pangkat</span>
+                                    </button>
+                                  </>
+                                ) : (
                                   <button
-                                    onClick={() => {
-                                      const peg = activePegawai.find((p) => p.nip === item.nip);
-                                      if (peg) handleOpenActionModal(peg, 'pangkat');
-                                    }}
-                                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                                    onClick={() => handleOpenSendNotification(pegawai, 'Kenaikan Pangkat', `Sinkronisasi TMT Kenaikan Pangkat (${formatDateIndonesian(tmtStr)}) - Target Jatuh Tempo: ${formatDateIndonesian(targetDate.toISOString().split('T')[0])}`)}
+                                    className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
                                   >
-                                    <Edit3 className="w-3.5 h-3.5" />
-                                    <span>Update</span>
+                                    <Send className="w-3.5 h-3.5" />
+                                    <span>Kirim Notif</span>
                                   </button>
                                 )}
-                                <button
-                                  onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
-                                  className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors"
-                                >
-                                  <FileUp className="w-3.5 h-3.5" />
-                                  <span>SK Pangkat</span>
-                                </button>
-                              </>
-                            ) : (
-                              <button
-                                onClick={() => {
-                                  const peg = activePegawai.find((p) => p.nip === item.nip);
-                                  if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
-                                }}
-                                className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
-                              >
-                                <Send className="w-3.5 h-3.5" />
-                                <span>Kirim Pemberitahuan</span>
-                              </button>
-                            )}
-                          </div>
-                        </td>
-                      </tr>
-                    ))}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
                   </tbody>
                 </table>
               </div>
 
-              {/* Mobile Card List */}
+              {/* Mobile Card View for 'semua' */}
               <div className="md:hidden space-y-3">
-                {filteredPangkatAlerts.map((item) => (
-                  <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                    <div className="flex items-start justify-between gap-2">
-                      <div>
-                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                          {item.nama_lengkap}
+                {filteredPegawai
+                  .filter((p) => p.status_kepegawaian === 'PNS')
+                  .map((pegawai) => {
+                    const tmtStr = getPegawaiTmtPangkat(pegawai, skList);
+                    const tmtDate = new Date(tmtStr);
+                    const targetDate = new Date(tmtDate.getFullYear() + 4, tmtDate.getMonth(), tmtDate.getDate());
+                    const periodeBkn = getPeriodeBknTerdekat(targetDate);
+                    return (
+                      <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                              {pegawai.nama_lengkap}
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                            <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
+                          </div>
+                          <span className="bg-blue-100 text-blue-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                            {pegawai.golongan_pangkat || 'III/a'}
+                          </span>
                         </div>
-                        <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
-                        <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
-                      </div>
-                      <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                        H-3 Bln
-                      </span>
-                    </div>
 
-                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-semibold block">Periode BKN</span>
-                        <span className="font-bold text-indigo-700">{item.periode_bkn_terdekat}</span>
-                      </div>
-                      <div>
-                        <span className="text-[10px] text-slate-400 font-semibold block">Status UKOM</span>
-                        <span className={`text-[11px] font-bold ${item.status_ukom ? 'text-emerald-700' : 'text-amber-700'}`}>
-                          {item.status_ukom ? 'Lulus UKOM' : 'Perlu UKOM'}
-                        </span>
-                      </div>
-                      <div className="col-span-2">
-                        <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo Pangkat</span>
-                        <span className="font-semibold text-slate-800 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
-                      </div>
-                    </div>
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">TMT Pangkat</span>
+                            <span className="font-bold text-slate-800 text-[11px]">{formatDateIndonesian(tmtStr)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo (4 Thn)</span>
+                            <span className="font-bold text-indigo-700 text-[11px]">{formatDateIndonesian(targetDate.toISOString().split('T')[0])}</span>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-[10px] text-slate-400 font-semibold block">Periode BKN</span>
+                            <span className="font-semibold text-slate-700 text-[11px]">{periodeBkn}</span>
+                          </div>
+                        </div>
 
-                    <div className="pt-1 flex items-center justify-end gap-1.5">
-                      {isSuperAdmin ? (
-                        <>
-                          {activePegawai.find((p) => p.nip === item.nip) && (
+                        <div className="pt-1 flex items-center justify-end gap-1.5">
+                          {isSuperAdmin ? (
+                            <>
+                              <button
+                                onClick={() => handleOpenActionModal(pegawai, 'pangkat')}
+                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Update</span>
+                              </button>
+                              <button
+                                onClick={() => onOpenUploadSkModal(pegawai.nip, 'Pangkat')}
+                                className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                              >
+                                <FileUp className="w-3.5 h-3.5" />
+                                <span>SK Pangkat</span>
+                              </button>
+                            </>
+                          ) : (
                             <button
-                              onClick={() => {
-                                const peg = activePegawai.find((p) => p.nip === item.nip);
-                                if (peg) handleOpenActionModal(peg, 'pangkat');
-                              }}
-                              className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                              onClick={() => handleOpenSendNotification(pegawai, 'Kenaikan Pangkat', `Sinkronisasi TMT Pangkat ${formatDateIndonesian(tmtStr)}`)}
+                              className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
                             >
-                              <Edit3 className="w-3.5 h-3.5" />
-                              <span>Update</span>
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Kirim Pemberitahuan</span>
                             </button>
                           )}
-                          <button
-                            onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
-                            className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                          >
-                            <FileUp className="w-3.5 h-3.5" />
-                            <span>SK Pangkat</span>
-                          </button>
-                        </>
-                      ) : (
-                        <button
-                          onClick={() => {
-                            const peg = activePegawai.find((p) => p.nip === item.nip);
-                            if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
-                          }}
-                          className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
-                        >
-                          <Send className="w-3.5 h-3.5" />
-                          <span>Kirim Pemberitahuan</span>
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
+                        </div>
+                      </div>
+                    );
+                  })}
               </div>
             </>
           )}
@@ -858,14 +1092,51 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
         <div className="space-y-4">
           {/* Table of Functional Staff */}
           <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
-            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
-              <h4 className="font-bold text-slate-900 text-sm flex items-center space-x-2">
-                <Briefcase className="w-4 h-4 text-blue-600 shrink-0" />
-                <span>Daftar Pemantauan Jabatan Fungsional Kesehatan & SDMK PNS ({jafungPnsCount} Pegawai PNS)</span>
-              </h4>
-              <span className="text-xs text-slate-500 font-semibold">
-                Rumpun Dokter, Perawat, Bidan, Apoteker, Sanitarian, & SDMK (Khusus PNS)
-              </span>
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-200 pb-3">
+              <div>
+                <h4 className="font-bold text-slate-900 text-sm flex items-center space-x-2">
+                  <Briefcase className="w-4 h-4 text-blue-600 shrink-0" />
+                  <span>
+                    {jafungViewMode === 'usulan'
+                      ? `Daftar Usulan Kenaikan Jenjang Jabatan Fungsional (${filteredJafungAlerts.length} Pegawai)`
+                      : `Daftar Pemantauan Jabatan Fungsional Kesehatan & SDMK PNS (${jafungPnsCount} Pegawai PNS)`}
+                  </span>
+                </h4>
+                <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                  Rumpun Dokter, Perawat, Bidan, Apoteker, Sanitarian, & SDMK (Khusus PNS)
+                </p>
+              </div>
+
+              {/* View Mode Toggle */}
+              <div className="flex items-center bg-slate-100 p-1 rounded-xl shrink-0 self-end sm:self-auto border border-slate-200/80">
+                <button
+                  onClick={() => setJafungViewMode('usulan')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                    jafungViewMode === 'usulan'
+                      ? 'bg-[#004B87] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <Sparkles className="w-3.5 h-3.5" />
+                  <span>Usulan Tahun Berjalan</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${jafungViewMode === 'usulan' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                    {jafungAlerts.length}
+                  </span>
+                </button>
+                <button
+                  onClick={() => setJafungViewMode('semua')}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 cursor-pointer ${
+                    jafungViewMode === 'semua'
+                      ? 'bg-[#004B87] text-white shadow-xs'
+                      : 'text-slate-600 hover:text-slate-900'
+                  }`}
+                >
+                  <span>Semua PNS Fungsional</span>
+                  <span className={`px-1.5 py-0.2 rounded-full text-[10px] ${jafungViewMode === 'semua' ? 'bg-white/20 text-white' : 'bg-slate-200 text-slate-700'}`}>
+                    {jafungPnsCount}
+                  </span>
+                </button>
+              </div>
             </div>
 
             {/* Desktop Table View */}
@@ -878,169 +1149,197 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                     <th className="p-3.5">Predikat SKP & Konversi AK</th>
                     <th className="p-3.5">Total AK Kumulatif (PAK Integrasi)</th>
                     <th className="p-3.5">Proyeksi Kenaikan Jenjang</th>
-                    <th className="p-3.5 text-right">Aksi Admin</th>
+                    <th className="p-3.5 text-right">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100">
-                  {filteredPegawai
-                    .filter((p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS')
-                    .map((pegawai) => {
-                      const isMadya = pegawai.jabatan_spesifik.toLowerCase().includes('madya');
-                      const isMuda = pegawai.jabatan_spesifik.toLowerCase().includes('muda');
-                      const isPertama = pegawai.jabatan_spesifik.toLowerCase().includes('pertama');
+                  {(jafungViewMode === 'usulan'
+                    ? filteredJafungAlerts.map((a) => {
+                        const peg = activePegawai.find((p) => p.nip === a.nip) || (a as any);
+                        return peg;
+                      })
+                    : filteredPegawai.filter((p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS')
+                  ).map((pegawai) => {
+                    const isMadya = pegawai.jabatan_spesifik.toLowerCase().includes('madya');
+                    const isMuda = pegawai.jabatan_spesifik.toLowerCase().includes('muda');
+                    const isPertama = pegawai.jabatan_spesifik.toLowerCase().includes('pertama');
 
-                      const currentJenjang = pegawai.jenjang_jabatan || (isMadya ? 'Ahli Madya' : isMuda ? 'Ahli Muda' : isPertama ? 'Ahli Pertama' : 'Kategori Keterampilan');
-                      const targetJenjang = currentJenjang === 'Ahli Madya' ? 'Ahli Utama' : currentJenjang === 'Ahli Muda' ? 'Ahli Madya' : currentJenjang === 'Ahli Pertama' ? 'Ahli Muda' : 'Alih Kategori / Penyelia';
-                      const estAngkaKredit = pegawai.total_ak_kumulatif ?? (isMadya ? 187.5 : isMuda ? 125.0 : 87.5);
-                      const targetAk = currentJenjang === 'Ahli Madya' ? 225 : currentJenjang === 'Ahli Muda' ? 150 : 100;
-                      const akKonversi = pegawai.ak_konversi_skp ?? (pegawai.status_kepegawaian === 'Non-ASN' ? 0 : 12.5);
+                    const currentJenjang = pegawai.jenjang_jabatan || (isMadya ? 'Ahli Madya' : isMuda ? 'Ahli Muda' : isPertama ? 'Ahli Pertama' : 'Kategori Keterampilan');
+                    const targetJenjang = currentJenjang === 'Ahli Madya' ? 'Ahli Utama' : currentJenjang === 'Ahli Muda' ? 'Ahli Madya' : currentJenjang === 'Ahli Pertama' ? 'Ahli Muda' : 'Alih Kategori / Penyelia';
+                    const estAngkaKredit = pegawai.total_ak_kumulatif ?? (isMadya ? 187.5 : isMuda ? 125.0 : 87.5);
+                    const targetAk = currentJenjang === 'Ahli Madya' ? 225 : currentJenjang === 'Ahli Muda' ? 150 : 100;
+                    const akKonversi = pegawai.ak_konversi_skp ?? (pegawai.status_kepegawaian === 'Non-ASN' ? 0 : 12.5);
 
-                      return (
-                        <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="p-3.5">
-                            <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
-                            <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
-                            <div className="text-[11px] text-blue-700 font-semibold">{pegawai.jabatan_spesifik}</div>
-                            <div className="text-[10px] text-slate-500">{pegawai.unit_kerja}</div>
-                          </td>
-                          <td className="p-3.5">
-                            <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[11px] inline-block">
-                              {currentJenjang}
+                    return (
+                      <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="p-3.5">
+                          <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
+                          <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
+                          <div className="text-[11px] text-blue-700 font-semibold">{pegawai.jabatan_spesifik}</div>
+                          <div className="text-[10px] text-slate-500">{pegawai.unit_kerja}</div>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="font-bold text-slate-800 bg-slate-100 px-2 py-0.5 rounded text-[11px] inline-block">
+                            {currentJenjang}
+                          </span>
+                          <div className="text-[11px] font-semibold text-blue-900 mt-1">
+                            Pangkat: {pegawai.golongan_pangkat || 'III/a'} ({pegawai.nama_pangkat || 'Penata Muda'})
+                          </div>
+                        </td>
+                        <td className="p-3.5">
+                          <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">
+                            SKP Terkonversi
+                          </span>
+                          <div className="text-[11px] text-slate-700 font-semibold mt-1">
+                            Konversi AK: <strong className="text-emerald-700">+{akKonversi} AK</strong>
+                          </div>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="font-extrabold text-blue-900 text-sm">{estAngkaKredit} AK</div>
+                          <div className="text-[10px] text-slate-500">Batas Target: {targetAk} AK</div>
+                          <div className="w-24 bg-slate-200 rounded-full h-1.5 mt-1 overflow-hidden">
+                            <div
+                              className="bg-blue-600 h-1.5 rounded-full"
+                              style={{ width: `${Math.min(100, (estAngkaKredit / targetAk) * 100)}%` }}
+                            ></div>
+                          </div>
+                        </td>
+                        <td className="p-3.5">
+                          <div className="font-bold text-indigo-900">{targetJenjang}</div>
+                          {estAngkaKredit >= targetAk ? (
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded mt-0.5 inline-block">
+                              Siap UKKJ Kenaikan Jenjang
                             </span>
-                            <div className="text-[11px] font-semibold text-blue-900 mt-1">
-                              Pangkat: {pegawai.golongan_pangkat || 'III/a'} ({pegawai.nama_pangkat || 'Penata Muda'})
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <span className="bg-emerald-100 text-emerald-800 px-2 py-0.5 rounded text-[10px] font-extrabold uppercase">
-                              SKP Terkonversi
+                          ) : (
+                            <span className="bg-slate-100 text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded mt-0.5 inline-block">
+                              Kurang {Math.max(0, targetAk - estAngkaKredit)} AK
                             </span>
-                            <div className="text-[11px] text-slate-700 font-semibold mt-1">
-                              Konversi AK Tahun Ini: <strong className="text-emerald-700">+{akKonversi} AK</strong>
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="font-extrabold text-blue-900 text-sm">{estAngkaKredit} AK</div>
-                            <div className="text-[10px] text-slate-500">Batas Target: {targetAk} AK</div>
-                            <div className="w-24 bg-slate-200 rounded-full h-1.5 mt-1 overflow-hidden">
-                              <div
-                                className="bg-blue-600 h-1.5 rounded-full"
-                                style={{ width: `${Math.min(100, (estAngkaKredit / targetAk) * 100)}%` }}
-                              ></div>
-                            </div>
-                          </td>
-                          <td className="p-3.5">
-                            <div className="font-bold text-indigo-900">{targetJenjang}</div>
-                            {estAngkaKredit >= targetAk ? (
-                              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded mt-0.5 inline-block">
-                                Siap UKKJ Kenaikan Jenjang
-                              </span>
-                            ) : (
-                              <span className="bg-slate-100 text-slate-700 text-[10px] font-semibold px-2 py-0.5 rounded mt-0.5 inline-block">
-                                Kurang {Math.max(0, targetAk - estAngkaKredit)} AK
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3.5 text-right">
-                            {isSuperAdmin ? (
+                          )}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          {isSuperAdmin ? (
+                            <div className="flex items-center justify-end space-x-1.5">
                               <button
                                 onClick={() => handleOpenActionModal(pegawai, 'pak_jafung')}
-                                className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                                className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                                title="Update Kenaikan Jabatan Fungsional"
                               >
-                                <FileCheck className="w-3.5 h-3.5" />
-                                <span>PAK & SKP Konversi</span>
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Update</span>
                               </button>
-                            ) : (
                               <button
-                                onClick={() => handleOpenSendNotification(pegawai, 'Jabatan Fungsional & PAK', `Pemberitahuan evaluasi Angka Kredit (AK) Konversi SKP & Jenjang ${pegawai.jenjang_jabatan || 'Jafung'}.`)}
-                                className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                                onClick={() => onOpenUploadSkModal(pegawai.nip, 'Pangkat')}
+                                className="inline-flex items-center space-x-1 bg-[#004B87] hover:bg-blue-800 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+                                title="Upload SK Jabatan Fungsional"
                               >
-                                <Send className="w-3.5 h-3.5" />
-                                <span>Kirim Pemberitahuan</span>
+                                <FileUp className="w-3.5 h-3.5" />
+                                <span>SK Jafung</span>
                               </button>
-                            )}
-                          </td>
-                        </tr>
-                      );
-                    })}
+                            </div>
+                          ) : (
+                            <button
+                              onClick={() => handleOpenSendNotification(pegawai, 'Jabatan Fungsional & PAK', `Pemberitahuan evaluasi Angka Kredit (AK) Konversi SKP & Jenjang ${pegawai.jenjang_jabatan || 'Jafung'}.`)}
+                              className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                            >
+                              <Send className="w-3.5 h-3.5" />
+                              <span>Kirim Pemberitahuan</span>
+                            </button>
+                          )}
+                        </td>
+                      </tr>
+                    );
+                  })}
                 </tbody>
               </table>
             </div>
 
             {/* Mobile Card List View */}
             <div className="md:hidden space-y-3">
-              {filteredPegawai
-                .filter((p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS')
-                .map((pegawai) => {
-                  const isMadya = pegawai.jabatan_spesifik.toLowerCase().includes('madya');
-                  const isMuda = pegawai.jabatan_spesifik.toLowerCase().includes('muda');
-                  const isPertama = pegawai.jabatan_spesifik.toLowerCase().includes('pertama');
+              {(jafungViewMode === 'usulan'
+                ? filteredJafungAlerts.map((a) => {
+                    const peg = activePegawai.find((p) => p.nip === a.nip) || (a as any);
+                    return peg;
+                  })
+                : filteredPegawai.filter((p) => p.jenis_jabatan === 'Fungsional' && p.status_kepegawaian === 'PNS')
+              ).map((pegawai) => {
+                const isMadya = pegawai.jabatan_spesifik.toLowerCase().includes('madya');
+                const isMuda = pegawai.jabatan_spesifik.toLowerCase().includes('muda');
+                const isPertama = pegawai.jabatan_spesifik.toLowerCase().includes('pertama');
 
-                  const currentJenjang = pegawai.jenjang_jabatan || (isMadya ? 'Ahli Madya' : isMuda ? 'Ahli Muda' : isPertama ? 'Ahli Pertama' : 'Kategori Keterampilan');
-                  const targetJenjang = currentJenjang === 'Ahli Madya' ? 'Ahli Utama' : currentJenjang === 'Ahli Muda' ? 'Ahli Madya' : currentJenjang === 'Ahli Pertama' ? 'Ahli Muda' : 'Alih Kategori / Penyelia';
-                  const estAngkaKredit = pegawai.total_ak_kumulatif ?? (isMadya ? 187.5 : isMuda ? 125.0 : 87.5);
-                  const targetAk = currentJenjang === 'Ahli Madya' ? 225 : currentJenjang === 'Ahli Muda' ? 150 : 100;
-                  const akKonversi = pegawai.ak_konversi_skp ?? (pegawai.status_kepegawaian === 'Non-ASN' ? 0 : 12.5);
+                const currentJenjang = pegawai.jenjang_jabatan || (isMadya ? 'Ahli Madya' : isMuda ? 'Ahli Muda' : isPertama ? 'Ahli Pertama' : 'Kategori Keterampilan');
+                const targetJenjang = currentJenjang === 'Ahli Madya' ? 'Ahli Utama' : currentJenjang === 'Ahli Muda' ? 'Ahli Madya' : currentJenjang === 'Ahli Pertama' ? 'Ahli Muda' : 'Alih Kategori / Penyelia';
+                const estAngkaKredit = pegawai.total_ak_kumulatif ?? (isMadya ? 187.5 : isMuda ? 125.0 : 87.5);
+                const targetAk = currentJenjang === 'Ahli Madya' ? 225 : currentJenjang === 'Ahli Muda' ? 150 : 100;
+                const akKonversi = pegawai.ak_konversi_skp ?? (pegawai.status_kepegawaian === 'Non-ASN' ? 0 : 12.5);
 
-                  return (
-                    <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                            {pegawai.nama_lengkap}
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
-                          <div className="text-[11px] text-blue-700 font-semibold">{pegawai.jabatan_spesifik}</div>
-                          <div className="text-[10px] text-slate-500">{pegawai.unit_kerja}</div>
+                return (
+                  <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {pegawai.nama_lengkap}
                         </div>
-                        <span className="font-bold text-slate-800 bg-white border border-slate-200 px-2 py-0.5 rounded text-[10px] shrink-0">
-                          {currentJenjang}
-                        </span>
+                        <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                        <div className="text-[11px] text-blue-700 font-semibold">{pegawai.jabatan_spesifik}</div>
+                        <div className="text-[10px] text-slate-500">{pegawai.unit_kerja}</div>
                       </div>
+                      <span className="font-bold text-slate-800 bg-white border border-slate-200 px-2 py-0.5 rounded text-[10px] shrink-0">
+                        {currentJenjang}
+                      </span>
+                    </div>
 
-                      <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1.5 text-xs">
-                        <div className="flex items-center justify-between">
-                          <span className="text-slate-500 text-[11px]">Angka Kredit Kumulatif:</span>
-                          <span className="font-extrabold text-blue-900">{estAngkaKredit} / {targetAk} AK</span>
-                        </div>
-                        <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
-                          <div
-                            className="bg-blue-600 h-2 rounded-full"
-                            style={{ width: `${Math.min(100, (estAngkaKredit / targetAk) * 100)}%` }}
-                          />
-                        </div>
-                        <div className="flex items-center justify-between text-[11px] pt-0.5">
-                          <span className="text-slate-500">Target Promosi:</span>
-                          <span className="font-bold text-indigo-700">{targetJenjang}</span>
-                        </div>
-                        <div className="flex items-center justify-between text-[11px]">
-                          <span className="text-slate-500">Konversi Tahun Ini:</span>
-                          <span className="font-bold text-emerald-700">+{akKonversi} AK</span>
-                        </div>
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200 space-y-1.5 text-xs">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500 text-[11px]">Angka Kredit Kumulatif:</span>
+                        <span className="font-extrabold text-blue-900">{estAngkaKredit} / {targetAk} AK</span>
                       </div>
-
-                      <div className="pt-1">
-                        {isSuperAdmin ? (
-                          <button
-                            onClick={() => handleOpenActionModal(pegawai, 'pak_jafung')}
-                            className="w-full py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                          >
-                            <FileCheck className="w-3.5 h-3.5" />
-                            <span>PAK & SKP Konversi</span>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenSendNotification(pegawai, 'Jabatan Fungsional & PAK', `Pemberitahuan evaluasi Angka Kredit (AK) Konversi SKP & Jenjang ${pegawai.jenjang_jabatan || 'Jafung'}.`)}
-                            className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>Kirim Pemberitahuan</span>
-                          </button>
-                        )}
+                      <div className="w-full bg-slate-100 rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-blue-600 h-2 rounded-full"
+                          style={{ width: `${Math.min(100, (estAngkaKredit / targetAk) * 100)}%` }}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between text-[11px] pt-0.5">
+                        <span className="text-slate-500">Target Promosi:</span>
+                        <span className="font-bold text-indigo-700">{targetJenjang}</span>
+                      </div>
+                      <div className="flex items-center justify-between text-[11px]">
+                        <span className="text-slate-500">Konversi Tahun Ini:</span>
+                        <span className="font-bold text-emerald-700">+{akKonversi} AK</span>
                       </div>
                     </div>
-                  );
-                })}
+
+                    <div className="pt-1">
+                      {isSuperAdmin ? (
+                        <div className="grid grid-cols-2 gap-2">
+                          <button
+                            onClick={() => handleOpenActionModal(pegawai, 'pak_jafung')}
+                            className="py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                          >
+                            <Edit3 className="w-3.5 h-3.5" />
+                            <span>Update</span>
+                          </button>
+                          <button
+                            onClick={() => onOpenUploadSkModal(pegawai.nip, 'Pangkat')}
+                            className="py-2 bg-[#004B87] hover:bg-blue-800 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                          >
+                            <FileUp className="w-3.5 h-3.5" />
+                            <span>SK Jafung</span>
+                          </button>
+                        </div>
+                      ) : (
+                        <button
+                          onClick={() => handleOpenSendNotification(pegawai, 'Jabatan Fungsional & PAK', `Pemberitahuan evaluasi Angka Kredit (AK) Konversi SKP & Jenjang ${pegawai.jenjang_jabatan || 'Jafung'}.`)}
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
             </div>
           </div>
         </div>
@@ -1382,79 +1681,363 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
                 <Clock className="w-5 h-5 text-blue-600 shrink-0" />
-                <span>Daftar Pegawai Jatuh Tempo KGB (Kenaikan Gaji Berkala)</span>
+                <span>Pemantauan Kenaikan Gaji Berkala (KGB) PNS (Siklus 2 Tahun)</span>
               </h3>
-              <p className="text-xs text-[#64748B]">Siklus 2 Tahun (24 Bulan) | Terhitung H-3 Bulan</p>
+              <p className="text-xs text-[#64748B]">Siklus 2 Tahun (24 Bulan) terhitung dari TMT KGB Terakhir</p>
             </div>
-            <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2.5 py-1 rounded-full shrink-0">
-              {kgbAlerts.length} Perlu Diproses
-            </span>
+            <div className="flex items-center space-x-2 shrink-0">
+              <button
+                type="button"
+                id="btn-kgb-view-all"
+                onClick={() => setKgbViewMode('semua')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
+                  kgbViewMode === 'semua'
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Semua Pegawai PNS ({filteredPegawai.filter((p) => p.status_kepegawaian === 'PNS').length})
+              </button>
+              <button
+                type="button"
+                id="btn-kgb-view-alerts"
+                onClick={() => setKgbViewMode('peringatan')}
+                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
+                  kgbViewMode === 'peringatan'
+                    ? 'bg-[#004B87] text-white shadow-2xs'
+                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+                }`}
+              >
+                Jatuh Tempo KGB ({kgbAlerts.length})
+              </button>
+            </div>
           </div>
 
-          {/* Desktop Table View */}
-          <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
-                  <th className="p-3.5">Pegawai</th>
-                  <th className="p-3.5">TMT KGB Terakhir</th>
-                  <th className="p-3.5">Jatuh Tempo Berikutnya</th>
-                  <th className="p-3.5">Status Alert</th>
-                  <th className="p-3.5 text-right">Aksi Admin</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {kgbAlerts.length === 0 ? (
-                  <tr>
-                    <td colSpan={5} className="p-8 text-center text-slate-500">
-                      <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                      Semua pegawai aktif memiliki TMT KGB yang masih berlaku.
-                    </td>
-                  </tr>
-                ) : (
-                  kgbAlerts.map((item) => (
-                    <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="p-3.5">
-                        <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
-                        <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
-                        <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
-                      </td>
-                      <td className="p-3.5 font-medium text-[#334155]">
-                        {formatDateIndonesian(item.tmt_kgb_terakhir)}
-                      </td>
-                      <td className="p-3.5 font-bold text-blue-900">
-                        {formatDateIndonesian(item.tanggal_jatuh_tempo)}
-                      </td>
-                      <td className="p-3.5">
-                        {item.status_alert === 'Bahaya' ? (
-                          <span className="inline-flex items-center space-x-1 bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
-                            <span>Mendekati / Jatuh Tempo</span>
-                          </span>
-                        ) : (
-                          <span className="inline-flex items-center space-x-1 bg-[#FEF3C7] text-[#92400E] px-2.5 py-1 rounded-full text-[11px] font-semibold">
-                            <span>Peringatan ({item.sisa_bulan} bln)</span>
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-3.5 text-right">
-                        <div className="flex items-center justify-end space-x-1.5">
-                          {isSuperAdmin ? (
-                            <>
-                              {activePegawai.find((p) => p.nip === item.nip) && (
+          {kgbViewMode === 'peringatan' ? (
+            /* Alerts Table */
+            <>
+              {/* Desktop Table View */}
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
+                      <th className="p-3.5">Pegawai</th>
+                      <th className="p-3.5">TMT KGB Terakhir</th>
+                      <th className="p-3.5">Jatuh Tempo Berikutnya</th>
+                      <th className="p-3.5">Status Alert</th>
+                      <th className="p-3.5 text-right">Aksi Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {kgbAlerts.length === 0 ? (
+                      <tr>
+                        <td colSpan={5} className="p-8 text-center text-slate-500">
+                          <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                          Semua pegawai aktif memiliki TMT KGB yang masih berlaku.
+                        </td>
+                      </tr>
+                    ) : (
+                      kgbAlerts.map((item) => (
+                        <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="p-3.5">
+                            <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
+                            <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
+                            <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
+                          </td>
+                          <td className="p-3.5 font-medium text-[#334155]">
+                            {formatDateIndonesian(item.tmt_kgb_terakhir)}
+                          </td>
+                          <td className="p-3.5 font-bold text-blue-900">
+                            {formatDateIndonesian(item.tanggal_jatuh_tempo)}
+                          </td>
+                          <td className="p-3.5">
+                            {item.status_alert === 'Bahaya' ? (
+                              <span className="inline-flex items-center space-x-1 bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
+                                <span>Mendekati / Jatuh Tempo</span>
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center space-x-1 bg-[#FEF3C7] text-[#92400E] px-2.5 py-1 rounded-full text-[11px] font-semibold">
+                                <span>Peringatan ({item.sisa_bulan} bln)</span>
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            <div className="flex items-center justify-end space-x-1.5">
+                              {isSuperAdmin ? (
+                                <>
+                                  {activePegawai.find((p) => p.nip === item.nip) && (
+                                    <button
+                                      onClick={() => {
+                                        const peg = activePegawai.find((p) => p.nip === item.nip);
+                                        if (peg) handleOpenActionModal(peg, 'kgb');
+                                      }}
+                                      className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                      <span>Update</span>
+                                    </button>
+                                  )}
+                                  <button
+                                    onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
+                                    className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+                                  >
+                                    <FileUp className="w-3.5 h-3.5" />
+                                    <span>SK KGB</span>
+                                  </button>
+                                </>
+                              ) : (
                                 <button
                                   onClick={() => {
                                     const peg = activePegawai.find((p) => p.nip === item.nip);
-                                    if (peg) handleOpenActionModal(peg, 'kgb');
+                                    if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
                                   }}
-                                  className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                                  className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
                                 >
-                                  <Edit3 className="w-3.5 h-3.5" />
-                                  <span>Update</span>
+                                  <Send className="w-3.5 h-3.5" />
+                                  <span>Kirim Pemberitahuan</span>
                                 </button>
                               )}
+                            </div>
+                          </td>
+                        </tr>
+                      ))
+                    )}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card List View */}
+              <div className="md:hidden space-y-3">
+                {kgbAlerts.length === 0 ? (
+                  <div className="p-8 text-center text-slate-500">
+                    <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+                    Semua pegawai aktif memiliki TMT KGB yang masih berlaku.
+                  </div>
+                ) : (
+                  kgbAlerts.map((item) => (
+                    <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                      <div className="flex items-start justify-between gap-2">
+                        <div>
+                          <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                            {item.nama_lengkap}
+                          </div>
+                          <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
+                          <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
+                        </div>
+                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
+                          item.status_alert === 'Bahaya' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                        }`}>
+                          {item.status_alert === 'Bahaya' ? 'Jatuh Tempo' : `${item.sisa_bulan} Bln Lagi`}
+                        </span>
+                      </div>
+
+                      <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">TMT KGB Lama</span>
+                          <span className="font-medium text-slate-800 text-[11px]">{formatDateIndonesian(item.tmt_kgb_terakhir)}</span>
+                        </div>
+                        <div>
+                          <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo KGB Baru</span>
+                          <span className="font-bold text-emerald-700 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
+                        </div>
+                      </div>
+
+                      <div className="pt-1 flex items-center justify-end gap-1.5">
+                        {isSuperAdmin ? (
+                          <>
+                            {activePegawai.find((p) => p.nip === item.nip) && (
                               <button
-                                onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
-                                className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors"
+                                onClick={() => {
+                                  const peg = activePegawai.find((p) => p.nip === item.nip);
+                                  if (peg) handleOpenActionModal(peg, 'kgb');
+                                }}
+                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Update</span>
+                              </button>
+                            )}
+                            <button
+                              onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
+                              className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
+                            >
+                              <FileUp className="w-3.5 h-3.5" />
+                              <span>SK KGB</span>
+                            </button>
+                          </>
+                        ) : (
+                          <button
+                            onClick={() => {
+                              const peg = activePegawai.find((p) => p.nip === item.nip);
+                              if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
+                            }}
+                            className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                          >
+                            <Send className="w-3.5 h-3.5" />
+                            <span>Kirim Pemberitahuan</span>
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </>
+          ) : (
+            /* Mode 'semua': Full List of PNS Synchronized with TMT KGB */
+            <>
+              <div className="hidden md:block overflow-x-auto">
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
+                      <th className="p-3.5">Pegawai PNS</th>
+                      <th className="p-3.5">Golongan & Pangkat</th>
+                      <th className="p-3.5">TMT KGB Terakhir</th>
+                      <th className="p-3.5">No SK & Tanggal SK KGB</th>
+                      <th className="p-3.5">Jatuh Tempo Berikutnya (2 Thn)</th>
+                      <th className="p-3.5 text-right">Aksi Admin</th>
+                    </tr>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {filteredPegawai
+                      .filter((p) => p.status_kepegawaian === 'PNS')
+                      .map((pegawai) => {
+                        const tmtStr = getPegawaiTmtKgb(pegawai, skList);
+                        const tmtDate = new Date(tmtStr);
+                        const nextKgbDate = new Date(tmtDate.getFullYear() + 2, tmtDate.getMonth(), tmtDate.getDate());
+
+                        // Check if approaching
+                        const now = new Date();
+                        const diffDays = Math.ceil((nextKgbDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+                        const isApproaching = diffDays <= 90;
+
+                        // Find latest KGB SK if any
+                        const kgbSk = skList.find((s) => s.nip === pegawai.nip && s.jenis_sk === 'KGB');
+                        const noSkKgb = pegawai.nomor_sk_kgb || kgbSk?.nomor_sk || '-';
+                        const tglSkKgb = pegawai.tanggal_sk_kgb || kgbSk?.tanggal_sk;
+
+                        return (
+                          <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
+                            <td className="p-3.5">
+                              <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
+                              <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
+                              <div className="text-[11px] text-slate-500">{pegawai.unit_kerja}</div>
+                            </td>
+                            <td className="p-3.5">
+                              <span className="font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                                {pegawai.golongan_pangkat || 'III/a'}
+                              </span>
+                              <div className="text-[11px] text-slate-600 mt-1 font-medium">
+                                {pegawai.nama_pangkat || 'Penata Muda'}
+                              </div>
+                            </td>
+                            <td className="p-3.5 font-bold text-slate-800">
+                              {formatDateIndonesian(tmtStr)}
+                            </td>
+                            <td className="p-3.5">
+                              <div className="font-mono text-slate-700 font-medium">{noSkKgb}</div>
+                              {tglSkKgb && (
+                                <div className="text-[10px] text-slate-500">Tgl SK: {formatDateIndonesian(tglSkKgb)}</div>
+                              )}
+                            </td>
+                            <td className="p-3.5 font-bold text-indigo-900">
+                              <div>{formatDateIndonesian(nextKgbDate.toISOString().split('T')[0])}</div>
+                              {isApproaching && (
+                                <span className="inline-block bg-red-100 text-red-800 text-[10px] font-bold px-1.5 py-0.2 rounded mt-0.5">
+                                  H-3 Bln
+                                </span>
+                              )}
+                            </td>
+                            <td className="p-3.5 text-right">
+                              <div className="flex items-center justify-end space-x-1.5">
+                                {isSuperAdmin ? (
+                                  <>
+                                    <button
+                                      onClick={() => handleOpenActionModal(pegawai, 'kgb')}
+                                      className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                                    >
+                                      <Edit3 className="w-3.5 h-3.5" />
+                                      <span>Update</span>
+                                    </button>
+                                    <button
+                                      onClick={() => onOpenUploadSkModal(pegawai.nip, 'KGB')}
+                                      className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+                                    >
+                                      <FileUp className="w-3.5 h-3.5" />
+                                      <span>SK KGB</span>
+                                    </button>
+                                  </>
+                                ) : (
+                                  <button
+                                    onClick={() => handleOpenSendNotification(pegawai, 'KGB Gaji Berkala', `Sinkronisasi TMT KGB (${formatDateIndonesian(tmtStr)}) - Jatuh Tempo KGB Berikutnya: ${formatDateIndonesian(nextKgbDate.toISOString().split('T')[0])}`)}
+                                    className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                                  >
+                                    <Send className="w-3.5 h-3.5" />
+                                    <span>Kirim Notif</span>
+                                  </button>
+                                )}
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                  </tbody>
+                </table>
+              </div>
+
+              {/* Mobile Card View for 'semua' */}
+              <div className="md:hidden space-y-3">
+                {filteredPegawai
+                  .filter((p) => p.status_kepegawaian === 'PNS')
+                  .map((pegawai) => {
+                    const tmtStr = getPegawaiTmtKgb(pegawai, skList);
+                    const tmtDate = new Date(tmtStr);
+                    const nextKgbDate = new Date(tmtDate.getFullYear() + 2, tmtDate.getMonth(), tmtDate.getDate());
+                    const kgbSk = skList.find((s) => s.nip === pegawai.nip && s.jenis_sk === 'KGB');
+                    const noSkKgb = pegawai.nomor_sk_kgb || kgbSk?.nomor_sk || '-';
+                    return (
+                      <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                        <div className="flex items-start justify-between gap-2">
+                          <div>
+                            <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                              {pegawai.nama_lengkap}
+                            </div>
+                            <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                            <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
+                          </div>
+                          <span className="bg-blue-100 text-blue-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                            {pegawai.golongan_pangkat || 'III/a'}
+                          </span>
+                        </div>
+
+                        <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">TMT KGB</span>
+                            <span className="font-bold text-slate-800 text-[11px]">{formatDateIndonesian(tmtStr)}</span>
+                          </div>
+                          <div>
+                            <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo (2 Thn)</span>
+                            <span className="font-bold text-emerald-700 text-[11px]">{formatDateIndonesian(nextKgbDate.toISOString().split('T')[0])}</span>
+                          </div>
+                          <div className="col-span-2">
+                            <span className="text-[10px] text-slate-400 font-semibold block">No SK KGB</span>
+                            <span className="font-mono text-slate-700 text-[11px]">{noSkKgb}</span>
+                          </div>
+                        </div>
+
+                        <div className="pt-1 flex items-center justify-end gap-1.5">
+                          {isSuperAdmin ? (
+                            <>
+                              <button
+                                onClick={() => handleOpenActionModal(pegawai, 'kgb')}
+                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                                <span>Update</span>
+                              </button>
+                              <button
+                                onClick={() => onOpenUploadSkModal(pegawai.nip, 'KGB')}
+                                className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
                               >
                                 <FileUp className="w-3.5 h-3.5" />
                                 <span>SK KGB</span>
@@ -1462,101 +2045,20 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                             </>
                           ) : (
                             <button
-                              onClick={() => {
-                                const peg = activePegawai.find((p) => p.nip === item.nip);
-                                if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
-                              }}
-                              className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                              onClick={() => handleOpenSendNotification(pegawai, 'KGB Gaji Berkala', `Sinkronisasi TMT KGB ${formatDateIndonesian(tmtStr)}`)}
+                              className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
                             >
                               <Send className="w-3.5 h-3.5" />
                               <span>Kirim Pemberitahuan</span>
                             </button>
                           )}
                         </div>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-
-          {/* Mobile Card List View */}
-          <div className="md:hidden space-y-3">
-            {kgbAlerts.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">
-                <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                Semua pegawai aktif memiliki TMT KGB yang masih berlaku.
-              </div>
-            ) : (
-              kgbAlerts.map((item) => (
-                <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                        {item.nama_lengkap}
                       </div>
-                      <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
-                      <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
-                    </div>
-                    <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
-                      item.status_alert === 'Bahaya' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                    }`}>
-                      {item.status_alert === 'Bahaya' ? 'Jatuh Tempo' : `${item.sisa_bulan} Bln Lagi`}
-                    </span>
-                  </div>
-
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-semibold block">TMT KGB Lama</span>
-                      <span className="font-medium text-slate-800 text-[11px]">{formatDateIndonesian(item.tmt_kgb_terakhir)}</span>
-                    </div>
-                    <div>
-                      <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo KGB Baru</span>
-                      <span className="font-bold text-emerald-700 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
-                    </div>
-                  </div>
-
-                  <div className="pt-1 flex items-center justify-end gap-1.5">
-                    {isSuperAdmin ? (
-                      <>
-                        {activePegawai.find((p) => p.nip === item.nip) && (
-                          <button
-                            onClick={() => {
-                              const peg = activePegawai.find((p) => p.nip === item.nip);
-                              if (peg) handleOpenActionModal(peg, 'kgb');
-                            }}
-                            className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                          >
-                            <Edit3 className="w-3.5 h-3.5" />
-                            <span>Update</span>
-                          </button>
-                        )}
-                        <button
-                          onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
-                          className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                        >
-                          <FileUp className="w-3.5 h-3.5" />
-                          <span>SK KGB</span>
-                        </button>
-                      </>
-                    ) : (
-                      <button
-                        onClick={() => {
-                          const peg = activePegawai.find((p) => p.nip === item.nip);
-                          if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
-                        }}
-                        className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Kirim Pemberitahuan</span>
-                      </button>
-                    )}
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
+                    );
+                  })}
+              </div>
+            </>
+          )}
         </div>
       )}
 
@@ -2510,63 +3012,128 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                 )}
               </div>
 
-              {/* PAK / SKP JAFUNG */}
+              {/* PAK / SKP JAFUNG / UPDATE KENAIKAN JABATAN */}
               {modalType === 'pak_jafung' && (
                 <div className="space-y-3">
-                  <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">Predikat Kinerja SKP (PermenPANRB 1/2023)</label>
-                    <select
-                      value={modalFormData.predikat_skp}
-                      onChange={(e) => setModalFormData({ ...modalFormData, predikat_skp: e.target.value })}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
-                    >
-                      <option value="Sangat Baik">Sangat Baik (150% Koefisien AK)</option>
-                      <option value="Baik">Baik (100% Koefisien AK)</option>
-                      <option value="Cukup">Cukup / Butuh Perbaikan (75% Koefisien AK)</option>
-                      <option value="Kurang">Kurang (50% Koefisien AK)</option>
-                    </select>
+                  <div className="p-3 bg-indigo-50 border border-indigo-200 rounded-xl">
+                    <h4 className="font-bold text-xs text-indigo-950 flex items-center gap-1.5 mb-1">
+                      <Briefcase className="w-4 h-4 text-indigo-600" />
+                      <span>Form Update Kenaikan Jabatan Fungsional</span>
+                    </h4>
+                    <p className="text-[11px] text-indigo-700">
+                      Perbarui jenjang jabatan fungsional baru, nama jabatan spesifik, TMT pengangkatan, dan angka kredit integrasi.
+                    </p>
                   </div>
 
                   <div className="space-y-1">
-                    <label className="text-xs font-bold text-slate-700">AK Konversi SKP Tahunan</label>
+                    <label className="text-xs font-bold text-slate-700">Nama Jabatan Spesifik / Baru</label>
                     <input
-                      type="number"
-                      step="0.1"
-                      value={modalFormData.angka_kredit_konversi}
-                      onChange={(e) => setModalFormData({ ...modalFormData, angka_kredit_konversi: parseFloat(e.target.value) })}
-                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                      type="text"
+                      placeholder="Contoh: Dokter Ahli Madya, Bidan Ahli Muda, Apoteker Ahli Pertama"
+                      value={modalFormData.jabatan_spesifik || ''}
+                      onChange={(e) => setModalFormData({ ...modalFormData, jabatan_spesifik: e.target.value })}
+                      className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 text-slate-900"
                     />
                   </div>
 
                   {(selectedPegawaiModal.status_kepegawaian === 'PNS' || selectedPegawaiModal.status_kepegawaian === 'PPPK Penuh Waktu') && (
                     <>
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700">Total AK Kumulatif (PAK Integrasi)</label>
-                        <input
-                          type="number"
-                          step="0.1"
-                          value={modalFormData.total_ak_kumulatif}
-                          onChange={(e) => setModalFormData({ ...modalFormData, total_ak_kumulatif: parseFloat(e.target.value) })}
-                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 text-blue-900"
-                        />
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-700">Jenjang Jabatan Fungsional</label>
+                          <select
+                            value={modalFormData.jenjang_jabatan}
+                            onChange={(e) => setModalFormData({ ...modalFormData, jenjang_jabatan: e.target.value })}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="Ahli Pertama">Ahli Pertama (Gol. III/a - III/b)</option>
+                            <option value="Ahli Muda">Ahli Muda (Gol. III/c - III/d)</option>
+                            <option value="Ahli Madya">Ahli Madya (Gol. IV/a - IV/c)</option>
+                            <option value="Ahli Utama">Ahli Utama (Gol. IV/d - IV/e)</option>
+                            <option value="Penyelia">Penyelia (Keterampilan)</option>
+                            <option value="Mahir / Pelaksana Lanjutan">Mahir / Pelaksana Lanjutan</option>
+                            <option value="Terampil / Pelaksana">Terampil / Pelaksana</option>
+                            <option value="Pemula">Pemula</option>
+                            <option value="Kategori Keterampilan">Kategori Keterampilan</option>
+                          </select>
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-700">TMT Kenaikan / Pengangkatan Jabatan</label>
+                          <input
+                            type="date"
+                            value={modalFormData.tmt_jabatan_pns || ''}
+                            onChange={(e) => setModalFormData({ ...modalFormData, tmt_jabatan_pns: e.target.value })}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
                       </div>
 
-                      <div className="space-y-1">
-                        <label className="text-xs font-bold text-slate-700">Jenjang Jabatan Fungsional</label>
-                        <select
-                          value={modalFormData.jenjang_jabatan}
-                          onChange={(e) => setModalFormData({ ...modalFormData, jenjang_jabatan: e.target.value })}
-                          className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
-                        >
-                          <option value="Ahli Pertama">Ahli Pertama</option>
-                          <option value="Ahli Muda">Ahli Muda</option>
-                          <option value="Ahli Madya">Ahli Madya</option>
-                          <option value="Ahli Utama">Ahli Utama</option>
-                          <option value="Kategori Keterampilan">Kategori Keterampilan</option>
-                        </select>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-700">Nomor SK Kenaikan Jabatan</label>
+                          <input
+                            type="text"
+                            placeholder="Contoh: 821.2/123/BKD-PSDM/2025"
+                            value={modalFormData.no_sk_jafung || ''}
+                            onChange={(e) => setModalFormData({ ...modalFormData, no_sk_jafung: e.target.value })}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <label className="text-xs font-bold text-slate-700">Status Kelulusan UKKJ</label>
+                          <select
+                            value={modalFormData.status_ukom || 'Belum UKKJ'}
+                            onChange={(e) => setModalFormData({ ...modalFormData, status_ukom: e.target.value })}
+                            className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="Lulus UKKJ">Lulus UKKJ - Rekomendasi Terbit</option>
+                            <option value="Dalam Proses UKKJ">Dalam Proses UKKJ</option>
+                            <option value="Belum UKKJ">Belum UKKJ / Persiapan</option>
+                          </select>
+                        </div>
                       </div>
                     </>
                   )}
+
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Predikat SKP</label>
+                      <select
+                        value={modalFormData.predikat_skp}
+                        onChange={(e) => setModalFormData({ ...modalFormData, predikat_skp: e.target.value })}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-semibold outline-none focus:ring-2 focus:ring-blue-500"
+                      >
+                        <option value="Sangat Baik">Sangat Baik (150%)</option>
+                        <option value="Baik">Baik (100%)</option>
+                        <option value="Cukup">Cukup (75%)</option>
+                        <option value="Kurang">Kurang (50%)</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">AK Konversi Tahunan</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={modalFormData.angka_kredit_konversi}
+                        onChange={(e) => setModalFormData({ ...modalFormData, angka_kredit_konversi: parseFloat(e.target.value) })}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500"
+                      />
+                    </div>
+
+                    <div className="space-y-1">
+                      <label className="text-xs font-bold text-slate-700">Total AK Kumulatif</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={modalFormData.total_ak_kumulatif}
+                        onChange={(e) => setModalFormData({ ...modalFormData, total_ak_kumulatif: parseFloat(e.target.value) })}
+                        className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs font-bold outline-none focus:ring-2 focus:ring-blue-500 text-blue-900"
+                      />
+                    </div>
+                  </div>
                 </div>
               )}
 
