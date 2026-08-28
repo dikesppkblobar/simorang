@@ -199,6 +199,108 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
         </div>
 
         {/* ========================================================================= */}
+        {/* TOP TAB BAR (Click to open & close specific section) */}
+        {/* ========================================================================= */}
+        <div
+          id="pegawai-form-tab-nav"
+          className="bg-slate-100/90 border-b border-slate-200 px-3 sm:px-6 py-2 flex items-center gap-1.5 overflow-x-auto select-none shrink-0"
+        >
+          <button
+            type="button"
+            id="btn-tab-nav-identitas"
+            onClick={(e) => {
+              e.preventDefault();
+              toggleTab('identitas');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              openTab === 'identitas'
+                ? 'bg-blue-600 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <span
+              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                openTab === 'identitas' ? 'bg-white/20 text-white' : 'bg-blue-100 text-blue-700'
+              }`}
+            >
+              1
+            </span>
+            <span>Identitas &amp; Kontak</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-tab-nav-akademik"
+            onClick={(e) => {
+              e.preventDefault();
+              toggleTab('akademik');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              openTab === 'akademik'
+                ? 'bg-indigo-600 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <span
+              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                openTab === 'akademik' ? 'bg-white/20 text-white' : 'bg-indigo-100 text-indigo-700'
+              }`}
+            >
+              2
+            </span>
+            <span>Jabatan, Jafung &amp; Profesi</span>
+          </button>
+
+          <button
+            type="button"
+            id="btn-tab-nav-golongan"
+            onClick={(e) => {
+              e.preventDefault();
+              toggleTab('golongan');
+            }}
+            className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+              openTab === 'golongan'
+                ? 'bg-amber-600 text-white shadow-xs font-bold'
+                : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+            }`}
+          >
+            <span
+              className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                openTab === 'golongan' ? 'bg-white/20 text-white' : 'bg-amber-100 text-amber-700'
+              }`}
+            >
+              3
+            </span>
+            <span>Pangkat, KGB &amp; Golongan</span>
+          </button>
+
+          {isKp4Enabled && (
+            <button
+              type="button"
+              id="btn-tab-nav-keluarga"
+              onClick={(e) => {
+                e.preventDefault();
+                toggleTab('keluarga');
+              }}
+              className={`px-3 py-1.5 rounded-lg text-xs font-semibold flex items-center space-x-1.5 transition-all cursor-pointer whitespace-nowrap shrink-0 ${
+                openTab === 'keluarga'
+                  ? 'bg-rose-600 text-white shadow-xs font-bold'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-50'
+              }`}
+            >
+              <span
+                className={`w-4 h-4 rounded-full flex items-center justify-center text-[10px] font-bold ${
+                  openTab === 'keluarga' ? 'bg-white/20 text-white' : 'bg-rose-100 text-rose-700'
+                }`}
+              >
+                4
+              </span>
+              <span>Keluarga KP4 ({daftarAnak.length + (statusPerkawinan === 'Menikah' ? 1 : 0)})</span>
+            </button>
+          )}
+        </div>
+
+        {/* ========================================================================= */}
         {/* 2. ACCORDION FORM BODY (NO HORIZONTAL SCROLL) */}
         {/* ========================================================================= */}
         <form
@@ -845,13 +947,19 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                   )}
 
                   {/* ATRIBUT PEMANTAUAN ASN SESUAI JENIS JABATAN: FUNGSIONAL */}
-                  {formData.jenis_jabatan === 'Fungsional' && (isJafungEnabled || isUkomEnabled) && (
+                  {formData.jenis_jabatan === 'Fungsional' && (
                     <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 sm:p-4 space-y-3">
-                      <div className="font-heading font-bold text-slate-800 flex items-center space-x-2 text-xs">
-                        <Award className="w-4 h-4 text-blue-600" />
-                        <span>Atribut Jabatan Fungsional {isJafungEnabled ? '(PAK Integrasi / PermenPANRB)' : ''}</span>
+                      <div className="flex items-center justify-between">
+                        <div className="font-heading font-bold text-slate-800 flex items-center space-x-2 text-xs">
+                          <Award className="w-4 h-4 text-blue-600" />
+                          <span>Atribut &amp; Legalitas Jabatan Fungsional (Jafung &amp; PAK)</span>
+                        </div>
+                        <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-blue-100 text-blue-800 border border-blue-200">
+                          Jafung Kesehatan / Administrasi
+                        </span>
                       </div>
 
+                      {/* Row 1: Jenjang & TMT Jafung & SK Pengangkatan Jafung */}
                       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                         <div>
                           <label className="block font-bold text-slate-700 mb-1">
@@ -860,7 +968,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                           <select
                             value={formData.jenjang_jabatan}
                             onChange={(e) => setFormData({ ...formData, jenjang_jabatan: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                           >
                             <option value="Ahli Utama">Ahli Utama</option>
                             <option value="Ahli Madya">Ahli Madya</option>
@@ -873,55 +981,100 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                           </select>
                         </div>
 
-                        {isJafungEnabled && (
-                          <>
-                            <div>
-                              <label className="block font-bold text-slate-700 mb-1">
-                                AK Konversi SKP Tahunan:*
-                              </label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={formData.ak_konversi_skp ?? 12.5}
-                                onChange={(e) => setFormData({ ...formData, ak_konversi_skp: parseFloat(e.target.value) || 0 })}
-                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold"
-                              />
-                            </div>
+                        <div>
+                          <label className="block font-bold text-blue-900 mb-1">
+                            TMT Jabatan Fungsional (TMT Jafung):*
+                          </label>
+                          <input
+                            id="input-tmt-jafung"
+                            type="date"
+                            value={formData.tmt_jabatan_pns || formData.tmt_jafung || ''}
+                            onChange={(e) =>
+                              setFormData({
+                                ...formData,
+                                tmt_jabatan_pns: e.target.value,
+                                tmt_jafung: e.target.value,
+                              })
+                            }
+                            className="w-full px-3 py-2 bg-white border border-blue-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
 
-                            <div>
-                              <label className="block font-bold text-slate-700 mb-1">
-                                Total AK Kumulatif (PAK):*
-                              </label>
-                              <input
-                                type="number"
-                                step="0.01"
-                                value={formData.total_ak_kumulatif ?? 37.5}
-                                onChange={(e) => setFormData({ ...formData, total_ak_kumulatif: parseFloat(e.target.value) || 0 })}
-                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold"
-                              />
-                            </div>
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            No. SK Jabatan Fungsional:
+                          </label>
+                          <input
+                            id="input-no-sk-jafung"
+                            type="text"
+                            value={formData.no_sk_jabatan_pns || ''}
+                            onChange={(e) => setFormData({ ...formData, no_sk_jabatan_pns: e.target.value })}
+                            placeholder="Contoh: 821.2/123/BKD/2023"
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
 
-                            <div>
-                              <label className="block font-bold text-slate-700 mb-1">
-                                Predikat Kinerja SKP:*
-                              </label>
-                              <select
-                                value={formData.predikat_skp_terakhir}
-                                onChange={(e) => setFormData({ ...formData, predikat_skp_terakhir: e.target.value })}
-                                className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold"
-                              >
-                                <option value="Sangat Baik">Sangat Baik (150% AK)</option>
-                                <option value="Baik">Baik (100% AK)</option>
-                                <option value="Cukup">Cukup (75% AK)</option>
-                                <option value="Kurang">Kurang (50% AK)</option>
-                                <option value="Sangat Kurang">Sangat Kurang (25% AK)</option>
-                              </select>
-                            </div>
-                          </>
-                        )}
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Tanggal SK Jafung:
+                          </label>
+                          <input
+                            id="input-tgl-sk-jafung"
+                            type="date"
+                            value={formData.tgl_sk_jabatan_pns || ''}
+                            onChange={(e) => setFormData({ ...formData, tgl_sk_jabatan_pns: e.target.value })}
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
                       </div>
 
-                      {/* Baris UKKJ: Hanya tampil jika fitur uji kompetensi aktif */}
+                      {/* Row 2: Angka Kredit & SKP */}
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-slate-200">
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            AK Konversi SKP Tahunan:*
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.ak_konversi_skp ?? 12.5}
+                            onChange={(e) => setFormData({ ...formData, ak_konversi_skp: parseFloat(e.target.value) || 0 })}
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Total AK Kumulatif (PAK):*
+                          </label>
+                          <input
+                            type="number"
+                            step="0.01"
+                            value={formData.total_ak_kumulatif ?? 37.5}
+                            onChange={(e) => setFormData({ ...formData, total_ak_kumulatif: parseFloat(e.target.value) || 0 })}
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
+                          />
+                        </div>
+
+                        <div>
+                          <label className="block font-bold text-slate-700 mb-1">
+                            Predikat Kinerja SKP:*
+                          </label>
+                          <select
+                            value={formData.predikat_skp_terakhir}
+                            onChange={(e) => setFormData({ ...formData, predikat_skp_terakhir: e.target.value })}
+                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
+                          >
+                            <option value="Sangat Baik">Sangat Baik (150% AK)</option>
+                            <option value="Baik">Baik (100% AK)</option>
+                            <option value="Cukup">Cukup (75% AK)</option>
+                            <option value="Kurang">Kurang (50% AK)</option>
+                            <option value="Sangat Kurang">Sangat Kurang (25% AK)</option>
+                          </select>
+                        </div>
+                      </div>
+
+                      {/* Row 3: Baris UKKJ */}
                       {isUkomEnabled && (
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2 border-t border-slate-200">
                           <div>
@@ -1104,7 +1257,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               id="select-golongan-pns"
                               value={formData.golongan_pangkat}
                               onChange={(e) => handleGolonganPnsChange(e.target.value)}
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-bold text-blue-900"
+                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-bold text-blue-900 focus:ring-2 focus:ring-blue-500"
                             >
                               {Object.keys(PANGKAT_GOLONGAN_MAP).map((gol) => (
                                 <option key={gol} value={gol}>
@@ -1134,7 +1287,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               type="date"
                               value={formData.tmt_golongan || ''}
                               onChange={(e) => setFormData({ ...formData, tmt_golongan: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold"
+                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                         </div>
@@ -1150,7 +1303,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               max={40}
                               value={formData.masa_kerja_tahun ?? 0}
                               onChange={(e) => setFormData({ ...formData, masa_kerja_tahun: parseInt(e.target.value) || 0 })}
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold"
+                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
 
@@ -1164,7 +1317,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               max={11}
                               value={formData.masa_kerja_bulan ?? 0}
                               onChange={(e) => setFormData({ ...formData, masa_kerja_bulan: parseInt(e.target.value) || 0 })}
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold"
+                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
 
@@ -1177,7 +1330,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               value={formData.no_sk_pangkat || ''}
                               onChange={(e) => setFormData({ ...formData, no_sk_pangkat: e.target.value })}
                               placeholder="Contoh: 823/123/BKD-PSDM/2023"
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold font-mono"
+                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
 
@@ -1189,169 +1342,248 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               type="date"
                               value={formData.tgl_sk_pangkat || ''}
                               onChange={(e) => setFormData({ ...formData, tgl_sk_pangkat: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold"
+                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
                         </div>
                       </div>
 
-                      {/* LEGALITAS MUTASI KEPEGAWAIAN & PENEMPATAN (Hanya tampil jika fitur mutasi_kepegawaian aktif) */}
-                      {isMutasiEnabled && (
-                        <div
-                          id="section-legalitas-mutasi"
-                          className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 sm:p-4 space-y-3"
-                        >
-                          <div className="font-heading font-bold text-amber-950 text-xs flex items-center space-x-2">
-                            <Building2 className="w-4 h-4 text-amber-700" />
-                            <span>Legalitas Mutasi &amp; Penempatan Jabatan PNS</span>
+                      {/* ======================= KENAIKAN GAJI BERKALA (KGB) SECTION ======================= */}
+                      <div
+                        id="section-gaji-berkala-kgb-pns"
+                        className="bg-emerald-50/70 border border-emerald-200 rounded-xl p-3.5 sm:p-4 space-y-3"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="font-heading font-bold text-emerald-950 text-xs flex items-center space-x-2">
+                            <CreditCard className="w-4 h-4 text-emerald-700" />
+                            <span>Kenaikan Gaji Berkala (KGB) PNS</span>
                           </div>
-                          <p className="text-[11px] text-amber-800">
-                            Pengaturan mutasi antar unit kerja/puskesmas, alih jabatan struktural/fungsional, dan legalitas Pertek BKN
-                          </p>
+                          <span className="text-[10px] px-2 py-0.5 rounded-full font-semibold bg-emerald-100 text-emerald-800 border border-emerald-200">
+                            Siklus 2 Tahunan
+                          </span>
+                        </div>
+                        <p className="text-[11px] text-emerald-800">
+                          Riwayat penetapan Surat Keterangan Kenaikan Gaji Berkala (KGB) dan pemantauan jatuh tempo otomatis.
+                        </p>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                            <div>
-                              <label className="block font-bold text-amber-950 mb-1">
-                                Unit Kerja Tujuan / Penempatan Baru:*
-                              </label>
-                              <select
-                                id="select-unit-kerja-tujuan"
-                                value={formData.unit_kerja}
-                                onChange={(e) => setFormData({ ...formData, unit_kerja: e.target.value })}
-                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
-                              >
-                                {synchronizedUnitOptions.map((unit) => (
-                                  <option key={unit} value={unit}>
-                                    {unit}
-                                  </option>
-                                ))}
-                              </select>
-                            </div>
-
-                            <div>
-                              <label className="block font-bold text-amber-950 mb-1">
-                                Jenis Mutasi Kepegawaian:*
-                              </label>
-                              <select
-                                id="select-jenis-mutasi"
-                                value={formData.jenis_mutasi || 'Kenaikan Pangkat Reguler'}
-                                onChange={(e) => setFormData({ ...formData, jenis_mutasi: e.target.value })}
-                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
-                              >
-                                <option value="Kenaikan Pangkat Reguler">Kenaikan Pangkat Reguler</option>
-                                <option value="Mutasi Internal Antar-Puskesmas/RSUD">Mutasi Internal Antar-Puskesmas / RSUD Lobar</option>
-                                <option value="Mutasi Masuk dari Luar Daerah">Mutasi Masuk dari Luar Daerah</option>
-                                <option value="Mutasi Keluar Daerah">Mutasi Keluar Daerah</option>
-                                <option value="Alih Jabatan Struktural ke Fungsional">Alih Jabatan Struktural ke Fungsional</option>
-                                <option value="Alih Jabatan Fungsional ke Struktural">Alih Jabatan Fungsional ke Struktural</option>
-                                <option value="Penyesuaian Ijazah">Penyesuaian Ijazah</option>
-                                <option value="Pengangkatan Pertama CPNS">Pengangkatan Pertama CPNS</option>
-                              </select>
-                            </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block font-bold text-emerald-950 mb-1">
+                              TMT Gaji Berkala (KGB) Terakhir:*
+                            </label>
+                            <input
+                              id="input-tmt-kgb-pns"
+                              type="date"
+                              value={formData.tmt_kgb_terakhir || ''}
+                              onChange={(e) => setFormData({ ...formData, tmt_kgb_terakhir: e.target.value })}
+                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-emerald-400"
+                            />
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
-                            <div>
-                              <label className="block font-bold text-amber-950 mb-1">
-                                No. Pertek BKN (Persetujuan Teknis):
-                              </label>
-                              <input
-                                id="input-no-pertek-bkn"
-                                type="text"
-                                value={formData.no_pertek_bkn || ''}
-                                onChange={(e) => setFormData({ ...formData, no_pertek_bkn: e.target.value })}
-                                placeholder="Contoh: 12345/B-MP.01.01/SD/D/2023"
-                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold font-mono"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block font-bold text-amber-950 mb-1">
-                                Tanggal Pertek BKN:
-                              </label>
-                              <input
-                                id="input-tgl-pertek-bkn"
-                                type="date"
-                                value={formData.tgl_pertek_bkn || ''}
-                                onChange={(e) => setFormData({ ...formData, tgl_pertek_bkn: e.target.value })}
-                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold"
-                              />
-                            </div>
+                          <div>
+                            <label className="block font-bold text-emerald-950 mb-1">
+                              Nomor SK Gaji Berkala (KGB):
+                            </label>
+                            <input
+                              id="input-no-sk-kgb-pns"
+                              type="text"
+                              value={formData.no_sk_kgb || ''}
+                              onChange={(e) => setFormData({ ...formData, no_sk_kgb: e.target.value })}
+                              placeholder="Contoh: 822/045/Dinkes-KGB/2023"
+                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-emerald-400"
+                            />
                           </div>
 
-                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-amber-200">
-                            <div>
-                              <label className="block font-bold text-amber-950 mb-1">
-                                Nama Jabatan / Penempatan:
-                              </label>
-                              <input
-                                id="input-nama-jabatan-pns"
-                                type="text"
-                                value={formData.nama_jabatan_pns || formData.jabatan_spesifik || ''}
-                                onChange={(e) => setFormData({ ...formData, nama_jabatan_pns: e.target.value })}
-                                placeholder="Nama jabatan sesuai SK penempatan"
-                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block font-bold text-amber-950 mb-1">
-                                No. SK Penempatan / Mutasi:
-                              </label>
-                              <input
-                                id="input-no-sk-jabatan-pns"
-                                type="text"
-                                value={formData.no_sk_jabatan_pns || ''}
-                                onChange={(e) => setFormData({ ...formData, no_sk_jabatan_pns: e.target.value })}
-                                placeholder="Nomor SK Bupati / Kadinkes"
-                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold font-mono"
-                              />
-                            </div>
-
-                            <div>
-                              <label className="block font-bold text-amber-950 mb-1">
-                                TMT Jabatan / Penempatan:
-                              </label>
-                              <input
-                                id="input-tmt-jabatan-pns"
-                                type="date"
-                                value={formData.tmt_jabatan_pns || ''}
-                                onChange={(e) => setFormData({ ...formData, tmt_jabatan_pns: e.target.value })}
-                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
-                            <div>
-                              <label className="block font-bold text-amber-950 mb-1">
-                                TMT CPNS (Pengangkatan Awal):*
-                              </label>
-                              <input
-                                id="input-tmt-cpns"
-                                type="date"
-                                value={formData.tmt_cpns || ''}
-                                onChange={(e) => setFormData({ ...formData, tmt_cpns: e.target.value })}
-                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold"
-                              />
-                            </div>
-
-                            {(featureConfig?.kenaikan_pangkat !== false || featureConfig?.kenaikan_gaji_berkala !== false) && (
-                              <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200 flex items-center space-x-2.5">
-                                <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
-                                <div className="text-[11px] text-amber-900">
-                                  <strong>Otomatisasi Berkala:</strong>{' '}
-                                  {featureConfig?.kenaikan_pangkat !== false && featureConfig?.kenaikan_gaji_berkala !== false
-                                    ? 'Kenaikan Pangkat dihitung +4 Tahun dari TMT Golongan, dan KGB dihitung +2 Tahun.'
-                                    : featureConfig?.kenaikan_pangkat !== false
-                                    ? 'Kenaikan Pangkat dihitung +4 Tahun dari TMT Golongan.'
-                                    : 'KGB dihitung +2 Tahun dari TMT Golongan/KGB.'}
-                                </div>
-                              </div>
-                            )}
+                          <div>
+                            <label className="block font-bold text-emerald-950 mb-1">
+                              Tanggal SK Gaji Berkala (KGB):
+                            </label>
+                            <input
+                              id="input-tgl-sk-kgb-pns"
+                              type="date"
+                              value={formData.tgl_sk_kgb || ''}
+                              onChange={(e) => setFormData({ ...formData, tgl_sk_kgb: e.target.value })}
+                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-emerald-400"
+                            />
                           </div>
                         </div>
-                      )}
+
+                        {formData.tmt_kgb_terakhir && (
+                          <div className="bg-white/90 p-2.5 rounded-lg border border-emerald-200 flex items-center justify-between text-xs">
+                            <div className="flex items-center space-x-2 text-emerald-900">
+                              <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
+                              <span>
+                                <strong>Jatuh Tempo KGB Berikutnya:</strong>{' '}
+                                {(() => {
+                                  const d = new Date(formData.tmt_kgb_terakhir);
+                                  if (isNaN(d.getTime())) return '-';
+                                  d.setFullYear(d.getFullYear() + 2);
+                                  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
+                                })()}
+                              </span>
+                            </div>
+                            <span className="text-[10px] text-emerald-700 font-medium">Otomatis Pemantauan Berkala</span>
+                          </div>
+                        )}
+                      </div>
+
+                      {/* LEGALITAS MUTASI KEPEGAWAIAN & PENEMPATAN */}
+                      <div
+                        id="section-legalitas-mutasi"
+                        className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 sm:p-4 space-y-3"
+                      >
+                        <div className="font-heading font-bold text-amber-950 text-xs flex items-center space-x-2">
+                          <Building2 className="w-4 h-4 text-amber-700" />
+                          <span>Legalitas Penempatan &amp; Mutasi PNS</span>
+                        </div>
+                        <p className="text-[11px] text-amber-800">
+                          Pengaturan mutasi antar unit kerja, penempatan awal CPNS, TMT pengangkatan, dan legalitas Pertek BKN
+                        </p>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                          <div>
+                            <label className="block font-bold text-amber-950 mb-1">
+                              Unit Kerja Penempatan:*
+                            </label>
+                            <select
+                              id="select-unit-kerja-tujuan"
+                              value={formData.unit_kerja}
+                              onChange={(e) => setFormData({ ...formData, unit_kerja: e.target.value })}
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                            >
+                              {synchronizedUnitOptions.map((unit) => (
+                                <option key={unit} value={unit}>
+                                  {unit}
+                                </option>
+                              ))}
+                            </select>
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-amber-950 mb-1">
+                              Jenis Mutasi / Pengangkatan:*
+                            </label>
+                            <select
+                              id="select-jenis-mutasi"
+                              value={formData.jenis_mutasi || 'Kenaikan Pangkat Reguler'}
+                              onChange={(e) => setFormData({ ...formData, jenis_mutasi: e.target.value })}
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                            >
+                              <option value="Kenaikan Pangkat Reguler">Kenaikan Pangkat Reguler</option>
+                              <option value="Mutasi Internal Antar-Puskesmas/RSUD">Mutasi Internal Antar-Puskesmas / RSUD Lobar</option>
+                              <option value="Mutasi Masuk dari Luar Daerah">Mutasi Masuk dari Luar Daerah</option>
+                              <option value="Mutasi Keluar Daerah">Mutasi Keluar Daerah</option>
+                              <option value="Alih Jabatan Struktural ke Fungsional">Alih Jabatan Struktural ke Fungsional</option>
+                              <option value="Alih Jabatan Fungsional ke Struktural">Alih Jabatan Fungsional ke Struktural</option>
+                              <option value="Penyesuaian Ijazah">Penyesuaian Ijazah</option>
+                              <option value="Pengangkatan Pertama CPNS">Pengangkatan Pertama CPNS</option>
+                            </select>
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
+                          <div>
+                            <label className="block font-bold text-amber-950 mb-1">
+                              No. Pertek BKN (Persetujuan Teknis):
+                            </label>
+                            <input
+                              id="input-no-pertek-bkn"
+                              type="text"
+                              value={formData.no_pertek_bkn || ''}
+                              onChange={(e) => setFormData({ ...formData, no_pertek_bkn: e.target.value })}
+                              placeholder="Contoh: 12345/B-MP.01.01/SD/D/2023"
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-amber-400"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-amber-950 mb-1">
+                              Tanggal Pertek BKN:
+                            </label>
+                            <input
+                              id="input-tgl-pertek-bkn"
+                              type="date"
+                              value={formData.tgl_pertek_bkn || ''}
+                              onChange={(e) => setFormData({ ...formData, tgl_pertek_bkn: e.target.value })}
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-amber-200">
+                          <div>
+                            <label className="block font-bold text-amber-950 mb-1">
+                              Nama Jabatan / Penempatan:
+                            </label>
+                            <input
+                              id="input-nama-jabatan-pns"
+                              type="text"
+                              value={formData.nama_jabatan_pns || formData.jabatan_spesifik || ''}
+                              onChange={(e) => setFormData({ ...formData, nama_jabatan_pns: e.target.value })}
+                              placeholder="Nama jabatan sesuai SK penempatan"
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-amber-950 mb-1">
+                              No. SK Penempatan / Mutasi:
+                            </label>
+                            <input
+                              id="input-no-sk-jabatan-pns"
+                              type="text"
+                              value={formData.no_sk_jabatan_pns || ''}
+                              onChange={(e) => setFormData({ ...formData, no_sk_jabatan_pns: e.target.value })}
+                              placeholder="Nomor SK Bupati / Kadinkes"
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-amber-400"
+                            />
+                          </div>
+
+                          <div>
+                            <label className="block font-bold text-amber-950 mb-1">
+                              TMT Jabatan / Penempatan:
+                            </label>
+                            <input
+                              id="input-tmt-jabatan-pns"
+                              type="date"
+                              value={formData.tmt_jabatan_pns || ''}
+                              onChange={(e) =>
+                                setFormData({
+                                  ...formData,
+                                  tmt_jabatan_pns: e.target.value,
+                                  tmt_jafung: formData.jenis_jabatan === 'Fungsional' ? e.target.value : formData.tmt_jafung,
+                                })
+                              }
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                            />
+                          </div>
+                        </div>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
+                          <div>
+                            <label className="block font-bold text-amber-950 mb-1">
+                              TMT CPNS (Pengangkatan Awal):*
+                            </label>
+                            <input
+                              id="input-tmt-cpns"
+                              type="date"
+                              value={formData.tmt_cpns || ''}
+                              onChange={(e) => setFormData({ ...formData, tmt_cpns: e.target.value })}
+                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                            />
+                          </div>
+
+                          {(featureConfig?.kenaikan_pangkat !== false || featureConfig?.kenaikan_gaji_berkala !== false) && (
+                            <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200 flex items-center space-x-2.5">
+                              <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                              <div className="text-[11px] text-amber-900">
+                                <strong>Otomatisasi Berkala:</strong>{' '}
+                                Kenaikan Pangkat +4 Tahun dari TMT Golongan, dan KGB +2 Tahun dari TMT KGB/Golongan.
+                              </div>
+                            </div>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   )}
 
@@ -1483,6 +1715,53 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                             onChange={(e) => setFormData({ ...formData, tmt_cpns: e.target.value })}
                             className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold"
                           />
+                        </div>
+                      </div>
+
+                      {/* KGB PPPK */}
+                      <div className="pt-2 border-t border-emerald-200">
+                        <div className="font-heading font-bold text-emerald-950 text-xs mb-2 flex items-center space-x-2">
+                          <CreditCard className="w-3.5 h-3.5 text-emerald-700" />
+                          <span>Kenaikan Gaji Berkala (KGB) PPPK</span>
+                        </div>
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                          <div>
+                            <label className="block font-bold text-emerald-950 mb-1">
+                              TMT KGB Terakhir:
+                            </label>
+                            <input
+                              id="input-tmt-kgb-pppk"
+                              type="date"
+                              value={formData.tmt_kgb_terakhir || ''}
+                              onChange={(e) => setFormData({ ...formData, tmt_kgb_terakhir: e.target.value })}
+                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold text-emerald-950 mb-1">
+                              No. SK KGB:
+                            </label>
+                            <input
+                              id="input-no-sk-kgb-pppk"
+                              type="text"
+                              value={formData.no_sk_kgb || ''}
+                              onChange={(e) => setFormData({ ...formData, no_sk_kgb: e.target.value })}
+                              placeholder="Nomor SK KGB PPPK"
+                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold font-mono"
+                            />
+                          </div>
+                          <div>
+                            <label className="block font-bold text-emerald-950 mb-1">
+                              Tanggal SK KGB:
+                            </label>
+                            <input
+                              id="input-tgl-sk-kgb-pppk"
+                              type="date"
+                              value={formData.tgl_sk_kgb || ''}
+                              onChange={(e) => setFormData({ ...formData, tgl_sk_kgb: e.target.value })}
+                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold"
+                            />
+                          </div>
                         </div>
                       </div>
                     </div>
