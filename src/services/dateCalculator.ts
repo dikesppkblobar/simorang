@@ -98,35 +98,41 @@ export function getDaysBetween(startDate: Date, endDate: Date): number {
 
 /**
  * Mengambil TMT Pangkat / Golongan yang akurat dan tersinkronisasi
- * Prioritas: SK Pangkat Terakhir -> tmt_golongan -> tmt_pangkat_terakhir -> tmt_cpns
+ * Prioritas: tmt_pangkat_terakhir -> tmt_golongan -> SK Pangkat Terakhir -> tmt_cpns
  */
 export function getPegawaiTmtPangkat(pegawai: Pegawai, skList: RiwayatSK[] = []): string {
+  if (pegawai.tmt_pangkat_terakhir && pegawai.tmt_pangkat_terakhir.trim() !== '') {
+    return pegawai.tmt_pangkat_terakhir;
+  }
+  if (pegawai.tmt_golongan && pegawai.tmt_golongan.trim() !== '') {
+    return pegawai.tmt_golongan;
+  }
   const pangkatSkList = skList
-    .filter((s) => s.nip_pegawai === pegawai.nip && s.jenis_sk === 'Pangkat' && s.tmt_berlaku)
+    .filter((s) => (s.nip_pegawai === pegawai.nip || (s as any).nip === pegawai.nip) && s.jenis_sk === 'Pangkat' && s.tmt_berlaku)
     .sort((a, b) => new Date(b.tmt_berlaku).getTime() - new Date(a.tmt_berlaku).getTime());
 
   if (pangkatSkList.length > 0 && pangkatSkList[0].tmt_berlaku) {
     return pangkatSkList[0].tmt_berlaku;
   }
-  if (pegawai.tmt_golongan) return pegawai.tmt_golongan;
-  if (pegawai.tmt_pangkat_terakhir) return pegawai.tmt_pangkat_terakhir;
   if (pegawai.tmt_cpns) return pegawai.tmt_cpns;
   return new Date().toISOString().slice(0, 10);
 }
 
 /**
  * Mengambil TMT Kenaikan Gaji Berkala (KGB) yang akurat dan tersinkronisasi
- * Prioritas: SK KGB Terakhir -> tmt_kgb_terakhir -> tmt_golongan -> tmt_pangkat_terakhir -> tmt_perjanjian_mulai -> tmt_cpns
+ * Prioritas: tmt_kgb_terakhir (Data Pegawai) -> SK KGB Terakhir -> tmt_golongan -> tmt_pangkat_terakhir -> tmt_perjanjian_mulai -> tmt_cpns
  */
 export function getPegawaiTmtKgb(pegawai: Pegawai, skList: RiwayatSK[] = []): string {
+  if (pegawai.tmt_kgb_terakhir && pegawai.tmt_kgb_terakhir.trim() !== '') {
+    return pegawai.tmt_kgb_terakhir;
+  }
   const kgbSkList = skList
-    .filter((s) => s.nip_pegawai === pegawai.nip && s.jenis_sk === 'KGB' && s.tmt_berlaku)
+    .filter((s) => (s.nip_pegawai === pegawai.nip || (s as any).nip === pegawai.nip) && s.jenis_sk === 'KGB' && s.tmt_berlaku)
     .sort((a, b) => new Date(b.tmt_berlaku).getTime() - new Date(a.tmt_berlaku).getTime());
 
   if (kgbSkList.length > 0 && kgbSkList[0].tmt_berlaku) {
     return kgbSkList[0].tmt_berlaku;
   }
-  if (pegawai.tmt_kgb_terakhir) return pegawai.tmt_kgb_terakhir;
   if (pegawai.tmt_golongan) return pegawai.tmt_golongan;
   if (pegawai.tmt_pangkat_terakhir) return pegawai.tmt_pangkat_terakhir;
   if (pegawai.tmt_perjanjian_mulai) return pegawai.tmt_perjanjian_mulai;
@@ -136,17 +142,22 @@ export function getPegawaiTmtKgb(pegawai: Pegawai, skList: RiwayatSK[] = []): st
 
 /**
  * Mengambil TMT Jabatan Fungsional yang tersinkronisasi
+ * Prioritas: tmt_jafung (Data Pegawai) -> tmt_jabatan_pns -> SK Jafung Terakhir -> tmt_golongan -> tmt_cpns
  */
 export function getPegawaiTmtJafung(pegawai: Pegawai, skList: RiwayatSK[] = []): string {
+  if (pegawai.tmt_jafung && pegawai.tmt_jafung.trim() !== '') {
+    return pegawai.tmt_jafung;
+  }
+  if (pegawai.tmt_jabatan_pns && pegawai.tmt_jabatan_pns.trim() !== '') {
+    return pegawai.tmt_jabatan_pns;
+  }
   const jafungSkList = skList
-    .filter((s) => s.nip_pegawai === pegawai.nip && s.jenis_sk === 'Jafung_PAK' && s.tmt_berlaku)
+    .filter((s) => (s.nip_pegawai === pegawai.nip || (s as any).nip === pegawai.nip) && s.jenis_sk === 'Jafung_PAK' && s.tmt_berlaku)
     .sort((a, b) => new Date(b.tmt_berlaku).getTime() - new Date(a.tmt_berlaku).getTime());
 
   if (jafungSkList.length > 0 && jafungSkList[0].tmt_berlaku) {
     return jafungSkList[0].tmt_berlaku;
   }
-  if (pegawai.tmt_jafung) return pegawai.tmt_jafung;
-  if (pegawai.tmt_jabatan_pns) return pegawai.tmt_jabatan_pns;
   if (pegawai.tmt_golongan) return pegawai.tmt_golongan;
   if (pegawai.tmt_cpns) return pegawai.tmt_cpns;
   return new Date().toISOString().slice(0, 10);
