@@ -1374,6 +1374,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                             <input
                               id="input-tmt-kgb-pns"
                               type="date"
+                              required={formData.status_kepegawaian === 'PNS'}
                               value={formData.tmt_kgb_terakhir || ''}
                               onChange={(e) => setFormData({ ...formData, tmt_kgb_terakhir: e.target.value })}
                               className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-emerald-400"
@@ -1407,24 +1408,6 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                             />
                           </div>
                         </div>
-
-                        {formData.tmt_kgb_terakhir && (
-                          <div className="bg-white/90 p-2.5 rounded-lg border border-emerald-200 flex items-center justify-between text-xs">
-                            <div className="flex items-center space-x-2 text-emerald-900">
-                              <Calendar className="w-4 h-4 text-emerald-600 shrink-0" />
-                              <span>
-                                <strong>Jatuh Tempo KGB Berikutnya:</strong>{' '}
-                                {(() => {
-                                  const d = new Date(formData.tmt_kgb_terakhir);
-                                  if (isNaN(d.getTime())) return '-';
-                                  d.setFullYear(d.getFullYear() + 2);
-                                  return d.toLocaleDateString('id-ID', { day: 'numeric', month: 'long', year: 'numeric' });
-                                })()}
-                              </span>
-                            </div>
-                            <span className="text-[10px] text-emerald-700 font-medium">Otomatis Pemantauan Berkala</span>
-                          </div>
-                        )}
                       </div>
 
                       {/* LEGALITAS MUTASI KEPEGAWAIAN & PENEMPATAN */}
