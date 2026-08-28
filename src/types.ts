@@ -57,6 +57,7 @@ export interface Pegawai {
   akreditasi_pt?: string;
   tmt_kgb_terakhir?: string;
   no_sk_kgb?: string;
+  tgl_sk_kgb?: string;
   tmt_pangkat_terakhir?: string;
 
   // PNS Atribut Spesifik
@@ -72,7 +73,9 @@ export interface Pegawai {
   tgl_pertek_bkn?: string;
   nama_jabatan_pns?: string;
   tmt_jabatan_pns?: string;
+  tmt_jafung?: string;
   no_sk_jabatan_pns?: string;
+  tgl_sk_jabatan_pns?: string;
 
   // PPPK Atribut Spesifik (Penuh / Paruh Waktu)
   ni_pppk?: string;
