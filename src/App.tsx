@@ -37,6 +37,7 @@ import { apiClient } from './services/apiClient';
 import {
   calculateKgbAlerts,
   calculatePangkatAlerts,
+  calculateJafungAlerts,
   calculatePensiunAlerts,
   calculateKp4AnakAlerts,
   isDinasCategory,
@@ -408,11 +409,13 @@ export default function App() {
   // Scoped Alert Calculations
   const scopedKgbAlerts = calculateKgbAlerts(scopedPegawaiList, scopedSkList);
   const scopedPangkatAlerts = calculatePangkatAlerts(scopedPegawaiList, scopedSkList);
+  const scopedJafungAlerts = calculateJafungAlerts(scopedPegawaiList, scopedSkList);
   const scopedPensiunAlerts = calculatePensiunAlerts(scopedPegawaiList);
   const scopedKp4Alerts = calculateKp4AnakAlerts(scopedPegawaiList, scopedKeluargaList);
 
   const totalKgb = scopedKgbAlerts.length;
   const totalPangkat = scopedPangkatAlerts.length;
+  const totalJafung = scopedJafungAlerts.length;
   const totalPensiun = scopedPensiunAlerts.length;
   const totalKp4 = scopedKp4Alerts.length;
 
@@ -420,6 +423,7 @@ export default function App() {
   const grandTotalAlerts =
     (featureConfig.sub_kgb ? totalKgb : 0) +
     (featureConfig.sub_pangkat ? totalPangkat : 0) +
+    (featureConfig.sub_jafung ? totalJafung : 0) +
     (featureConfig.sub_pensiun ? totalPensiun : 0) +
     (featureConfig.sub_kp4 ? totalKp4 : 0);
 
@@ -442,18 +446,8 @@ export default function App() {
     unitCounts[unitShort] = (unitCounts[unitShort] || 0) + 1;
   });
 
-  // Jabatan Fungsional yang akan jatuh tempo (KGB, Pangkat, UKKJ)
-  const kgbNips = new Set(scopedKgbAlerts.map((a) => a.nip));
-  const pangkatNips = new Set(scopedPangkatAlerts.map((a) => a.nip));
-
-  const fungsionalJatuhTempoCount = activePegawai.filter((p) => {
-    if (p.jenis_jabatan !== 'Fungsional') return false;
-    if (kgbNips.has(p.nip) || pangkatNips.has(p.nip)) return true;
-    if (p.status_ukkj === 'Belum UKKJ' || p.status_ukkj === 'Dalam Proses' || p.status_ukom === false) {
-      return true;
-    }
-    return false;
-  }).length;
+  // Jabatan Fungsional yang akan jatuh tempo (KGB, Pangkat, UKKJ / Kenaikan Jenjang Tahun Berjalan)
+  const fungsionalJatuhTempoCount = totalJafung;
 
   const dashboardStats: DashboardStats = {
     totalPegawaiAktif: activePegawai.length,
