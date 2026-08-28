@@ -158,6 +158,24 @@ export interface AlertPensiunItem {
   status_alert: string;
 }
 
+export interface AlertJafungItem {
+  nip: string;
+  nama_lengkap: string;
+  unit_kerja: string;
+  jenis_jabatan: JenisJabatan;
+  jabatan_spesifik: string;
+  jenjang_jabatan: string;
+  target_jenjang: string;
+  golongan_pangkat: string;
+  nama_pangkat: string;
+  total_ak_kumulatif: number;
+  target_ak: number;
+  ak_konversi_skp: number;
+  tmt_jafung: string;
+  status_siap_ukkj: boolean;
+  status_alert: 'Bahaya' | 'Peringatan' | 'Aman';
+}
+
 export interface AlertKP4AnakItem {
   id: string;
   nip_pegawai: string;
