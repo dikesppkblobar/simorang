@@ -140,8 +140,23 @@ export interface AlertPangkatItem {
   tmt_pangkat_terakhir: string;
   tanggal_jatuh_tempo: string;
   periode_bkn_terdekat: string;
+  periode_bkn_short?: string;
   sisa_bulan: number;
   status_alert: 'Bahaya' | 'Peringatan' | 'Aman';
+  alert_badge_type?: 'h3' | 'overdue' | 'aman';
+  alert_badge_text?: string;
+
+  // Detail Informasi & Jalur Kenaikan Pangkat
+  golongan_sekarang?: string;
+  nama_pangkat_sekarang?: string;
+  golongan_tujuan?: string;
+  nama_pangkat_tujuan?: string;
+  jalur_kenaikan?: string;
+  subtext_jalur?: string;
+  syarat_khusus_type?: 'ujian_dinas' | 'tugas_belajar' | 'ukom' | 'struktural' | 'none';
+  syarat_khusus_label?: string;
+  syarat_khusus_status?: 'perlu' | 'terpenuhi' | 'none';
+  syarat_khusus_desc?: string;
 }
 
 export interface AlertPensiunItem {
