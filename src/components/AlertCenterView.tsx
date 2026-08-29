@@ -125,9 +125,11 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
   const [activeSubTab, setActiveSubTab] = useState<SubTabType>(defaultSubTab);
 
   const [searchTerm, setSearchTerm] = useState('');
-  const [pangkatViewMode, setPangkatViewMode] = useState<'semua' | 'usulan'>('semua');
-  const [kgbViewMode, setKgbViewMode] = useState<'semua' | 'jatuh_tempo'>('semua');
   const [jafungViewMode, setJafungViewMode] = useState<'semua' | 'usulan'>('semua');
+  const [pensiunCategoryFilter, setPensiunCategoryFilter] = useState<'all' | 'h3' | 'tahun_ini' | 'tahun_depan' | 'pns' | 'non_pns'>('all');
+
+  const currentCalYear = new Date().getFullYear();
+  const nextCalYear = currentCalYear + 1;
 
   // Notification Modal State for Admin Unit Kerja & Admin Dinkes
   const [notificationModalData, setNotificationModalData] = useState<{
@@ -215,11 +217,33 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       item.unit_kerja.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const filteredPensiunAlerts = pensiunAlerts.filter(
-    (item) =>
+  const filteredPensiunAlerts = pensiunAlerts.filter((item) => {
+    const matchesSearch =
       item.nama_lengkap.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      item.nip.includes(searchTerm)
-  );
+      item.nip.includes(searchTerm) ||
+      item.unit_kerja.toLowerCase().includes(searchTerm.toLowerCase());
+
+    if (!matchesSearch) return false;
+
+    const pYear = new Date(item.tanggal_pensiun).getFullYear();
+
+    if (pensiunCategoryFilter === 'h3') {
+      return item.sisa_bulan <= 3;
+    }
+    if (pensiunCategoryFilter === 'tahun_ini') {
+      return pYear === currentCalYear || (pYear < currentCalYear && item.sisa_bulan <= 0);
+    }
+    if (pensiunCategoryFilter === 'tahun_depan') {
+      return pYear === nextCalYear;
+    }
+    if (pensiunCategoryFilter === 'pns') {
+      return item.status_kepegawaian === 'PNS';
+    }
+    if (pensiunCategoryFilter === 'non_pns') {
+      return item.status_kepegawaian !== 'PNS';
+    }
+    return true;
+  });
 
   const filteredKp4Alerts = kp4Alerts.filter(
     (item) =>
@@ -707,389 +731,186 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
       {/* SUB-TAB 1: KENAIKAN PANGKAT */}
       {activeSubTab === 'pangkat' && (
         <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden space-y-4 p-4 sm:p-6">
-          {/* Sub-toolbar: View Filter Toggle & Info */}
+          {/* Sub-toolbar: Scope Info & Count */}
           <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-slate-100 pb-3">
             <div className="flex items-center space-x-2">
-              <button
-                type="button"
-                id="btn-pangkat-view-all"
-                onClick={() => setPangkatViewMode('semua')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
-                  pangkatViewMode === 'semua'
-                    ? 'bg-[#004B87] text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Semua Pegawai PNS ({filteredPegawai.filter((p) => p.status_kepegawaian === 'PNS').length})
-              </button>
-              <button
-                type="button"
-                id="btn-pangkat-view-alerts"
-                onClick={() => setPangkatViewMode('usulan')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
-                  pangkatViewMode === 'usulan'
-                    ? 'bg-[#004B87] text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Mendekati Usulan BKN ({pangkatAlerts.length})
-              </button>
+              <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-[#004B87] text-white shadow-2xs">
+                <Award className="w-3.5 h-3.5 text-amber-300" />
+                <span>Pegawai Mendekati Usulan BKN ({filteredPangkatAlerts.length})</span>
+              </span>
             </div>
             <span className="text-[11px] text-slate-500 font-medium">
-              Siklus 4 Tahun terhitung dari <strong>TMT Golongan / Pangkat Terakhir</strong>
+              Siklus 4 Tahun Menjelang 6 Periode Kenaikan Pangkat BKN (Feb, Apr, Jun, Ags, Okt, Des)
             </span>
           </div>
 
-          {pangkatViewMode === 'usulan' ? (
-            filteredPangkatAlerts.length === 0 ? (
-              <div className="p-8 text-center text-slate-500">
-                <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                Semua pegawai berada dalam masa berlaku pangkat normal (belum mendekati H-3 bulan periode BKN).
-              </div>
-            ) : (
-              <>
-                {/* Desktop Table */}
-                <div className="hidden md:block overflow-x-auto">
-                  <table className="w-full text-left border-collapse text-xs">
-                    <thead>
-                      <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
-                        <th className="p-3.5">Pegawai</th>
-                        <th className="p-3.5">Golongan & TMT Pangkat</th>
-                        <th className="p-3.5">Periode BKN Terdekat</th>
-                        <th className="p-3.5">Status Syarat UKOM</th>
-                        <th className="p-3.5">Status Alert</th>
-                        <th className="p-3.5 text-right">Aksi Admin</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {filteredPangkatAlerts.map((item) => (
-                        <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="p-3.5">
-                            <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
-                            <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
-                            <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
-                          </td>
-                          <td className="p-3.5 font-medium text-[#334155]">
-                            <div className="font-bold text-blue-900">{formatDateIndonesian(item.tmt_pangkat_terakhir)}</div>
-                            <div className="text-[11px] text-slate-500">Target Jatuh Tempo: {formatDateIndonesian(item.tanggal_jatuh_tempo)}</div>
-                          </td>
-                          <td className="p-3.5 font-bold text-indigo-900 bg-indigo-50/50 rounded-lg">
-                            {item.periode_bkn_terdekat}
-                          </td>
-                          <td className="p-3.5">
-                            {item.status_ukom ? (
-                              <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                                Lulus UKOM
-                              </span>
-                            ) : (
-                              <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                                Perlu UKOM / Syarat
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3.5">
-                            <span className="inline-flex items-center bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
-                              <span>Mendekati H-3 Bln</span>
-                            </span>
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <div className="flex items-center justify-end space-x-1.5">
-                              {isSuperAdmin ? (
-                                <>
-                                  {activePegawai.find((p) => p.nip === item.nip) && (
-                                    <button
-                                      onClick={() => {
-                                        const peg = activePegawai.find((p) => p.nip === item.nip);
-                                        if (peg) handleOpenActionModal(peg, 'pangkat');
-                                      }}
-                                      className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                      <span>Update</span>
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
-                                    className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors"
-                                  >
-                                    <FileUp className="w-3.5 h-3.5" />
-                                    <span>SK Pangkat</span>
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    const peg = activePegawai.find((p) => p.nip === item.nip);
-                                    if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
-                                  }}
-                                  className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
-                                >
-                                  <Send className="w-3.5 h-3.5" />
-                                  <span>Kirim Pemberitahuan</span>
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-
-                {/* Mobile Card List */}
-                <div className="md:hidden space-y-3">
-                  {filteredPangkatAlerts.map((item) => (
-                    <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                            {item.nama_lengkap}
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
-                          <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
-                        </div>
-                        <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                          H-3 Bln
-                        </span>
-                      </div>
-
-                      <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-semibold block">Periode BKN</span>
-                          <span className="font-bold text-indigo-700">{item.periode_bkn_terdekat}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-semibold block">Status UKOM</span>
-                          <span className={`text-[11px] font-bold ${item.status_ukom ? 'text-emerald-700' : 'text-amber-700'}`}>
-                            {item.status_ukom ? 'Lulus UKOM' : 'Perlu UKOM'}
-                          </span>
-                        </div>
-                        <div className="col-span-2">
-                          <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo Pangkat</span>
-                          <span className="font-semibold text-slate-800 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
-                        </div>
-                      </div>
-
-                      <div className="pt-1 flex items-center justify-end gap-1.5">
-                        {isSuperAdmin ? (
-                          <>
-                            {activePegawai.find((p) => p.nip === item.nip) && (
-                              <button
-                                onClick={() => {
-                                  const peg = activePegawai.find((p) => p.nip === item.nip);
-                                  if (peg) handleOpenActionModal(peg, 'pangkat');
-                                }}
-                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Update</span>
-                              </button>
-                            )}
-                            <button
-                              onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
-                              className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                            >
-                              <FileUp className="w-3.5 h-3.5" />
-                              <span>SK Pangkat</span>
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              const peg = activePegawai.find((p) => p.nip === item.nip);
-                              if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
-                            }}
-                            className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>Kirim Pemberitahuan</span>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </>
-            )
+          {filteredPangkatAlerts.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">
+              <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+              Semua pegawai berada dalam masa berlaku pangkat normal (belum mendekati jendela H-3 bulan usulan BKN).
+            </div>
           ) : (
-            /* Mode 'semua': Full List of PNS Synchronized with TMT Golongan / Pangkat */
             <>
+              {/* Desktop Table */}
               <div className="hidden md:block overflow-x-auto">
                 <table className="w-full text-left border-collapse text-xs">
                   <thead>
                     <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
-                      <th className="p-3.5">Pegawai PNS</th>
-                      <th className="p-3.5">Golongan & Pangkat</th>
-                      <th className="p-3.5">TMT Golongan / Pangkat</th>
-                      <th className="p-3.5">Target Jatuh Tempo (4 Thn)</th>
+                      <th className="p-3.5">Pegawai</th>
+                      <th className="p-3.5">Golongan & TMT Pangkat</th>
                       <th className="p-3.5">Periode BKN Terdekat</th>
                       <th className="p-3.5">Status Syarat UKOM</th>
+                      <th className="p-3.5">Status Alert</th>
                       <th className="p-3.5 text-right">Aksi Admin</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {filteredPegawai
-                      .filter((p) => p.status_kepegawaian === 'PNS')
-                      .map((pegawai) => {
-                        const tmtStr = getPegawaiTmtPangkat(pegawai, skList);
-                        const tmtDate = new Date(tmtStr);
-                        const targetDate = new Date(tmtDate.getFullYear() + 4, tmtDate.getMonth(), tmtDate.getDate());
-                        const periodeBkn = getPeriodeBknTerdekat(targetDate);
-                        const isUkomLulus = pegawai.status_ukkj === 'Lulus UKKJ' || pegawai.status_ukom;
-
-                        // Check alert status
-                        const now = new Date();
-                        const diffTime = targetDate.getTime() - now.getTime();
-                        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-                        const isApproaching = diffDays <= 90;
-
-                        return (
-                          <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
-                            <td className="p-3.5">
-                              <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
-                              <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
-                              <div className="text-[11px] text-slate-500">{pegawai.unit_kerja}</div>
-                            </td>
-                            <td className="p-3.5">
-                              <span className="font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                                {pegawai.golongan_pangkat || 'III/a'}
-                              </span>
-                              <div className="text-[11px] text-slate-600 mt-1 font-medium">
-                                {pegawai.nama_pangkat || 'Penata Muda'}
-                              </div>
-                            </td>
-                            <td className="p-3.5 font-bold text-slate-800">
-                              {formatDateIndonesian(tmtStr)}
-                            </td>
-                            <td className="p-3.5 font-bold text-indigo-900">
-                              <div>{formatDateIndonesian(targetDate.toISOString().split('T')[0])}</div>
-                              {isApproaching && (
-                                <span className="inline-block bg-red-100 text-red-800 text-[10px] font-bold px-1.5 py-0.2 rounded mt-0.5">
-                                  H-3 Bln
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-3.5 font-bold text-slate-700">
-                              {periodeBkn}
-                            </td>
-                            <td className="p-3.5">
-                              {isUkomLulus ? (
-                                <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
-                                  Lulus UKOM
-                                </span>
-                              ) : (
-                                <span className="bg-slate-100 text-slate-700 text-[10px] font-medium px-2 py-0.5 rounded">
-                                  Sesuai Jenjang
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-3.5 text-right">
-                              <div className="flex items-center justify-end space-x-1.5">
-                                {isSuperAdmin ? (
-                                  <>
-                                    <button
-                                      onClick={() => handleOpenActionModal(pegawai, 'pangkat')}
-                                      className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                      <span>Update</span>
-                                    </button>
-                                    <button
-                                      onClick={() => onOpenUploadSkModal(pegawai.nip, 'Pangkat')}
-                                      className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
-                                    >
-                                      <FileUp className="w-3.5 h-3.5" />
-                                      <span>SK Pangkat</span>
-                                    </button>
-                                  </>
-                                ) : (
+                    {filteredPangkatAlerts.map((item) => (
+                      <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="p-3.5">
+                          <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
+                          <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
+                          <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
+                        </td>
+                        <td className="p-3.5 font-medium text-[#334155]">
+                          <div className="font-bold text-blue-900">{formatDateIndonesian(item.tmt_pangkat_terakhir)}</div>
+                          <div className="text-[11px] text-slate-500">Target Jatuh Tempo: {formatDateIndonesian(item.tanggal_jatuh_tempo)}</div>
+                        </td>
+                        <td className="p-3.5 font-bold text-indigo-900 bg-indigo-50/50 rounded-lg">
+                          {item.periode_bkn_terdekat}
+                        </td>
+                        <td className="p-3.5">
+                          {item.status_ukom ? (
+                            <span className="bg-emerald-100 text-emerald-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                              Lulus UKOM
+                            </span>
+                          ) : (
+                            <span className="bg-amber-100 text-amber-800 text-[10px] font-bold px-2 py-0.5 rounded">
+                              Perlu UKOM / Syarat
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5">
+                          <span className="inline-flex items-center bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
+                            <span>Mendekati H-3 Bln</span>
+                          </span>
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end space-x-1.5">
+                            {isSuperAdmin ? (
+                              <>
+                                {activePegawai.find((p) => p.nip === item.nip) && (
                                   <button
-                                    onClick={() => handleOpenSendNotification(pegawai, 'Kenaikan Pangkat', `Sinkronisasi TMT Kenaikan Pangkat (${formatDateIndonesian(tmtStr)}) - Target Jatuh Tempo: ${formatDateIndonesian(targetDate.toISOString().split('T')[0])}`)}
-                                    className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                                    onClick={() => {
+                                      const peg = activePegawai.find((p) => p.nip === item.nip);
+                                      if (peg) handleOpenActionModal(peg, 'pangkat');
+                                    }}
+                                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
                                   >
-                                    <Send className="w-3.5 h-3.5" />
-                                    <span>Kirim Notif</span>
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <span>Update</span>
                                   </button>
                                 )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
+                                <button
+                                  onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
+                                  className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+                                >
+                                  <FileUp className="w-3.5 h-3.5" />
+                                  <span>SK Pangkat</span>
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  const peg = activePegawai.find((p) => p.nip === item.nip);
+                                  if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
+                                }}
+                                className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Kirim Pemberitahuan</span>
+                              </button>
+                            )}
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
                 </table>
               </div>
 
-              {/* Mobile Card View for 'semua' */}
+              {/* Mobile Card List */}
               <div className="md:hidden space-y-3">
-                {filteredPegawai
-                  .filter((p) => p.status_kepegawaian === 'PNS')
-                  .map((pegawai) => {
-                    const tmtStr = getPegawaiTmtPangkat(pegawai, skList);
-                    const tmtDate = new Date(tmtStr);
-                    const targetDate = new Date(tmtDate.getFullYear() + 4, tmtDate.getMonth(), tmtDate.getDate());
-                    const periodeBkn = getPeriodeBknTerdekat(targetDate);
-                    return (
-                      <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                              {pegawai.nama_lengkap}
-                            </div>
-                            <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
-                            <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
-                          </div>
-                          <span className="bg-blue-100 text-blue-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                            {pegawai.golongan_pangkat || 'III/a'}
-                          </span>
+                {filteredPangkatAlerts.map((item) => (
+                  <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {item.nama_lengkap}
                         </div>
+                        <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
+                        <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
+                      </div>
+                      <span className="bg-red-100 text-red-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
+                        H-3 Bln
+                      </span>
+                    </div>
 
-                        <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
-                          <div>
-                            <span className="text-[10px] text-slate-400 font-semibold block">TMT Pangkat</span>
-                            <span className="font-bold text-slate-800 text-[11px]">{formatDateIndonesian(tmtStr)}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo (4 Thn)</span>
-                            <span className="font-bold text-indigo-700 text-[11px]">{formatDateIndonesian(targetDate.toISOString().split('T')[0])}</span>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-[10px] text-slate-400 font-semibold block">Periode BKN</span>
-                            <span className="font-semibold text-slate-700 text-[11px]">{periodeBkn}</span>
-                          </div>
-                        </div>
+                    <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Periode BKN</span>
+                        <span className="font-bold text-indigo-700">{item.periode_bkn_terdekat}</span>
+                      </div>
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Status UKOM</span>
+                        <span className={`text-[11px] font-bold ${item.status_ukom ? 'text-emerald-700' : 'text-amber-700'}`}>
+                          {item.status_ukom ? 'Lulus UKOM' : 'Perlu UKOM'}
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo Pangkat</span>
+                        <span className="font-semibold text-slate-800 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
+                      </div>
+                    </div>
 
-                        <div className="pt-1 flex items-center justify-end gap-1.5">
-                          {isSuperAdmin ? (
-                            <>
-                              <button
-                                onClick={() => handleOpenActionModal(pegawai, 'pangkat')}
-                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Update</span>
-                              </button>
-                              <button
-                                onClick={() => onOpenUploadSkModal(pegawai.nip, 'Pangkat')}
-                                className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                              >
-                                <FileUp className="w-3.5 h-3.5" />
-                                <span>SK Pangkat</span>
-                              </button>
-                            </>
-                          ) : (
+                    <div className="pt-1 flex items-center justify-end gap-1.5">
+                      {isSuperAdmin ? (
+                        <>
+                          {activePegawai.find((p) => p.nip === item.nip) && (
                             <button
-                              onClick={() => handleOpenSendNotification(pegawai, 'Kenaikan Pangkat', `Sinkronisasi TMT Pangkat ${formatDateIndonesian(tmtStr)}`)}
-                              className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                              onClick={() => {
+                                const peg = activePegawai.find((p) => p.nip === item.nip);
+                                if (peg) handleOpenActionModal(peg, 'pangkat');
+                              }}
+                              className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
                             >
-                              <Send className="w-3.5 h-3.5" />
-                              <span>Kirim Pemberitahuan</span>
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Update</span>
                             </button>
                           )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                          <button
+                            onClick={() => onOpenUploadSkModal(item.nip, 'Pangkat')}
+                            className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <FileUp className="w-3.5 h-3.5" />
+                            <span>SK Pangkat</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const peg = activePegawai.find((p) => p.nip === item.nip);
+                            if (peg) handleOpenSendNotification(peg, 'Kenaikan Pangkat', `Mendekati periode kenaikan pangkat (${item.periode_bkn_terdekat}). Mohon siapkan kelengkapan usulan berkas.`);
+                          }}
+                          className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
@@ -1673,40 +1494,24 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
                 <Clock className="w-5 h-5 text-blue-600 shrink-0" />
-                <span>Pemantauan Kenaikan Gaji Berkala (KGB) PNS (Siklus 2 Tahun)</span>
+                <span>Pemantauan Kenaikan Gaji Berkala (KGB) PNS</span>
               </h3>
-              <p className="text-xs text-[#64748B]">Siklus 2 Tahun (24 Bulan) terhitung dari TMT KGB Terakhir</p>
+              <p className="text-xs text-[#64748B]">Menampilkan daftar pegawai yang memasuki jendela H-3 Bulan / Jatuh Tempo KGB (Siklus 2 Tahun)</p>
             </div>
             <div className="flex items-center space-x-2 shrink-0">
-              <button
-                type="button"
-                id="btn-kgb-view-all"
-                onClick={() => setKgbViewMode('semua')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
-                  kgbViewMode === 'semua'
-                    ? 'bg-[#004B87] text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Semua Pegawai PNS ({filteredPegawai.filter((p) => p.status_kepegawaian === 'PNS').length})
-              </button>
-              <button
-                type="button"
-                id="btn-kgb-view-alerts"
-                onClick={() => setKgbViewMode('peringatan')}
-                className={`px-3 py-1.5 rounded-lg text-xs font-heading font-bold transition-all cursor-pointer ${
-                  kgbViewMode === 'peringatan'
-                    ? 'bg-[#004B87] text-white shadow-2xs'
-                    : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
-                }`}
-              >
-                Jatuh Tempo KGB ({kgbAlerts.length})
-              </button>
+              <span className="inline-flex items-center space-x-1.5 px-3 py-1.5 rounded-lg text-xs font-heading font-bold bg-[#004B87] text-white shadow-2xs">
+                <Clock className="w-3.5 h-3.5 text-blue-200" />
+                <span>Jatuh Tempo KGB H-3 Bln ({filteredKgbAlerts.length})</span>
+              </span>
             </div>
           </div>
 
-          {kgbViewMode === 'peringatan' ? (
-            /* Alerts Table */
+          {filteredKgbAlerts.length === 0 ? (
+            <div className="p-8 text-center text-slate-500">
+              <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
+              Semua pegawai aktif memiliki TMT KGB yang masih berlaku (belum ada yang mendekati H-3 bulan jatuh tempo).
+            </div>
+          ) : (
             <>
               {/* Desktop Table View */}
               <div className="hidden md:block overflow-x-auto">
@@ -1721,333 +1526,142 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-slate-100">
-                    {kgbAlerts.length === 0 ? (
-                      <tr>
-                        <td colSpan={5} className="p-8 text-center text-slate-500">
-                          <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                          Semua pegawai aktif memiliki TMT KGB yang masih berlaku.
+                    {filteredKgbAlerts.map((item) => (
+                      <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
+                        <td className="p-3.5">
+                          <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
+                          <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
+                          <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
+                        </td>
+                        <td className="p-3.5 font-medium text-[#334155]">
+                          {formatDateIndonesian(item.tmt_kgb_terakhir)}
+                        </td>
+                        <td className="p-3.5 font-bold text-blue-900">
+                          {formatDateIndonesian(item.tanggal_jatuh_tempo)}
+                        </td>
+                        <td className="p-3.5">
+                          {item.status_alert === 'Bahaya' ? (
+                            <span className="inline-flex items-center space-x-1 bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
+                              <span>Mendekati / Jatuh Tempo</span>
+                            </span>
+                          ) : (
+                            <span className="inline-flex items-center space-x-1 bg-[#FEF3C7] text-[#92400E] px-2.5 py-1 rounded-full text-[11px] font-semibold">
+                              <span>Peringatan ({item.sisa_bulan} bln)</span>
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-3.5 text-right">
+                          <div className="flex items-center justify-end space-x-1.5">
+                            {isSuperAdmin ? (
+                              <>
+                                {activePegawai.find((p) => p.nip === item.nip) && (
+                                  <button
+                                    onClick={() => {
+                                      const peg = activePegawai.find((p) => p.nip === item.nip);
+                                      if (peg) handleOpenActionModal(peg, 'kgb');
+                                    }}
+                                    className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
+                                  >
+                                    <Edit3 className="w-3.5 h-3.5" />
+                                    <span>Update</span>
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
+                                  className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
+                                >
+                                  <FileUp className="w-3.5 h-3.5" />
+                                  <span>SK KGB</span>
+                                </button>
+                              </>
+                            ) : (
+                              <button
+                                onClick={() => {
+                                  const peg = activePegawai.find((p) => p.nip === item.nip);
+                                  if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
+                                }}
+                                className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Kirim Pemberitahuan</span>
+                              </button>
+                            )}
+                          </div>
                         </td>
                       </tr>
-                    ) : (
-                      kgbAlerts.map((item) => (
-                        <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
-                          <td className="p-3.5">
-                            <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
-                            <div className="text-[11px] text-[#64748B] font-mono">NIP: {item.nip}</div>
-                            <div className="text-[11px] text-slate-500">{item.unit_kerja}</div>
-                          </td>
-                          <td className="p-3.5 font-medium text-[#334155]">
-                            {formatDateIndonesian(item.tmt_kgb_terakhir)}
-                          </td>
-                          <td className="p-3.5 font-bold text-blue-900">
-                            {formatDateIndonesian(item.tanggal_jatuh_tempo)}
-                          </td>
-                          <td className="p-3.5">
-                            {item.status_alert === 'Bahaya' ? (
-                              <span className="inline-flex items-center space-x-1 bg-[#FEE2E2] text-[#991B1B] px-2.5 py-1 rounded-full text-[11px] font-semibold">
-                                <span>Mendekati / Jatuh Tempo</span>
-                              </span>
-                            ) : (
-                              <span className="inline-flex items-center space-x-1 bg-[#FEF3C7] text-[#92400E] px-2.5 py-1 rounded-full text-[11px] font-semibold">
-                                <span>Peringatan ({item.sisa_bulan} bln)</span>
-                              </span>
-                            )}
-                          </td>
-                          <td className="p-3.5 text-right">
-                            <div className="flex items-center justify-end space-x-1.5">
-                              {isSuperAdmin ? (
-                                <>
-                                  {activePegawai.find((p) => p.nip === item.nip) && (
-                                    <button
-                                      onClick={() => {
-                                        const peg = activePegawai.find((p) => p.nip === item.nip);
-                                        if (peg) handleOpenActionModal(peg, 'kgb');
-                                      }}
-                                      className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                      <span>Update</span>
-                                    </button>
-                                  )}
-                                  <button
-                                    onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
-                                    className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
-                                  >
-                                    <FileUp className="w-3.5 h-3.5" />
-                                    <span>SK KGB</span>
-                                  </button>
-                                </>
-                              ) : (
-                                <button
-                                  onClick={() => {
-                                    const peg = activePegawai.find((p) => p.nip === item.nip);
-                                    if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
-                                  }}
-                                  className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
-                                >
-                                  <Send className="w-3.5 h-3.5" />
-                                  <span>Kirim Pemberitahuan</span>
-                                </button>
-                              )}
-                            </div>
-                          </td>
-                        </tr>
-                      ))
-                    )}
+                    ))}
                   </tbody>
                 </table>
               </div>
 
               {/* Mobile Card List View */}
               <div className="md:hidden space-y-3">
-                {kgbAlerts.length === 0 ? (
-                  <div className="p-8 text-center text-slate-500">
-                    <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                    Semua pegawai aktif memiliki TMT KGB yang masih berlaku.
-                  </div>
-                ) : (
-                  kgbAlerts.map((item) => (
-                    <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                      <div className="flex items-start justify-between gap-2">
-                        <div>
-                          <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                            {item.nama_lengkap}
-                          </div>
-                          <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
-                          <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
+                {filteredKgbAlerts.map((item) => (
+                  <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {item.nama_lengkap}
                         </div>
-                        <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
-                          item.status_alert === 'Bahaya' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
-                        }`}>
-                          {item.status_alert === 'Bahaya' ? 'Jatuh Tempo' : `${item.sisa_bulan} Bln Lagi`}
-                        </span>
+                        <div className="text-[11px] text-slate-500 font-mono">NIP: {item.nip}</div>
+                        <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
                       </div>
+                      <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
+                        item.status_alert === 'Bahaya' ? 'bg-red-100 text-red-800' : 'bg-amber-100 text-amber-800'
+                      }`}>
+                        {item.status_alert === 'Bahaya' ? 'Jatuh Tempo' : `${item.sisa_bulan} Bln Lagi`}
+                      </span>
+                    </div>
 
-                      <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-semibold block">TMT KGB Lama</span>
-                          <span className="font-medium text-slate-800 text-[11px]">{formatDateIndonesian(item.tmt_kgb_terakhir)}</span>
-                        </div>
-                        <div>
-                          <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo KGB Baru</span>
-                          <span className="font-bold text-emerald-700 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
-                        </div>
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">TMT KGB Lama</span>
+                        <span className="font-medium text-slate-800 text-[11px]">{formatDateIndonesian(item.tmt_kgb_terakhir)}</span>
                       </div>
-
-                      <div className="pt-1 flex items-center justify-end gap-1.5">
-                        {isSuperAdmin ? (
-                          <>
-                            {activePegawai.find((p) => p.nip === item.nip) && (
-                              <button
-                                onClick={() => {
-                                  const peg = activePegawai.find((p) => p.nip === item.nip);
-                                  if (peg) handleOpenActionModal(peg, 'kgb');
-                                }}
-                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Update</span>
-                              </button>
-                            )}
-                            <button
-                              onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
-                              className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1"
-                            >
-                              <FileUp className="w-3.5 h-3.5" />
-                              <span>SK KGB</span>
-                            </button>
-                          </>
-                        ) : (
-                          <button
-                            onClick={() => {
-                              const peg = activePegawai.find((p) => p.nip === item.nip);
-                              if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
-                            }}
-                            className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>Kirim Pemberitahuan</span>
-                          </button>
-                        )}
+                      <div>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo KGB Baru</span>
+                        <span className="font-bold text-emerald-700 text-[11px]">{formatDateIndonesian(item.tanggal_jatuh_tempo)}</span>
                       </div>
                     </div>
-                  ))
-                )}
-              </div>
-            </>
-          ) : (
-            /* Mode 'semua': Full List of PNS Synchronized with TMT KGB */
-            <>
-              <div className="hidden md:block overflow-x-auto">
-                <table className="w-full text-left border-collapse text-xs">
-                  <thead>
-                    <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
-                      <th className="p-3.5">Pegawai PNS</th>
-                      <th className="p-3.5">Golongan & Pangkat</th>
-                      <th className="p-3.5">TMT KGB Terakhir</th>
-                      <th className="p-3.5">No SK & Tanggal SK KGB</th>
-                      <th className="p-3.5">Jatuh Tempo Berikutnya (2 Thn)</th>
-                      <th className="p-3.5 text-right">Aksi Admin</th>
-                    </tr>
-                  </thead>
-                  <tbody className="divide-y divide-slate-100">
-                    {filteredPegawai
-                      .filter((p) => p.status_kepegawaian === 'PNS')
-                      .map((pegawai) => {
-                        const tmtStr = getPegawaiTmtKgb(pegawai, skList);
-                        const tmtDate = new Date(tmtStr);
-                        const nextKgbDate = new Date(tmtDate.getFullYear() + 2, tmtDate.getMonth(), tmtDate.getDate());
 
-                        // Check if approaching
-                        const now = new Date();
-                        const diffDays = Math.ceil((nextKgbDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-                        const isApproaching = diffDays <= 90;
-
-                        // Find latest KGB SK if any
-                        const kgbSk = skList.find((s) => (s.nip_pegawai === pegawai.nip || (s as any).nip === pegawai.nip) && s.jenis_sk === 'KGB');
-                        const noSkKgb = pegawai.no_sk_kgb || (pegawai as any).nomor_sk_kgb || kgbSk?.nomor_sk || '-';
-                        const tglSkKgb = pegawai.tgl_sk_kgb || (pegawai as any).tanggal_sk_kgb || kgbSk?.tmt_berlaku;
-
-                        return (
-                          <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
-                            <td className="p-3.5">
-                              <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
-                              <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
-                              <div className="text-[11px] text-slate-500">{pegawai.unit_kerja}</div>
-                            </td>
-                            <td className="p-3.5">
-                              <span className="font-bold text-blue-900 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
-                                {pegawai.golongan_pangkat || 'III/a'}
-                              </span>
-                              <div className="text-[11px] text-slate-600 mt-1 font-medium">
-                                {pegawai.nama_pangkat || 'Penata Muda'}
-                              </div>
-                            </td>
-                            <td className="p-3.5 font-bold text-slate-800">
-                              {formatDateIndonesian(tmtStr)}
-                            </td>
-                            <td className="p-3.5">
-                              <div className="font-mono text-slate-700 font-medium">{noSkKgb}</div>
-                              {tglSkKgb && (
-                                <div className="text-[10px] text-slate-500">Tgl SK: {formatDateIndonesian(tglSkKgb)}</div>
-                              )}
-                            </td>
-                            <td className="p-3.5 font-bold text-indigo-900">
-                              <div>{formatDateIndonesian(nextKgbDate.toISOString().split('T')[0])}</div>
-                              {isApproaching && (
-                                <span className="inline-block bg-red-100 text-red-800 text-[10px] font-bold px-1.5 py-0.2 rounded mt-0.5">
-                                  H-3 Bln
-                                </span>
-                              )}
-                            </td>
-                            <td className="p-3.5 text-right">
-                              <div className="flex items-center justify-end space-x-1.5">
-                                {isSuperAdmin ? (
-                                  <>
-                                    <button
-                                      onClick={() => handleOpenActionModal(pegawai, 'kgb')}
-                                      className="inline-flex items-center space-x-1 bg-indigo-600 hover:bg-indigo-700 text-white px-2.5 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors cursor-pointer"
-                                    >
-                                      <Edit3 className="w-3.5 h-3.5" />
-                                      <span>Update</span>
-                                    </button>
-                                    <button
-                                      onClick={() => onOpenUploadSkModal(pegawai.nip, 'KGB')}
-                                      className="inline-flex items-center space-x-1 bg-[#2563EB] hover:bg-blue-700 text-white px-2.5 py-1.5 rounded-lg font-semibold text-xs shadow-sm transition-colors cursor-pointer"
-                                    >
-                                      <FileUp className="w-3.5 h-3.5" />
-                                      <span>SK KGB</span>
-                                    </button>
-                                  </>
-                                ) : (
-                                  <button
-                                    onClick={() => handleOpenSendNotification(pegawai, 'KGB Gaji Berkala', `Sinkronisasi TMT KGB (${formatDateIndonesian(tmtStr)}) - Jatuh Tempo KGB Berikutnya: ${formatDateIndonesian(nextKgbDate.toISOString().split('T')[0])}`)}
-                                    className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
-                                  >
-                                    <Send className="w-3.5 h-3.5" />
-                                    <span>Kirim Notif</span>
-                                  </button>
-                                )}
-                              </div>
-                            </td>
-                          </tr>
-                        );
-                      })}
-                  </tbody>
-                </table>
-              </div>
-
-              {/* Mobile Card View for 'semua' */}
-              <div className="md:hidden space-y-3">
-                {filteredPegawai
-                  .filter((p) => p.status_kepegawaian === 'PNS')
-                  .map((pegawai) => {
-                    const tmtStr = getPegawaiTmtKgb(pegawai, skList);
-                    const tmtDate = new Date(tmtStr);
-                    const nextKgbDate = new Date(tmtDate.getFullYear() + 2, tmtDate.getMonth(), tmtDate.getDate());
-                    const kgbSk = skList.find((s) => (s.nip_pegawai === pegawai.nip || (s as any).nip === pegawai.nip) && s.jenis_sk === 'KGB');
-                    const noSkKgb = pegawai.no_sk_kgb || (pegawai as any).nomor_sk_kgb || kgbSk?.nomor_sk || '-';
-                    return (
-                      <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                              {pegawai.nama_lengkap}
-                            </div>
-                            <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
-                            <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
-                          </div>
-                          <span className="bg-blue-100 text-blue-800 text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0">
-                            {pegawai.golongan_pangkat || 'III/a'}
-                          </span>
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-2 text-xs bg-white p-2 rounded-lg border border-slate-200/80">
-                          <div>
-                            <span className="text-[10px] text-slate-400 font-semibold block">TMT KGB</span>
-                            <span className="font-bold text-slate-800 text-[11px]">{formatDateIndonesian(tmtStr)}</span>
-                          </div>
-                          <div>
-                            <span className="text-[10px] text-slate-400 font-semibold block">Jatuh Tempo (2 Thn)</span>
-                            <span className="font-bold text-emerald-700 text-[11px]">{formatDateIndonesian(nextKgbDate.toISOString().split('T')[0])}</span>
-                          </div>
-                          <div className="col-span-2">
-                            <span className="text-[10px] text-slate-400 font-semibold block">No SK KGB</span>
-                            <span className="font-mono text-slate-700 text-[11px]">{noSkKgb}</span>
-                          </div>
-                        </div>
-
-                        <div className="pt-1 flex items-center justify-end gap-1.5">
-                          {isSuperAdmin ? (
-                            <>
-                              <button
-                                onClick={() => handleOpenActionModal(pegawai, 'kgb')}
-                                className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
-                              >
-                                <Edit3 className="w-3.5 h-3.5" />
-                                <span>Update</span>
-                              </button>
-                              <button
-                                onClick={() => onOpenUploadSkModal(pegawai.nip, 'KGB')}
-                                className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
-                              >
-                                <FileUp className="w-3.5 h-3.5" />
-                                <span>SK KGB</span>
-                              </button>
-                            </>
-                          ) : (
+                    <div className="pt-1 flex items-center justify-end gap-1.5">
+                      {isSuperAdmin ? (
+                        <>
+                          {activePegawai.find((p) => p.nip === item.nip) && (
                             <button
-                              onClick={() => handleOpenSendNotification(pegawai, 'KGB Gaji Berkala', `Sinkronisasi TMT KGB ${formatDateIndonesian(tmtStr)}`)}
-                              className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                              onClick={() => {
+                                const peg = activePegawai.find((p) => p.nip === item.nip);
+                                if (peg) handleOpenActionModal(peg, 'kgb');
+                              }}
+                              className="px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
                             >
-                              <Send className="w-3.5 h-3.5" />
-                              <span>Kirim Pemberitahuan</span>
+                              <Edit3 className="w-3.5 h-3.5" />
+                              <span>Update</span>
                             </button>
                           )}
-                        </div>
-                      </div>
-                    );
-                  })}
+                          <button
+                            onClick={() => onOpenUploadSkModal(item.nip, 'KGB')}
+                            className="px-2.5 py-1.5 bg-blue-600 text-white rounded-lg text-xs font-bold flex items-center gap-1 cursor-pointer"
+                          >
+                            <FileUp className="w-3.5 h-3.5" />
+                            <span>SK KGB</span>
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          onClick={() => {
+                            const peg = activePegawai.find((p) => p.nip === item.nip);
+                            if (peg) handleOpenSendNotification(peg, 'KGB Gaji Berkala', `Jatuh tempo KGB berkala (${formatDateIndonesian(item.tanggal_jatuh_tempo)}). Mohon siapkan kelengkapan SK KGB.`);
+                          }}
+                          className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                ))}
               </div>
             </>
           )}
@@ -2195,15 +1809,100 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
                 <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0" />
-                <span>Pemantauan Batas Usia Pensiun (BUP) PNS & Habis Masa Kontrak (PPPK / Non-ASN)</span>
+                <span>Pemantauan Batas Usia Pensiun (BUP) & Habis Kontrak (Tahun {currentCalYear} & {nextCalYear})</span>
               </h3>
               <p className="text-xs text-[#64748B]">
-                BUP PNS (58/60/65 Thn), Akhir Kontrak Perjanjian Kerja PPPK (5 Thn) & Akhir Masa SK Non-ASN (1 Thn)
+                BUP PNS (58/60/65 Thn) dan Habis Masa Kontrak Kerja PPPK / Non-ASN pada tahun berjalan & tahun depan dengan peringatan H-3 Bulan
               </p>
             </div>
             <span className="bg-rose-100 text-rose-900 text-xs font-bold px-3 py-1.5 rounded-full shrink-0">
-              {filteredPensiunAlerts.length} Mendekati BUP / Habis Kontrak
+              {filteredPensiunAlerts.length} Pegawai Terdaftar
             </span>
+          </div>
+
+          {/* Urgent H-3 Banner if any */}
+          {pensiunAlerts.some((p) => p.sisa_bulan <= 3) && (
+            <div className="bg-red-50 border border-red-200 rounded-xl p-3.5 flex items-start space-x-3 text-red-900">
+              <AlertTriangle className="w-5 h-5 text-red-600 shrink-0 mt-0.5" />
+              <div className="text-xs space-y-1">
+                <div className="font-bold text-sm text-red-800">
+                  Perhatian: Ada {pensiunAlerts.filter((p) => p.sisa_bulan <= 3).length} Pegawai Memasuki Jendela Kritis H-3 Bulan Pensiun / Habis Kontrak!
+                </div>
+                <p className="text-red-700">
+                  Segera proses penerbitan SK Pensiun BUP ke BKPSDM/BKN atau proses evaluasi/perpanjangan masa kontrak PPPK & Non-ASN.
+                </p>
+              </div>
+            </div>
+          )}
+
+          {/* Quick Filter Categories */}
+          <div className="flex flex-wrap items-center gap-1.5 pt-1">
+            <button
+              type="button"
+              onClick={() => setPensiunCategoryFilter('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                pensiunCategoryFilter === 'all'
+                  ? 'bg-[#004B87] text-white shadow-2xs'
+                  : 'bg-slate-100 text-slate-600 hover:bg-slate-200'
+              }`}
+            >
+              Semua ({pensiunAlerts.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPensiunCategoryFilter('h3')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer flex items-center space-x-1.5 ${
+                pensiunCategoryFilter === 'h3'
+                  ? 'bg-red-600 text-white shadow-2xs'
+                  : 'bg-red-50 text-red-700 hover:bg-red-100 border border-red-200'
+              }`}
+            >
+              <span>🚨 H-3 Bulan Mendesak ({pensiunAlerts.filter((p) => p.sisa_bulan <= 3).length})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPensiunCategoryFilter('tahun_ini')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                pensiunCategoryFilter === 'tahun_ini'
+                  ? 'bg-amber-600 text-white shadow-2xs'
+                  : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+              }`}
+            >
+              Tahun Ini ({currentCalYear}) ({pensiunAlerts.filter((p) => new Date(p.tanggal_pensiun).getFullYear() === currentCalYear).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPensiunCategoryFilter('tahun_depan')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                pensiunCategoryFilter === 'tahun_depan'
+                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  : 'bg-indigo-50 text-indigo-800 hover:bg-indigo-100 border border-indigo-200'
+              }`}
+            >
+              Tahun Depan ({nextCalYear}) ({pensiunAlerts.filter((p) => new Date(p.tanggal_pensiun).getFullYear() === nextCalYear).length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPensiunCategoryFilter('pns')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                pensiunCategoryFilter === 'pns'
+                  ? 'bg-blue-600 text-white shadow-2xs'
+                  : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
+              }`}
+            >
+              PNS BUP ({pensiunAlerts.filter((p) => p.status_kepegawaian === 'PNS').length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setPensiunCategoryFilter('non_pns')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all cursor-pointer ${
+                pensiunCategoryFilter === 'non_pns'
+                  ? 'bg-purple-600 text-white shadow-2xs'
+                  : 'bg-purple-50 text-purple-800 hover:bg-purple-100 border border-purple-200'
+              }`}
+            >
+              PPPK & Non-ASN ({pensiunAlerts.filter((p) => p.status_kepegawaian !== 'PNS').length})
+            </button>
           </div>
 
           {/* Desktop Table View */}
@@ -2215,7 +1914,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                   <th className="p-3.5">Status Kepegawaian & Jabatan</th>
                   <th className="p-3.5">Usia Saat Ini</th>
                   <th className="p-3.5">TMT Pensiun / Akhir Kontrak</th>
-                  <th className="p-3.5">Status Progres & Rekomendasi</th>
+                  <th className="p-3.5">Status Peringatan & Kategori</th>
                   <th className="p-3.5 text-right">Aksi Admin</th>
                 </tr>
               </thead>
@@ -2224,7 +1923,7 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                   <tr>
                     <td colSpan={6} className="p-8 text-center text-slate-500">
                       <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                      Tidak ada pegawai yang mendekati BUP atau habis masa kontrak dalam 18 bulan ke depan.
+                      Tidak ada pegawai yang sesuai filter pensiun/kontrak ({currentCalYear} - {nextCalYear}).
                     </td>
                   </tr>
                 ) : (
@@ -2232,9 +1931,16 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                     const statusKeg = item.status_kepegawaian || 'PNS';
                     const isPns = statusKeg === 'PNS';
                     const isPppk = statusKeg.includes('PPPK');
+                    const isUrgent = item.sisa_bulan <= 3;
+                    const pYear = new Date(item.tanggal_pensiun).getFullYear();
 
                     return (
-                      <tr key={item.nip} className="hover:bg-slate-50/60 transition-colors">
+                      <tr
+                        key={item.nip}
+                        className={`transition-colors ${
+                          isUrgent ? 'bg-red-50/40 hover:bg-red-50/70' : 'hover:bg-slate-50/60'
+                        }`}
+                      >
                         <td className="p-3.5">
                           <div className="font-bold text-[#1E293B]">{item.nama_lengkap}</div>
                           <div className="text-[11px] text-[#64748B] font-mono">
@@ -2257,6 +1963,9 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                                 Non-ASN (PKWT)
                               </span>
                             )}
+                            <span className="text-[10px] text-slate-500 font-semibold">
+                              ({pYear === currentCalYear ? `Tahun Ini ${currentCalYear}` : `Tahun Depan ${nextCalYear}`})
+                            </span>
                           </div>
                           <div className="text-xs font-semibold text-slate-800">{item.jenis_jabatan}</div>
                           <div className="text-[11px] text-slate-500">
@@ -2269,17 +1978,25 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                         </td>
                         <td className="p-3.5 font-bold text-[#334155]">{item.umur_saat_ini} Tahun</td>
                         <td className="p-3.5">
-                          <div className="font-bold text-red-900 text-xs">
+                          <div className={`font-bold text-xs ${isUrgent ? 'text-red-700 font-extrabold' : 'text-slate-800'}`}>
                             {formatDateIndonesian(item.tanggal_pensiun)}
                           </div>
-                          <div className="text-[10px] text-amber-800 font-semibold mt-0.5">
-                            Sisa: {item.sisa_bulan} Bulan Lagi
+                          <div className="text-[11px] mt-0.5">
+                            {item.sisa_bulan <= 0 ? (
+                              <span className="text-red-700 font-bold">⚠️ Sudah Masuk Waktu Pensiun/Habis Kontrak</span>
+                            ) : item.sisa_bulan <= 3 ? (
+                              <span className="text-red-700 font-bold">🚨 {item.sisa_bulan} Bulan Lagi (H-3 Bln)</span>
+                            ) : (
+                              <span className="text-slate-600 font-medium">{item.sisa_bulan} Bulan Lagi</span>
+                            )}
                           </div>
                         </td>
                         <td className="p-3.5">
                           <span
                             className={`inline-flex items-center px-2.5 py-1 rounded-full text-[11px] font-bold ${
-                              isPns
+                              isUrgent
+                                ? 'bg-red-100 text-red-900 border border-red-300 font-extrabold'
+                                : isPns
                                 ? 'bg-amber-100 text-amber-900'
                                 : isPppk
                                 ? 'bg-purple-100 text-purple-900 border border-purple-200'
@@ -2291,16 +2008,18 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                         </td>
                         <td className="p-3.5 text-right">
                           {isSuperAdmin ? (
-                            <span className="bg-rose-100 text-rose-800 text-[10px] font-bold px-2.5 py-1 rounded-full inline-block">
-                              Proses BUP Dinkes
+                            <span className={`text-[10px] font-bold px-2.5 py-1 rounded-full inline-block ${
+                              isUrgent ? 'bg-red-600 text-white' : 'bg-rose-100 text-rose-800'
+                            }`}>
+                              {isUrgent ? 'Mendesak Proses' : 'Proses BUP Dinkes'}
                             </span>
                           ) : (
                             <button
                               onClick={() => {
                                 const peg = activePegawai.find((p) => p.nip === item.nip);
-                                if (peg) handleOpenSendNotification(peg, 'Pensiun BUP / Masa Kontrak', `Jatuh tempo BUP/Kontrak pada ${formatDateIndonesian(item.tanggal_pensiun)}. Imbauan pengurusan berkas pensiun/kontrak.`);
+                                if (peg) handleOpenSendNotification(peg, 'Pensiun BUP / Masa Kontrak', `Jatuh tempo BUP/Kontrak pada ${formatDateIndonesian(item.tanggal_pensiun)} (${item.sisa_bulan} bulan lagi). Imbauan pengurusan berkas.`);
                               }}
-                              className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                              className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors cursor-pointer"
                             >
                               <Send className="w-3.5 h-3.5" />
                               <span>Kirim Pemberitahuan</span>
@@ -2320,16 +2039,23 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
             {filteredPensiunAlerts.length === 0 ? (
               <div className="p-8 text-center text-slate-500">
                 <CheckCircle className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                Tidak ada pegawai yang mendekati BUP atau habis masa kontrak dalam 18 bulan ke depan.
+                Tidak ada pegawai yang sesuai filter pensiun/kontrak ({currentCalYear} - {nextCalYear}).
               </div>
             ) : (
               filteredPensiunAlerts.map((item) => {
                 const statusKeg = item.status_kepegawaian || 'PNS';
                 const isPns = statusKeg === 'PNS';
                 const isPppk = statusKeg.includes('PPPK');
+                const isUrgent = item.sisa_bulan <= 3;
+                const pYear = new Date(item.tanggal_pensiun).getFullYear();
 
                 return (
-                  <div key={item.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                  <div
+                    key={item.nip}
+                    className={`p-3.5 rounded-xl border space-y-2.5 ${
+                      isUrgent ? 'bg-red-50/50 border-red-200' : 'bg-slate-50 border-slate-200'
+                    }`}
+                  >
                     <div className="flex items-start justify-between gap-2">
                       <div>
                         <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
@@ -2341,35 +2067,51 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
                         <div className="text-[11px] text-slate-600 font-medium">{item.unit_kerja}</div>
                       </div>
                       <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full shrink-0 ${
-                        isPns ? 'bg-blue-100 text-blue-800' : isPppk ? 'bg-purple-100 text-purple-800' : 'bg-slate-200 text-slate-800'
+                        isUrgent
+                          ? 'bg-red-600 text-white'
+                          : isPns
+                          ? 'bg-blue-100 text-blue-800'
+                          : isPppk
+                          ? 'bg-purple-100 text-purple-800'
+                          : 'bg-slate-200 text-slate-800'
                       }`}>
-                        {statusKeg}
+                        {isUrgent ? '🚨 H-3 Bln' : statusKeg}
                       </span>
                     </div>
 
                     <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 grid grid-cols-2 gap-2 text-xs">
                       <div>
-                        <span className="text-[10px] text-slate-400 font-semibold block">Usia Saat Ini</span>
-                        <span className="font-bold text-slate-800 text-[11px]">{item.umur_saat_ini} Tahun</span>
+                        <span className="text-[10px] text-slate-400 font-semibold block">Usia & Status</span>
+                        <span className="font-bold text-slate-800 text-[11px]">{item.umur_saat_ini} Thn ({statusKeg})</span>
                       </div>
                       <div>
-                        <span className="text-[10px] text-slate-400 font-semibold block">TMT BUP / Selesai Kontrak</span>
-                        <span className="font-bold text-red-800 text-[11px]">{formatDateIndonesian(item.tanggal_pensiun)}</span>
+                        <span className="text-[10px] text-slate-400 font-semibold block">TMT Pensiun / Kontrak</span>
+                        <span className={`font-bold text-[11px] ${isUrgent ? 'text-red-700' : 'text-slate-800'}`}>
+                          {formatDateIndonesian(item.tanggal_pensiun)}
+                        </span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-[10px] text-slate-400 font-semibold block">Status & Periode</span>
+                        <span className="font-semibold text-slate-800 text-[11px]">
+                          {pYear === currentCalYear ? `Tahun Ini (${currentCalYear})` : `Tahun Depan (${nextCalYear})`} - {item.sisa_bulan} Bulan Lagi
+                        </span>
                       </div>
                     </div>
 
                     <div className="pt-1">
                       {isSuperAdmin ? (
-                        <div className="bg-rose-50 text-rose-800 text-xs font-bold p-2 rounded-lg text-center border border-rose-200">
-                          Proses BUP Dinkes ({item.sisa_bulan} Bulan Lagi)
+                        <div className={`text-xs font-bold p-2 rounded-lg text-center border ${
+                          isUrgent ? 'bg-red-600 text-white border-red-700' : 'bg-rose-50 text-rose-800 border-rose-200'
+                        }`}>
+                          {isUrgent ? '🚨 Mendesak: Proses Berkas H-3 Bulan' : `Proses BUP Dinkes (${item.sisa_bulan} Bulan Lagi)`}
                         </div>
                       ) : (
                         <button
                           onClick={() => {
                             const peg = activePegawai.find((p) => p.nip === item.nip);
-                            if (peg) handleOpenSendNotification(peg, 'Pensiun BUP / Masa Kontrak', `Jatuh tempo BUP/Kontrak pada ${formatDateIndonesian(item.tanggal_pensiun)}. Imbauan pengurusan berkas pensiun/kontrak.`);
+                            if (peg) handleOpenSendNotification(peg, 'Pensiun BUP / Masa Kontrak', `Jatuh tempo BUP/Kontrak pada ${formatDateIndonesian(item.tanggal_pensiun)}. Imbauan pengurusan berkas.`);
                           }}
-                          className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5"
+                          className="w-full py-2 bg-emerald-600 text-white rounded-lg text-xs font-bold flex items-center justify-center gap-1.5 cursor-pointer"
                         >
                           <Send className="w-3.5 h-3.5" />
                           <span>Kirim Pemberitahuan</span>
