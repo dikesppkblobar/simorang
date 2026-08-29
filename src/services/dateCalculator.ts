@@ -165,7 +165,7 @@ export function getPegawaiTmtJafung(pegawai: Pegawai, skList: RiwayatSK[] = []):
 
 /**
  * Menghitung Daftar Alert KGB (Siklus 2 Tahun / 24 Bulan)
- * HANYA menampilkan alert yang jatuh tempo di Tahun Berjalan (currentYear) atau yang sudah jatuh tempo sebelumnya.
+ * HANYA menampilkan alert pegawai yang H-3 Bulan (sisa_bulan <= 3) menuju jatuh tempo di tahun berjalan atau yang sudah jatuh tempo sebelumnya.
  */
 export function calculateKgbAlerts(
   pegawaiList: Pegawai[],
@@ -174,7 +174,7 @@ export function calculateKgbAlerts(
 ): AlertKGBItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
   const currentYear = refDate.getFullYear();
-  const activePegawai = pegawaiList.filter((p) => !p.is_deleted);
+  const activePegawai = pegawaiList.filter((p) => !p.is_deleted && p.status_kepegawaian === 'PNS');
   const alerts: AlertKGBItem[] = [];
 
   for (const pegawai of activePegawai) {
@@ -189,15 +189,15 @@ export function calculateKgbAlerts(
     const sisaBulan = getMonthsBetween(refDate, jatuhTempoDate);
     const sisaHari = getDaysBetween(refDate, jatuhTempoDate);
 
-    // Saring hanya untuk tahun berjalan (Jatuh tempo pada tahun berjalan atau overdue sebelumnya)
-    const isTahunBerjalan = jatuhTempoDate.getFullYear() === currentYear || (jatuhTempoDate.getFullYear() < currentYear && sisaBulan <= 0);
+    // Saring HANYA pegawai yang H-3 Bulan (sisaBulan <= 3 atau elapsedMonths >= 21) pada tahun berjalan atau overdue sebelumnya
+    const isTahunBerjalanOrOverdue = jatuhTempoDate.getFullYear() <= currentYear || sisaBulan <= 3;
 
-    if (isTahunBerjalan && (elapsedMonths >= 21 || sisaBulan <= 3)) {
+    if (isTahunBerjalanOrOverdue && (sisaBulan <= 3 || elapsedMonths >= 21 || sisaHari <= 90)) {
       let status: 'Bahaya' | 'Peringatan' | 'Aman' = 'Peringatan';
-      if (sisaBulan <= 0) {
-        status = 'Bahaya'; // Sudah lewat jatuh tempo
+      if (sisaBulan <= 0 || sisaHari <= 0) {
+        status = 'Bahaya'; // Sudah lewat / jatuh tempo saat ini
       } else if (sisaBulan <= 3) {
-        status = 'Peringatan';
+        status = 'Peringatan'; // H-3 Bulan
       }
 
       alerts.push({
@@ -377,7 +377,9 @@ export function getBUP(jenisJabatan: string, jabatanSpesifik: string): number {
 }
 
 /**
- * Menghitung Alert Pensiun (BUP) & Akhir Masa Kontrak di TAHUN BERJALAN
+ * Menghitung Alert Pensiun (BUP) & Akhir Masa Kontrak di TAHUN INI & TAHUN DEPAN
+ * Menampilkan ASN/Non-ASN yang akan pensiun (PNS BUP) atau habis masa kontrak (PPPK / Non-ASN)
+ * Memberikan status peringatan tegas ketika sudah mendekati H-3 Bulan (sisa_bulan <= 3).
  */
 export function calculatePensiunAlerts(
   pegawaiList: Pegawai[],
@@ -385,6 +387,7 @@ export function calculatePensiunAlerts(
 ): AlertPensiunItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
   const currentYear = refDate.getFullYear();
+  const nextYear = currentYear + 1;
   const activePegawai = pegawaiList.filter((p) => !p.is_deleted);
   const alerts: AlertPensiunItem[] = [];
 
@@ -400,10 +403,23 @@ export function calculatePensiunAlerts(
       const sisaBulan = getMonthsBetween(refDate, pensiunDate);
       const pensiunYear = pensiunDate.getFullYear();
 
-      // Saring hanya untuk tahun berjalan (BUP di tahun ini atau overdue sebelumnya)
-      const isTahunBerjalan = pensiunYear === currentYear || (pensiunYear < currentYear && sisaBulan <= 0);
+      // Saring untuk tahun ini, tahun depan, atau yang overdue sebelumnya
+      const isTargetYear = pensiunYear === currentYear || pensiunYear === nextYear || (pensiunYear < currentYear && sisaBulan <= 0);
 
-      if (isTahunBerjalan && sisaBulan <= 18) {
+      if (isTargetYear) {
+        let statusAlert = '';
+        if (sisaBulan <= 0) {
+          statusAlert = 'Sudah Memasuki BUP Pensiun';
+        } else if (sisaBulan <= 3) {
+          statusAlert = '⚠️ Mendesak: BUP Pensiun (H-3 Bulan)';
+        } else if (sisaBulan <= 6) {
+          statusAlert = 'Persiapan DPCP Pensiun (H-6 Bulan)';
+        } else if (pensiunYear === currentYear) {
+          statusAlert = `BUP Pensiun Tahun Ini (${currentYear})`;
+        } else {
+          statusAlert = `BUP Pensiun Tahun Depan (${nextYear})`;
+        }
+
         alerts.push({
           nip: pegawai.nip,
           nama_lengkap: pegawai.nama_lengkap,
@@ -415,7 +431,7 @@ export function calculatePensiunAlerts(
           batas_usia_pensiun: bup,
           tanggal_pensiun: formatDate(pensiunDate),
           sisa_bulan: sisaBulan,
-          status_alert: sisaBulan <= 6 ? 'Segera BUP Pensiun' : 'Persiapan DPCP Pensiun',
+          status_alert: statusAlert,
         });
       }
     } else if (
@@ -440,10 +456,23 @@ export function calculatePensiunAlerts(
       const sisaBulan = getMonthsBetween(refDate, expDate);
       const expYear = expDate.getFullYear();
 
-      // Saring hanya untuk tahun berjalan
-      const isTahunBerjalan = expYear === currentYear || (expYear < currentYear && sisaBulan <= 0);
+      // Saring untuk tahun ini, tahun depan, atau overdue
+      const isTargetYear = expYear === currentYear || expYear === nextYear || (expYear < currentYear && sisaBulan <= 0);
 
-      if (isTahunBerjalan && sisaBulan <= 18) {
+      if (isTargetYear) {
+        let statusAlert = '';
+        if (sisaBulan <= 0) {
+          statusAlert = 'Masa Perjanjian Kerja Telah Berakhir';
+        } else if (sisaBulan <= 3) {
+          statusAlert = '⚠️ Mendesak: Habis Kontrak PPPK (H-3 Bulan)';
+        } else if (sisaBulan <= 6) {
+          statusAlert = 'Evaluasi Kinerja & Persiapan Perpanjangan Kontrak';
+        } else if (expYear === currentYear) {
+          statusAlert = `Habis Kontrak PPPK Tahun Ini (${currentYear})`;
+        } else {
+          statusAlert = `Habis Kontrak PPPK Tahun Depan (${nextYear})`;
+        }
+
         alerts.push({
           nip: pegawai.nip,
           nama_lengkap: pegawai.nama_lengkap,
@@ -455,7 +484,7 @@ export function calculatePensiunAlerts(
           batas_usia_pensiun: 5, // Masa Perjanjian Kontrak (5 thn)
           tanggal_pensiun: expiryDateStr,
           sisa_bulan: sisaBulan,
-          status_alert: sisaBulan <= 6 ? 'Habis Kontrak PPPK (Evaluasi Kinerja)' : 'Persiapan Perpanjangan Kontrak PPPK',
+          status_alert: statusAlert,
         });
       }
     } else if (pegawai.status_kepegawaian === 'Non-ASN') {
@@ -477,10 +506,23 @@ export function calculatePensiunAlerts(
       const sisaBulan = getMonthsBetween(refDate, expDate);
       const expYear = expDate.getFullYear();
 
-      // Saring hanya untuk tahun berjalan
-      const isTahunBerjalan = expYear === currentYear || (expYear < currentYear && sisaBulan <= 0);
+      // Saring untuk tahun ini, tahun depan, atau overdue
+      const isTargetYear = expYear === currentYear || expYear === nextYear || (expYear < currentYear && sisaBulan <= 0);
 
-      if (isTahunBerjalan && sisaBulan <= 18) {
+      if (isTargetYear) {
+        let statusAlert = '';
+        if (sisaBulan <= 0) {
+          statusAlert = 'Masa SK Kontrak Non-ASN Telah Berakhir';
+        } else if (sisaBulan <= 3) {
+          statusAlert = '⚠️ Mendesak: Habis Kontrak Non-ASN (H-3 Bulan)';
+        } else if (sisaBulan <= 6) {
+          statusAlert = 'Persiapan Evaluasi & Pembaharuan SK Kontrak';
+        } else if (expYear === currentYear) {
+          statusAlert = `Habis Kontrak Non-ASN Tahun Ini (${currentYear})`;
+        } else {
+          statusAlert = `Habis Kontrak Non-ASN Tahun Depan (${nextYear})`;
+        }
+
         alerts.push({
           nip: pegawai.nip,
           nama_lengkap: pegawai.nama_lengkap,
@@ -492,7 +534,7 @@ export function calculatePensiunAlerts(
           batas_usia_pensiun: 1, // Kontrak Tahunan Non-ASN
           tanggal_pensiun: expiryDateStr,
           sisa_bulan: sisaBulan,
-          status_alert: sisaBulan <= 3 ? 'Habis Kontrak Non-ASN (Evaluasi)' : 'Persiapan Pembaharuan SK Kontrak',
+          status_alert: statusAlert,
         });
       }
     }
