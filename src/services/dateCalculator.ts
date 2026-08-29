@@ -217,6 +217,234 @@ export function calculateKgbAlerts(
   return alerts.sort((a, b) => a.sisa_bulan - b.sisa_bulan);
 }
 
+export const PANGKAT_HIERARCHY: Record<string, { nama: string; next: string; nextNama: string }> = {
+  'I/a': { nama: 'Juru Muda', next: 'I/b', nextNama: 'Juru Muda Tk. I' },
+  'I/b': { nama: 'Juru Muda Tk. I', next: 'I/c', nextNama: 'Juru' },
+  'I/c': { nama: 'Juru', next: 'I/d', nextNama: 'Juru Tk. I' },
+  'I/d': { nama: 'Juru Tk. I', next: 'II/a', nextNama: 'Pengatur Muda' },
+  'II/a': { nama: 'Pengatur Muda', next: 'II/b', nextNama: 'Pengatur Muda Tk. I' },
+  'II/b': { nama: 'Pengatur Muda Tk. I', next: 'II/c', nextNama: 'Pengatur' },
+  'II/c': { nama: 'Pengatur', next: 'II/d', nextNama: 'Pengatur Tk. I' },
+  'II/d': { nama: 'Pengatur Tk. I', next: 'III/a', nextNama: 'Penata Muda' },
+  'III/a': { nama: 'Penata Muda', next: 'III/b', nextNama: 'Penata Muda Tk. I' },
+  'III/b': { nama: 'Penata Muda Tk. I', next: 'III/c', nextNama: 'Penata' },
+  'III/c': { nama: 'Penata', next: 'III/d', nextNama: 'Penata Tk. I' },
+  'III/d': { nama: 'Penata Tk. I', next: 'IV/a', nextNama: 'Pembina' },
+  'IV/a': { nama: 'Pembina', next: 'IV/b', nextNama: 'Pembina Tk. I' },
+  'IV/b': { nama: 'Pembina Tk. I', next: 'IV/c', nextNama: 'Pembina Utama Muda' },
+  'IV/c': { nama: 'Pembina Utama Muda', next: 'IV/d', nextNama: 'Pembina Utama Madya' },
+  'IV/d': { nama: 'Pembina Utama Madya', next: 'IV/e', nextNama: 'Pembina Utama' },
+  'IV/e': { nama: 'Pembina Utama', next: 'IV/e', nextNama: 'Pembina Utama' },
+};
+
+/**
+ * Menghitung detail jalur kenaikan pangkat, golongan tujuan, dan status syarat khusus
+ */
+export function getPangkatProgressionDetail(pegawai: Pegawai) {
+  const gol = (pegawai.golongan_pangkat || 'III/a').trim();
+  const info = PANGKAT_HIERARCHY[gol] || {
+    nama: pegawai.nama_pangkat || 'Penata Muda',
+    next: 'III/b',
+    nextNama: 'Penata Muda Tk. I',
+  };
+
+  const namaPangkatSekarang = pegawai.nama_pangkat || info.nama;
+  const golTujuan = info.next;
+  const namaPangkatTujuan = info.nextNama;
+
+  const isS1OrAbove =
+    Boolean(pegawai.pendidikan_terakhir && /s-?1|sarjana|s-?2|magister|s-?3|doktor/i.test(pegawai.pendidikan_terakhir)) ||
+    pegawai.status_ujian_dinas === 'Penyesuaian Ijazah';
+
+  const isTugasBelajar =
+    pegawai.status_izin_belajar ||
+    pegawai.status_ujian_dinas === 'Penyesuaian Ijazah' ||
+    pegawai.status_pencantuman_gelar === 'Proses Verval' ||
+    pegawai.status_pencantuman_gelar === 'Terverifikasi BKN' ||
+    Boolean(pegawai.nama_universitas_pt && pegawai.nama_universitas_pt.trim() !== '');
+
+  // 1. STRUKTURAL: Tidak butuh UKOM/Ujian Dinas, melainkan validasi Diklat Kepemimpinan (Diklatpim/PKP/PKA), SPMT Jabatan >= 1 Thn, dan SKP 2 Thn Baik
+  if (pegawai.jenis_jabatan === 'Struktural') {
+    // Eselon III / Administrator (III/d -> IV/a atau IV/a -> IV/b) butuh PKA / Diklatpim III
+    // Eselon IV / Pengawas (III/c -> III/d) butuh PKP / Diklatpim IV
+    const isPkaLevel = gol === 'III/d' || gol === 'IV/a' || gol === 'IV/b';
+    const diklatBadgeLabel = isPkaLevel ? 'Diklatpim / PKA' : 'Diklatpim / PKP';
+    const jabatanLabel = pegawai.jabatan_spesifik || 'Pejabat Struktural';
+
+    return {
+      golonganSekarang: gol,
+      namaPangkatSekarang,
+      golonganTujuan: golTujuan,
+      namaPangkatTujuan,
+      jalurKenaikanText: `${gol} → ${golTujuan}`,
+      subtextJalur: `Struktural (${jabatanLabel})`,
+      syaratKhususType: 'struktural' as const,
+      syaratKhususBadgeText: diklatBadgeLabel,
+      syaratKhususStatus: 'perlu' as const,
+      syaratKhususDesc: 'Lulus Diklat Kepemimpinan (PKA/PKP), Masa Jabatan Struktural >= 1 Thn, SKP 2 Thn Baik',
+    };
+  }
+
+  // 2. PELAKSANA II/d -> III/a
+  if (pegawai.jenis_jabatan === 'Pelaksana' && gol === 'II/d') {
+    const jabatanLabel = pegawai.jabatan_spesifik || 'Pelaksana';
+    // Jika ada peningkatan kualifikasi ijazah S1 / Penyesuaian Ijazah
+    if (isS1OrAbove || isTugasBelajar) {
+      const isVervalDone = pegawai.status_pencantuman_gelar === 'Terverifikasi BKN';
+      return {
+        golonganSekarang: gol,
+        namaPangkatSekarang,
+        golonganTujuan: 'III/a',
+        namaPangkatTujuan: 'Penata Muda',
+        jalurKenaikanText: `${gol} → III/a`,
+        subtextJalur: `Pelaksana (${jabatanLabel})`,
+        syaratKhususType: 'tugas_belajar' as const,
+        syaratKhususBadgeText: isVervalDone ? 'Syarat Lengkap' : 'Validasi S1',
+        syaratKhususStatus: (isVervalDone ? 'terpenuhi' : 'perlu') as 'terpenuhi' | 'perlu',
+        syaratKhususDesc: isVervalDone
+          ? 'Gelar & Ijazah S1 Terverifikasi BKN'
+          : 'Wajib Verval Ijazah S1 & SK Izin Belajar / BKN untuk Penyesuaian Ijazah',
+      };
+    }
+
+    // Reguler II/d ke III/a wajib Ujian Dinas (STLUD Tk. I)
+    const isStludLulus =
+      pegawai.status_ujian_dinas === 'Lulus STLUD' ||
+      Boolean(pegawai.no_stlud && pegawai.no_stlud.trim() !== '');
+    return {
+      golonganSekarang: gol,
+      namaPangkatSekarang,
+      golonganTujuan: 'III/a',
+      namaPangkatTujuan: 'Penata Muda',
+      jalurKenaikanText: `${gol} → III/a`,
+      subtextJalur: `Pelaksana (${jabatanLabel})`,
+      syaratKhususType: 'ujian_dinas' as const,
+      syaratKhususBadgeText: isStludLulus ? 'Syarat Lengkap' : 'Wajib Ujian Dinas',
+      syaratKhususStatus: (isStludLulus ? 'terpenuhi' : 'perlu') as 'terpenuhi' | 'perlu',
+      syaratKhususDesc: isStludLulus
+        ? `Lulus Ujian Dinas Tk. I (STLUD: ${pegawai.no_stlud || 'Terdata'})`
+        : 'Wajib Lulus Ujian Dinas Tingkat I (STLUD) untuk pindah Golongan II ke III',
+    };
+  }
+
+  // 3. FUNGSIONAL II/d -> III/a (Wajib UKOM Alih Kategori Keterampilan ke Keahlian)
+  if (pegawai.jenis_jabatan === 'Fungsional' && gol === 'II/d') {
+    const isUkomLulus = Boolean(pegawai.status_ukom || pegawai.status_ukkj === 'Lulus UKKJ');
+    const jabatanLabel = pegawai.jabatan_spesifik || 'Kategori Keterampilan';
+    return {
+      golonganSekarang: gol,
+      namaPangkatSekarang,
+      golonganTujuan: 'III/a',
+      namaPangkatTujuan: 'Penata Muda',
+      jalurKenaikanText: `${gol} → III/a`,
+      subtextJalur: `Fungsional (${jabatanLabel})`,
+      syaratKhususType: 'ukom' as const,
+      syaratKhususBadgeText: isUkomLulus ? 'Syarat Lengkap' : 'Wajib UKOM',
+      syaratKhususStatus: (isUkomLulus ? 'terpenuhi' : 'perlu') as 'terpenuhi' | 'perlu',
+      syaratKhususDesc: isUkomLulus
+        ? 'Lulus Uji Kompetensi Alih Kategori Keterampilan ke Keahlian'
+        : `Wajib UKOM Alih Kategori: ${jabatanLabel} → Keahlian (Ahli Pertama)`,
+    };
+  }
+
+  // 4. FUNGSIONAL III/b -> III/c (Wajib UKOM Kenaikan Jenjang Ahli Pertama ke Ahli Muda)
+  if (pegawai.jenis_jabatan === 'Fungsional' && gol === 'III/b') {
+    const isUkomLulus = Boolean(pegawai.status_ukom || pegawai.status_ukkj === 'Lulus UKKJ');
+    const jabatanLabel = pegawai.jabatan_spesifik || 'Ahli Pertama';
+    return {
+      golonganSekarang: gol,
+      namaPangkatSekarang,
+      golonganTujuan: 'III/c',
+      namaPangkatTujuan: 'Penata',
+      jalurKenaikanText: `${gol} → III/c`,
+      subtextJalur: `Fungsional (${jabatanLabel})`,
+      syaratKhususType: 'ukom' as const,
+      syaratKhususBadgeText: isUkomLulus ? 'Syarat Lengkap' : 'Wajib UKOM',
+      syaratKhususStatus: (isUkomLulus ? 'terpenuhi' : 'perlu') as 'terpenuhi' | 'perlu',
+      syaratKhususDesc: isUkomLulus
+        ? 'Lulus Uji Kompetensi Kenaikan Jenjang Ahli Muda'
+        : 'Wajib Uji Kompetensi Kenaikan Jenjang (UKKJ) Ahli Pertama ke Ahli Muda',
+    };
+  }
+
+  // 5. FUNGSIONAL III/d -> IV/a (Wajib UKOM Kenaikan Jenjang Ahli Muda ke Ahli Madya)
+  if (pegawai.jenis_jabatan === 'Fungsional' && gol === 'III/d') {
+    const isUkomLulus = Boolean(pegawai.status_ukom || pegawai.status_ukkj === 'Lulus UKKJ');
+    const jabatanLabel = pegawai.jabatan_spesifik || 'Ahli Muda';
+    return {
+      golonganSekarang: gol,
+      namaPangkatSekarang,
+      golonganTujuan: 'IV/a',
+      namaPangkatTujuan: 'Pembina',
+      jalurKenaikanText: `${gol} → IV/a`,
+      subtextJalur: `Fungsional (${jabatanLabel})`,
+      syaratKhususType: 'ukom' as const,
+      syaratKhususBadgeText: isUkomLulus ? 'Syarat Lengkap' : 'Wajib UKOM',
+      syaratKhususStatus: (isUkomLulus ? 'terpenuhi' : 'perlu') as 'terpenuhi' | 'perlu',
+      syaratKhususDesc: isUkomLulus
+        ? 'Lulus Uji Kompetensi Kenaikan Jenjang Ahli Madya'
+        : 'Wajib Uji Kompetensi Kenaikan Jenjang (UKKJ) Ahli Muda ke Ahli Madya',
+    };
+  }
+
+  // 6. KASUS TUGAS BELAJAR / PENINGKATAN PENDIDIKAN DI LUAR II/d
+  if (
+    isTugasBelajar &&
+    (pegawai.status_ujian_dinas === 'Penyesuaian Ijazah' ||
+      pegawai.status_izin_belajar ||
+      pegawai.status_pencantuman_gelar === 'Proses Verval')
+  ) {
+    const isVervalDone = pegawai.status_pencantuman_gelar === 'Terverifikasi BKN';
+    const jabatanLabel = pegawai.jabatan_spesifik || pegawai.jenis_jabatan;
+    return {
+      golonganSekarang: gol,
+      namaPangkatSekarang,
+      golonganTujuan: golTujuan,
+      namaPangkatTujuan,
+      jalurKenaikanText: `${gol} → ${golTujuan}`,
+      subtextJalur: `${pegawai.jenis_jabatan} (${jabatanLabel})`,
+      syaratKhususType: 'tugas_belajar' as const,
+      syaratKhususBadgeText: isVervalDone ? 'Syarat Lengkap' : 'Validasi S1',
+      syaratKhususStatus: (isVervalDone ? 'terpenuhi' : 'perlu') as 'terpenuhi' | 'perlu',
+      syaratKhususDesc: isVervalDone
+        ? 'Ijazah & Gelar Terverifikasi BKN'
+        : 'Perlu Verval Ijazah & SK Izin Belajar / BKN',
+    };
+  }
+
+  // 7. FUNGSIONAL REGULER DALAM JENJANG (misal III/a -> III/b, III/c -> III/d, IV/a -> IV/b)
+  if (pegawai.jenis_jabatan === 'Fungsional') {
+    const jabatanLabel = pegawai.jabatan_spesifik || 'Jabatan Fungsional';
+    return {
+      golonganSekarang: gol,
+      namaPangkatSekarang,
+      golonganTujuan: golTujuan,
+      namaPangkatTujuan,
+      jalurKenaikanText: `${gol} → ${golTujuan}`,
+      subtextJalur: `Fungsional (${jabatanLabel})`,
+      syaratKhususType: 'none' as const,
+      syaratKhususBadgeText: 'Syarat Lengkap',
+      syaratKhususStatus: 'terpenuhi' as const,
+      syaratKhususDesc: 'Reguler Angka Kredit Konversi SKP / PAK Integrasi Memenuhi (Tanpa UKOM)',
+    };
+  }
+
+  // 8. PELAKSANA REGULER LAINNYA (misal II/a -> II/b, II/b -> II/c, II/c -> II/d, I/a -> I/b)
+  const jabatanLabel = pegawai.jabatan_spesifik || 'Pelaksana';
+  return {
+    golonganSekarang: gol,
+    namaPangkatSekarang,
+    golonganTujuan: golTujuan,
+    namaPangkatTujuan,
+    jalurKenaikanText: `${gol} → ${golTujuan}`,
+    subtextJalur: `Pelaksana (${jabatanLabel})`,
+    syaratKhususType: 'none' as const,
+    syaratKhususBadgeText: 'Syarat Lengkap',
+    syaratKhususStatus: 'terpenuhi' as const,
+    syaratKhususDesc: 'Masa Kerja Golongan 4 Tahun Terpenuhi (SKP Baik/Sangat Baik)',
+  };
+}
+
 /**
  * Menghitung Periode BKN Terdekat (6 Periode: Feb, Apr, Jun, Ags, Okt, Des)
  */
@@ -236,8 +464,29 @@ export function getPeriodeBknTerdekat(targetDate: Date): string {
 }
 
 /**
+ * Menghitung Periode BKN Singkat (Format: 'Okt 2026', 'Feb 2027')
+ */
+export function getPeriodeBknShort(targetDate: Date): string {
+  const bknMonths = [1, 3, 5, 7, 9, 11]; // 0-indexed: Feb(1), Apr(3), Jun(5), Ags(7), Okt(9), Des(11)
+  const bknShortNames = ['Feb', 'Apr', 'Jun', 'Ags', 'Okt', 'Des'];
+
+  const month = targetDate.getMonth();
+  const year = targetDate.getFullYear();
+
+  for (let i = 0; i < bknMonths.length; i++) {
+    if (month <= bknMonths[i]) {
+      return `${bknShortNames[i]} ${year}`;
+    }
+  }
+  return `Feb ${year + 1}`;
+}
+
+/**
  * Menghitung Daftar Alert Kenaikan Pangkat (Siklus 4 Tahun / 48 Bulan)
- * HANYA menampilkan alert yang akan naik pangkat pada Tahun Berjalan (currentYear) atau yang sudah lewat/overdue.
+ * Logika Alert Baru:
+ * - H-3 Bulan: Jika periode usulan jatuh pada tahun berjalan dan berada di rentang 90 hari / <= 3 bulan (🔴 H-3 Bln (Bulan Tahun))
+ * - Lewat Tempo: Jika tahun/tanggal target sudah terlewat (⚠️ Lewat Tempo (Bulan Tahun))
+ * - Belum Waktunya: Jika belum masuk waktu usulan (⚪ Aman / Belum Waktunya)
  */
 export function calculatePangkatAlerts(
   pegawaiList: Pegawai[],
@@ -257,34 +506,71 @@ export function calculatePangkatAlerts(
     const jatuhTempoDate = new Date(tmtDate);
     jatuhTempoDate.setFullYear(jatuhTempoDate.getFullYear() + 4);
 
-    const elapsedMonths = getMonthsBetween(tmtDate, refDate);
     const sisaBulan = getMonthsBetween(refDate, jatuhTempoDate);
+    const targetYear = jatuhTempoDate.getFullYear();
+    const shortPeriode = getPeriodeBknShort(jatuhTempoDate);
+    const progression = getPangkatProgressionDetail(pegawai);
 
-    // Saring hanya untuk tahun berjalan (Jatuh tempo pada tahun berjalan atau overdue sebelumnya)
-    const isTahunBerjalan = jatuhTempoDate.getFullYear() === currentYear || (jatuhTempoDate.getFullYear() < currentYear && sisaBulan <= 0);
+    // Penentuan Kategori Alert Baru:
+    let alertBadgeType: 'h3' | 'overdue' | 'aman' = 'aman';
+    let alertBadgeText = '⚪ Aman / Belum Waktunya';
+    let statusAlert: 'Bahaya' | 'Peringatan' | 'Aman' = 'Aman';
 
-    if (isTahunBerjalan && (elapsedMonths >= 45 || sisaBulan <= 3)) {
-      let status: 'Bahaya' | 'Peringatan' | 'Aman' = 'Peringatan';
-      if (sisaBulan <= 0) {
-        status = 'Bahaya';
-      }
-
-      alerts.push({
-        nip: pegawai.nip,
-        nama_lengkap: pegawai.nama_lengkap,
-        unit_kerja: pegawai.unit_kerja,
-        jenis_jabatan: pegawai.jenis_jabatan,
-        status_ukom: Boolean(pegawai.status_ukom || pegawai.status_ukkj === 'Lulus UKKJ'),
-        tmt_pangkat_terakhir: tmtPangkatTerakhir,
-        tanggal_jatuh_tempo: formatDate(jatuhTempoDate),
-        periode_bkn_terdekat: getPeriodeBknTerdekat(jatuhTempoDate),
-        sisa_bulan: sisaBulan,
-        status_alert: status,
-      });
+    // 1. Lewat Tempo (Overdue) - jika tanggal jatuh tempo sudah lewat di masa lalu
+    if (sisaBulan < 0 || (targetYear < currentYear && sisaBulan <= 0)) {
+      alertBadgeType = 'overdue';
+      alertBadgeText = `⚠️ Lewat Tempo (${shortPeriode})`;
+      statusAlert = 'Bahaya';
     }
+    // 2. H-3 Bulan (Periode Usulan Tahun Berjalan / Terdekat dalam rentang 90 hari)
+    else if (sisaBulan >= 0 && sisaBulan <= 3) {
+      alertBadgeType = 'h3';
+      alertBadgeText = `🔴 H-3 Bln (${shortPeriode})`;
+      statusAlert = 'Peringatan';
+    }
+    // 3. Belum Waktunya / Aman
+    else {
+      alertBadgeType = 'aman';
+      alertBadgeText = '⚪ Aman / Belum Waktunya';
+      statusAlert = 'Aman';
+    }
+
+    alerts.push({
+      nip: pegawai.nip,
+      nama_lengkap: pegawai.nama_lengkap,
+      unit_kerja: pegawai.unit_kerja,
+      jenis_jabatan: pegawai.jenis_jabatan,
+      status_ukom: Boolean(pegawai.status_ukom || pegawai.status_ukkj === 'Lulus UKKJ'),
+      tmt_pangkat_terakhir: tmtPangkatTerakhir,
+      tanggal_jatuh_tempo: formatDate(jatuhTempoDate),
+      periode_bkn_terdekat: getPeriodeBknTerdekat(jatuhTempoDate),
+      periode_bkn_short: shortPeriode,
+      sisa_bulan: sisaBulan,
+      status_alert: statusAlert,
+      alert_badge_type: alertBadgeType,
+      alert_badge_text: alertBadgeText,
+      golongan_sekarang: progression.golonganSekarang,
+      nama_pangkat_sekarang: progression.namaPangkatSekarang,
+      golongan_tujuan: progression.golonganTujuan,
+      nama_pangkat_tujuan: progression.namaPangkatTujuan,
+      jalur_kenaikan: progression.jalurKenaikanText,
+      subtext_jalur: progression.subtextJalur,
+      syarat_khusus_type: progression.syaratKhususType,
+      syarat_khusus_label: progression.syaratKhususBadgeText,
+      syarat_khusus_status: progression.syaratKhususStatus,
+      syarat_khusus_desc: progression.syaratKhususDesc,
+    });
   }
 
-  return alerts.sort((a, b) => a.sisa_bulan - b.sisa_bulan);
+  // Urutkan: Yang Lewat Tempo & H-3 Bulan terlebih dahulu (sisaBulan terkecil), lalu yang Aman
+  return alerts.sort((a, b) => {
+    // Prioritas: overdue (1) -> h3 (2) -> aman (3)
+    const priority = { overdue: 1, h3: 2, aman: 3 };
+    const pA = priority[a.alert_badge_type || 'aman'];
+    const pB = priority[b.alert_badge_type || 'aman'];
+    if (pA !== pB) return pA - pB;
+    return a.sisa_bulan - b.sisa_bulan;
+  });
 }
 
 /**
