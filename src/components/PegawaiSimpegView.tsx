@@ -691,71 +691,96 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
   return (
     <div className="space-y-6">
       {/* Top Search & Filter Bar */}
-      <div className="bg-white p-5 rounded-xl border border-slate-200/80 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
-        <div className="flex flex-1 items-center space-x-3">
-          <div className="relative flex-1">
-            <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-3" />
-            <input
-              type="text"
-              placeholder="Cari NIK, NIP, Nama, Unit Kerja, Jabatan, atau Profesi SDMK..."
-              value={searchTerm}
-              onChange={(e) => {
-                setSearchTerm(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="w-full pl-10 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-xs focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all"
-            />
-          </div>
-
-          <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-[#64748B]" />
-            <select
-              value={filterStatus}
-              onChange={(e) => {
-                setFilterStatus(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-slate-50 border border-slate-200 text-xs text-[#334155] px-3 py-2 rounded-lg outline-none font-medium"
-            >
-              <option value="Semua">Semua Status Kepegawaian</option>
-              <option value="PNS">PNS</option>
-              <option value="PPPK Penuh Waktu">PPPK Penuh Waktu</option>
-              <option value="PPPK Paruh Waktu">PPPK Paruh Waktu</option>
-              <option value="Non-ASN">Non-ASN (PKWT)</option>
-            </select>
-
-            <select
-              value={filterJabatan}
-              onChange={(e) => {
-                setFilterJabatan(e.target.value);
-                setCurrentPage(1);
-              }}
-              className="bg-slate-50 border border-slate-200 text-xs text-[#334155] px-3 py-2 rounded-lg outline-none font-medium"
-            >
-              <option value="Semua">Semua Jabatan</option>
-              <option value="Fungsional">Fungsional</option>
-              <option value="Pelaksana">Pelaksana</option>
-              <option value="Struktural">Struktural</option>
-            </select>
-          </div>
-        </div>
-
-        <div className="flex items-center space-x-3">
-          <button
-            onClick={() => {
-              setShowDeleted(!showDeleted);
+      <div className="bg-white p-4 sm:p-5 rounded-xl border border-slate-200/80 shadow-sm space-y-3">
+        {/* Row 1: Full-width Long Search Input */}
+        <div className="relative w-full">
+          <Search className="w-4 h-4 text-[#64748B] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <input
+            type="text"
+            placeholder="Cari NIK, NIP, Nama Lengkap, Unit Kerja, Jabatan, atau Profesi SDMK..."
+            value={searchTerm}
+            onChange={(e) => {
+              setSearchTerm(e.target.value);
               setCurrentPage(1);
             }}
-            className={`px-3 py-2 rounded-lg text-xs font-semibold border transition-all ${
-              showDeleted
-                ? 'bg-red-50 text-red-700 border-red-200'
-                : 'bg-slate-100 text-[#334155] border-slate-200 hover:bg-slate-200'
-            }`}
-          >
-            {showDeleted ? 'Sembunyikan Non-Aktif' : 'Tampilkan Non-Aktif'}
-          </button>
+            className="w-full pl-10 pr-10 py-2.5 bg-slate-50 border border-slate-200 rounded-lg text-xs sm:text-sm text-slate-800 placeholder:text-slate-400 focus:ring-2 focus:ring-blue-500 focus:bg-white outline-none transition-all shadow-2xs font-medium"
+          />
+          {searchTerm && (
+            <button
+              type="button"
+              onClick={() => {
+                setSearchTerm('');
+                setCurrentPage(1);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 p-1 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200/70 transition-colors"
+              title="Hapus pencarian"
+            >
+              <X className="w-3.5 h-3.5" />
+            </button>
+          )}
+        </div>
 
-          <button
+        {/* Row 2: Filters & Actions Grid (Responsive on Mobile & Desktop) */}
+        <div className="flex flex-col lg:flex-row items-stretch lg:items-center justify-between gap-2.5 pt-0.5">
+          {/* Filters Group (Grid 1 col on mobile, 2 cols on tablet/desktop) */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 flex-1 max-w-2xl">
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-slate-400 pointer-events-none">
+                <Filter className="w-3.5 h-3.5" />
+              </span>
+              <select
+                value={filterStatus}
+                onChange={(e) => {
+                  setFilterStatus(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-xs text-[#334155] pl-8 pr-7 py-2 rounded-lg outline-none font-medium transition-colors cursor-pointer"
+              >
+                <option value="Semua">Semua Status Kepegawaian</option>
+                <option value="PNS">PNS</option>
+                <option value="PPPK Penuh Waktu">PPPK Penuh Waktu</option>
+                <option value="PPPK Paruh Waktu">PPPK Paruh Waktu</option>
+                <option value="Non-ASN">Non-ASN (PKWT)</option>
+              </select>
+            </div>
+
+            <div className="relative flex items-center">
+              <span className="absolute left-3 text-slate-400 pointer-events-none">
+                <Briefcase className="w-3.5 h-3.5" />
+              </span>
+              <select
+                value={filterJabatan}
+                onChange={(e) => {
+                  setFilterJabatan(e.target.value);
+                  setCurrentPage(1);
+                }}
+                className="w-full bg-slate-50 hover:bg-slate-100/80 border border-slate-200 text-xs text-[#334155] pl-8 pr-7 py-2 rounded-lg outline-none font-medium transition-colors cursor-pointer"
+              >
+                <option value="Semua">Semua Jenis Jabatan</option>
+                <option value="Fungsional">Fungsional</option>
+                <option value="Pelaksana">Pelaksana</option>
+                <option value="Struktural">Struktural</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Action Buttons Group */}
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-2 justify-end shrink-0">
+            <button
+              onClick={() => {
+                setShowDeleted(!showDeleted);
+                setCurrentPage(1);
+              }}
+              className={`flex-1 sm:flex-initial px-3 py-2 rounded-lg text-xs font-semibold border transition-all text-center ${
+                showDeleted
+                  ? 'bg-red-50 text-red-700 border-red-200'
+                  : 'bg-slate-100 text-[#334155] border-slate-200 hover:bg-slate-200'
+              }`}
+            >
+              {showDeleted ? 'Sembunyikan Non-Aktif' : 'Tampilkan Non-Aktif'}
+            </button>
+
+            <button
             onClick={() => {
               const defaultUnit = synchronizedUnitOptions[0] || 'Dinas Kesehatan Kab. Lombok Barat';
               setActiveFormTab('identitas');
@@ -838,6 +863,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
             <UserPlus className="w-4 h-4" />
             <span>Tambah Pegawai Baru</span>
           </button>
+          </div>
         </div>
       </div>
 
