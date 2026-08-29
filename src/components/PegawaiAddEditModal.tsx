@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { StatusKepegawaian, JenisJabatan, SumberPembiayaan, AppFeatureConfig, DEFAULT_FEATURE_CONFIG } from '../types';
 import { PANGKAT_GOLONGAN_MAP } from '../services/dateCalculator';
+import { PROFESI_SDMK_LIST, LULUSAN_PRESETS, detectProfesiFromLulusan, LulusanPreset } from '../data/profesiLulusanData';
 
 interface PegawaiAddEditModalProps {
   isOpen: boolean;
@@ -615,30 +616,32 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                   <div className={`grid grid-cols-1 ${featureConfig?.hak_cuti_tahunan !== false ? 'sm:grid-cols-2' : ''} gap-3 pt-1 border-t border-slate-100`}>
                     <div>
                       <label className="block font-bold text-[#1E293B] mb-1">
-                        Rumpun Profesi Kesehatan (SDMK):*
+                        Rumpun Profesi / Jabatan SDMK:*
                       </label>
                       <select
                         id="select-profesi-sdmk"
                         value={formData.profesi_sdmk}
-                        onChange={(e) => setFormData({ ...formData, profesi_sdmk: e.target.value })}
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          setFormData((prev: any) => {
+                            const matchingPreset = LULUSAN_PRESETS.find(p => p.profesi_sdmk === val);
+                            return {
+                              ...prev,
+                              profesi_sdmk: val,
+                              jabatan_spesifik: (!prev.jabatan_spesifik || prev.jabatan_spesifik === 'Staff Pelaksana' || prev.jabatan_spesifik === 'Perawat Ahli Pertama' || prev.jabatan_spesifik === 'Perawat Terampil') && matchingPreset
+                                ? matchingPreset.jabatan_spesifik
+                                : prev.jabatan_spesifik,
+                              jenis_jabatan: matchingPreset?.jenis_jabatan || prev.jenis_jabatan,
+                            };
+                          });
+                        }}
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                       >
-                        <option value="Dokter Umum">Dokter Umum</option>
-                        <option value="Dokter Gigi">Dokter Gigi</option>
-                        <option value="Dokter Spesialis">Dokter Spesialis</option>
-                        <option value="Perawat">Perawat</option>
-                        <option value="Bidan">Bidan</option>
-                        <option value="Tenaga Farmasi (Apoteker / TTK)">Tenaga Farmasi (Apoteker / TTK)</option>
-                        <option value="Nutrisionis / Dietisien">Nutrisionis / Dietisien</option>
-                        <option value="Tenaga Sanitasi Lingkungan / Sanitarian">Tenaga Sanitasi Lingkungan / Sanitarian</option>
-                        <option value="Pranata Laboratorium Kesehatan">Pranata Laboratorium Kesehatan</option>
-                        <option value="Epidemiolog Kesehatan">Epidemiolog Kesehatan</option>
-                        <option value="Perekam Medis & Informasi Kesehatan">Perekam Medis & Informasi Kesehatan</option>
-                        <option value="Radiografer / Teknisi Medis">Radiografer / Teknisi Medis</option>
-                        <option value="Fisioterapis">Fisioterapis</option>
-                        <option value="Administrator Kesehatan">Administrator Kesehatan</option>
-                        <option value="Penyuluh Kesehatan Masyarakat">Penyuluh Kesehatan Masyarakat</option>
-                        <option value="Tenaga Teknis / Administrasi">Tenaga Teknis / Administrasi</option>
+                        {PROFESI_SDMK_LIST.map((profesi) => (
+                          <option key={profesi} value={profesi}>
+                            {profesi}
+                          </option>
+                        ))}
                       </select>
                     </div>
 
@@ -732,6 +735,41 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                   id="tab-content-akademik"
                   className="p-3.5 sm:p-5 border-t border-indigo-100 bg-white space-y-4 animate-in fade-in duration-150"
                 >
+                  {/* Preset Kualifikasi Lulusan / Profesi Cepat */}
+                  <div className="bg-gradient-to-r from-blue-50/80 via-indigo-50/60 to-purple-50/70 border border-indigo-100 rounded-xl p-3 space-y-2">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-bold text-indigo-950 flex items-center gap-1.5">
+                        <Sparkles className="w-3.5 h-3.5 text-indigo-600" />
+                        Pilih Cepat Berdasarkan Kualifikasi Lulusan / Profesi Pegawai:
+                      </span>
+                      <span className="text-[10px] text-indigo-600 font-medium hidden sm:inline">
+                        Klik untuk mengisi otomatis jabatan &amp; pendidikan
+                      </span>
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 max-h-24 overflow-y-auto pr-1">
+                      {LULUSAN_PRESETS.map((preset) => (
+                        <button
+                          key={preset.label}
+                          type="button"
+                          onClick={() => {
+                            setFormData((prev: any) => ({
+                              ...prev,
+                              profesi_sdmk: preset.profesi_sdmk,
+                              pendidikan_terakhir: preset.pendidikan_terakhir,
+                              program_studi: preset.program_studi,
+                              jabatan_spesifik: preset.jabatan_spesifik,
+                              jenis_jabatan: preset.jenis_jabatan,
+                              jenjang_jabatan: preset.jenjang_jabatan || prev.jenjang_jabatan,
+                            }));
+                          }}
+                          className="px-2 py-1 bg-white hover:bg-indigo-600 hover:text-white text-indigo-900 border border-indigo-200/80 hover:border-indigo-600 rounded-md text-[10.5px] font-semibold transition-all shadow-2xs hover:shadow-xs active:scale-95 text-left"
+                        >
+                          {preset.label}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Baris Jabatan & Unit Kerja (Responsive Grid) */}
                   <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                     <div>
@@ -766,11 +804,17 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                         id="input-jabatan-spesifik"
                         type="text"
                         required
+                        list="list-jabatan-spesifik-suggestions"
                         value={formData.jabatan_spesifik}
                         onChange={(e) => setFormData({ ...formData, jabatan_spesifik: e.target.value })}
-                        placeholder="Contoh: Perawat Ahli Muda / Bidan Terampil"
+                        placeholder="Contoh: Dokter Ahli Pertama / Bidan Terampil / Analis Keuangan"
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                       />
+                      <datalist id="list-jabatan-spesifik-suggestions">
+                        {LULUSAN_PRESETS.map((p) => (
+                          <option key={p.jabatan_spesifik} value={p.jabatan_spesifik} />
+                        ))}
+                      </datalist>
                     </div>
 
                     <div>
@@ -802,11 +846,49 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                         id="input-pendidikan-terakhir"
                         type="text"
                         required
+                        list="list-pendidikan-terakhir-options"
                         value={formData.pendidikan_terakhir}
-                        onChange={(e) => setFormData({ ...formData, pendidikan_terakhir: e.target.value })}
-                        placeholder="Contoh: S1 Keperawatan / D3 Kebidanan"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const detected = detectProfesiFromLulusan(val, formData.program_studi);
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            pendidikan_terakhir: val,
+                            ...(detected && (!prev.jabatan_spesifik || prev.jabatan_spesifik === 'Staff Pelaksana' || prev.jabatan_spesifik === 'Perawat Ahli Pertama' || prev.jabatan_spesifik === 'Perawat Terampil')
+                              ? {
+                                  profesi_sdmk: detected.profesi_sdmk || prev.profesi_sdmk,
+                                  jabatan_spesifik: detected.jabatan_spesifik || prev.jabatan_spesifik,
+                                  jenis_jabatan: detected.jenis_jabatan || prev.jenis_jabatan,
+                                  jenjang_jabatan: detected.jenjang_jabatan || prev.jenjang_jabatan,
+                                }
+                              : {}),
+                          }));
+                        }}
+                        placeholder="Contoh: Profesi Dokter / S1 Farmasi / D3 Kebidanan"
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                       />
+                      <datalist id="list-pendidikan-terakhir-options">
+                        <option value="Profesi Dokter / S1 Kedokteran" />
+                        <option value="Profesi Dokter Gigi / S1 Kedokteran Gigi" />
+                        <option value="Spesialis (Sp.1)" />
+                        <option value="Profesi Ners / S1 Keperawatan" />
+                        <option value="D3 Keperawatan" />
+                        <option value="Profesi Bidan / S1 Kebidanan" />
+                        <option value="D3 Kebidanan" />
+                        <option value="Profesi Apoteker / S1 Farmasi" />
+                        <option value="D3 Farmasi" />
+                        <option value="D3 Analis Kesehatan / TLM" />
+                        <option value="D3 Gizi / S1 Gizi" />
+                        <option value="D3 Sanitasi / S1 Kesling" />
+                        <option value="D3 Rekam Medis" />
+                        <option value="D3 Radiologi" />
+                        <option value="D3 Fisioterapi" />
+                        <option value="S1 Kesehatan Masyarakat" />
+                        <option value="S1 Manajemen / Ilmu Administrasi" />
+                        <option value="S1 Akuntansi / Ekonomi" />
+                        <option value="S1 Teknik Informatika / Sistem Informasi" />
+                        <option value="SMA / SMK Sederajat" />
+                      </datalist>
                     </div>
 
                     <div>
@@ -818,7 +900,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                         type="text"
                         value={formData.nama_universitas_pt || ''}
                         onChange={(e) => setFormData({ ...formData, nama_universitas_pt: e.target.value })}
-                        placeholder="Contoh: Universitas Mataram / Poltekkes"
+                        placeholder="Contoh: Universitas Mataram / Poltekkes Mataram"
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                       />
                     </div>
@@ -830,11 +912,48 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                       <input
                         id="input-program-studi"
                         type="text"
+                        list="list-program-studi-options"
                         value={formData.program_studi || ''}
-                        onChange={(e) => setFormData({ ...formData, program_studi: e.target.value })}
-                        placeholder="Contoh: Ilmu Keperawatan / Kesehatan Masyarakat"
+                        onChange={(e) => {
+                          const val = e.target.value;
+                          const detected = detectProfesiFromLulusan(formData.pendidikan_terakhir, val);
+                          setFormData((prev: any) => ({
+                            ...prev,
+                            program_studi: val,
+                            ...(detected && (!prev.jabatan_spesifik || prev.jabatan_spesifik === 'Staff Pelaksana' || prev.jabatan_spesifik === 'Perawat Ahli Pertama' || prev.jabatan_spesifik === 'Perawat Terampil')
+                              ? {
+                                  profesi_sdmk: detected.profesi_sdmk || prev.profesi_sdmk,
+                                  jabatan_spesifik: detected.jabatan_spesifik || prev.jabatan_spesifik,
+                                  jenis_jabatan: detected.jenis_jabatan || prev.jenis_jabatan,
+                                  jenjang_jabatan: detected.jenjang_jabatan || prev.jenjang_jabatan,
+                                }
+                              : {}),
+                          }));
+                        }}
+                        placeholder="Contoh: Pendidikan Dokter / Kebidanan / Akuntansi"
                         className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                       />
+                      <datalist id="list-program-studi-options">
+                        <option value="Pendidikan Profesi Dokter" />
+                        <option value="Pendidikan Dokter Gigi" />
+                        <option value="Kebidanan" />
+                        <option value="Ilmu Keperawatan" />
+                        <option value="Farmasi" />
+                        <option value="Teknologi Laboratorium Medis" />
+                        <option value="Ilmu Gizi" />
+                        <option value="Kesehatan Lingkungan" />
+                        <option value="Rekam Medis & Informasi Kesehatan" />
+                        <option value="Kesehatan Masyarakat" />
+                        <option value="Epidemiologi" />
+                        <option value="Administrasi Kebijakan Kesehatan" />
+                        <option value="Promosi Kesehatan" />
+                        <option value="Teknik Radiologi" />
+                        <option value="Fisioterapi" />
+                        <option value="Administrasi Perkantoran" />
+                        <option value="Ilmu Administrasi Negara" />
+                        <option value="Akuntansi" />
+                        <option value="Teknik Informatika" />
+                      </datalist>
                     </div>
                   </div>
 
@@ -1292,38 +1411,24 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                           </div>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-2 border-t border-blue-100">
+                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-blue-100">
                           <div>
                             <label className="block font-bold text-blue-950 mb-1">
-                              Masa Kerja (Tahun):*
+                              TMT CPNS (Pengangkatan Awal):*
                             </label>
                             <input
-                              type="number"
-                              min={0}
-                              max={40}
-                              value={formData.masa_kerja_tahun ?? 0}
-                              onChange={(e) => setFormData({ ...formData, masa_kerja_tahun: parseInt(e.target.value) || 0 })}
+                              id="input-tmt-cpns-pns"
+                              type="date"
+                              required={formData.status_kepegawaian === 'PNS'}
+                              value={formData.tmt_cpns || ''}
+                              onChange={(e) => setFormData({ ...formData, tmt_cpns: e.target.value })}
                               className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
 
                           <div>
                             <label className="block font-bold text-blue-950 mb-1">
-                              Masa Kerja (Bulan):*
-                            </label>
-                            <input
-                              type="number"
-                              min={0}
-                              max={11}
-                              value={formData.masa_kerja_bulan ?? 0}
-                              onChange={(e) => setFormData({ ...formData, masa_kerja_bulan: parseInt(e.target.value) || 0 })}
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-blue-950 mb-1">
-                              No. SK Pangkat:
+                              No. SK Pangkat Terakhir:
                             </label>
                             <input
                               type="text"
@@ -1336,7 +1441,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
 
                           <div>
                             <label className="block font-bold text-blue-950 mb-1">
-                              Tanggal SK Pangkat:
+                              Tanggal SK Pangkat Terakhir:
                             </label>
                             <input
                               type="date"
@@ -1410,163 +1515,165 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                         </div>
                       </div>
 
-                      {/* LEGALITAS MUTASI KEPEGAWAIAN & PENEMPATAN */}
-                      <div
-                        id="section-legalitas-mutasi"
-                        className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 sm:p-4 space-y-3"
-                      >
-                        <div className="font-heading font-bold text-amber-950 text-xs flex items-center space-x-2">
-                          <Building2 className="w-4 h-4 text-amber-700" />
-                          <span>Legalitas Penempatan &amp; Mutasi PNS</span>
-                        </div>
-                        <p className="text-[11px] text-amber-800">
-                          Pengaturan mutasi antar unit kerja, penempatan awal CPNS, TMT pengangkatan, dan legalitas Pertek BKN
-                        </p>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                          <div>
-                            <label className="block font-bold text-amber-950 mb-1">
-                              Unit Kerja Penempatan:*
-                            </label>
-                            <select
-                              id="select-unit-kerja-tujuan"
-                              value={formData.unit_kerja}
-                              onChange={(e) => setFormData({ ...formData, unit_kerja: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
-                            >
-                              {synchronizedUnitOptions.map((unit) => (
-                                <option key={unit} value={unit}>
-                                  {unit}
-                                </option>
-                              ))}
-                            </select>
+                      {/* LEGALITAS MUTASI KEPEGAWAIAN & PENEMPATAN (Hanya muncul pada Mode Edit Pegawai, disembunyikan saat Tambah Pegawai Baru) */}
+                      {!isAddModalOpen && isEditModalOpen && isMutasiEnabled && (
+                        <div
+                          id="section-legalitas-mutasi"
+                          className="bg-amber-50/70 border border-amber-200 rounded-xl p-3.5 sm:p-4 space-y-3"
+                        >
+                          <div className="font-heading font-bold text-amber-950 text-xs flex items-center space-x-2">
+                            <Building2 className="w-4 h-4 text-amber-700" />
+                            <span>Legalitas Penempatan &amp; Mutasi PNS</span>
                           </div>
+                          <p className="text-[11px] text-amber-800">
+                            Pengaturan mutasi antar unit kerja, penempatan awal CPNS, TMT pengangkatan, dan legalitas Pertek BKN
+                          </p>
 
-                          <div>
-                            <label className="block font-bold text-amber-950 mb-1">
-                              Jenis Mutasi / Pengangkatan:*
-                            </label>
-                            <select
-                              id="select-jenis-mutasi"
-                              value={formData.jenis_mutasi || 'Kenaikan Pangkat Reguler'}
-                              onChange={(e) => setFormData({ ...formData, jenis_mutasi: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
-                            >
-                              <option value="Kenaikan Pangkat Reguler">Kenaikan Pangkat Reguler</option>
-                              <option value="Mutasi Internal Antar-Puskesmas/RSUD">Mutasi Internal Antar-Puskesmas / RSUD Lobar</option>
-                              <option value="Mutasi Masuk dari Luar Daerah">Mutasi Masuk dari Luar Daerah</option>
-                              <option value="Mutasi Keluar Daerah">Mutasi Keluar Daerah</option>
-                              <option value="Alih Jabatan Struktural ke Fungsional">Alih Jabatan Struktural ke Fungsional</option>
-                              <option value="Alih Jabatan Fungsional ke Struktural">Alih Jabatan Fungsional ke Struktural</option>
-                              <option value="Penyesuaian Ijazah">Penyesuaian Ijazah</option>
-                              <option value="Pengangkatan Pertama CPNS">Pengangkatan Pertama CPNS</option>
-                            </select>
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
-                          <div>
-                            <label className="block font-bold text-amber-950 mb-1">
-                              No. Pertek BKN (Persetujuan Teknis):
-                            </label>
-                            <input
-                              id="input-no-pertek-bkn"
-                              type="text"
-                              value={formData.no_pertek_bkn || ''}
-                              onChange={(e) => setFormData({ ...formData, no_pertek_bkn: e.target.value })}
-                              placeholder="Contoh: 12345/B-MP.01.01/SD/D/2023"
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-amber-400"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-amber-950 mb-1">
-                              Tanggal Pertek BKN:
-                            </label>
-                            <input
-                              id="input-tgl-pertek-bkn"
-                              type="date"
-                              value={formData.tgl_pertek_bkn || ''}
-                              onChange={(e) => setFormData({ ...formData, tgl_pertek_bkn: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-amber-200">
-                          <div>
-                            <label className="block font-bold text-amber-950 mb-1">
-                              Nama Jabatan / Penempatan:
-                            </label>
-                            <input
-                              id="input-nama-jabatan-pns"
-                              type="text"
-                              value={formData.nama_jabatan_pns || formData.jabatan_spesifik || ''}
-                              onChange={(e) => setFormData({ ...formData, nama_jabatan_pns: e.target.value })}
-                              placeholder="Nama jabatan sesuai SK penempatan"
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-amber-950 mb-1">
-                              No. SK Penempatan / Mutasi:
-                            </label>
-                            <input
-                              id="input-no-sk-jabatan-pns"
-                              type="text"
-                              value={formData.no_sk_jabatan_pns || ''}
-                              onChange={(e) => setFormData({ ...formData, no_sk_jabatan_pns: e.target.value })}
-                              placeholder="Nomor SK Bupati / Kadinkes"
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-amber-400"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-amber-950 mb-1">
-                              TMT Jabatan / Penempatan:
-                            </label>
-                            <input
-                              id="input-tmt-jabatan-pns"
-                              type="date"
-                              value={formData.tmt_jabatan_pns || ''}
-                              onChange={(e) =>
-                                setFormData({
-                                  ...formData,
-                                  tmt_jabatan_pns: e.target.value,
-                                  tmt_jafung: formData.jenis_jabatan === 'Fungsional' ? e.target.value : formData.tmt_jafung,
-                                })
-                              }
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
-                            />
-                          </div>
-                        </div>
-
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
-                          <div>
-                            <label className="block font-bold text-amber-950 mb-1">
-                              TMT CPNS (Pengangkatan Awal):*
-                            </label>
-                            <input
-                              id="input-tmt-cpns"
-                              type="date"
-                              value={formData.tmt_cpns || ''}
-                              onChange={(e) => setFormData({ ...formData, tmt_cpns: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
-                            />
-                          </div>
-
-                          {(featureConfig?.kenaikan_pangkat !== false || featureConfig?.kenaikan_gaji_berkala !== false) && (
-                            <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200 flex items-center space-x-2.5">
-                              <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
-                              <div className="text-[11px] text-amber-900">
-                                <strong>Otomatisasi Berkala:</strong>{' '}
-                                Kenaikan Pangkat +4 Tahun dari TMT Golongan, dan KGB +2 Tahun dari TMT KGB/Golongan.
-                              </div>
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                            <div>
+                              <label className="block font-bold text-amber-950 mb-1">
+                                Unit Kerja Penempatan:*
+                              </label>
+                              <select
+                                id="select-unit-kerja-tujuan"
+                                value={formData.unit_kerja}
+                                onChange={(e) => setFormData({ ...formData, unit_kerja: e.target.value })}
+                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                              >
+                                {synchronizedUnitOptions.map((unit) => (
+                                  <option key={unit} value={unit}>
+                                    {unit}
+                                  </option>
+                                ))}
+                              </select>
                             </div>
-                          )}
+
+                            <div>
+                              <label className="block font-bold text-amber-950 mb-1">
+                                Jenis Mutasi / Pengangkatan:*
+                              </label>
+                              <select
+                                id="select-jenis-mutasi"
+                                value={formData.jenis_mutasi || 'Kenaikan Pangkat Reguler'}
+                                onChange={(e) => setFormData({ ...formData, jenis_mutasi: e.target.value })}
+                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                              >
+                                <option value="Kenaikan Pangkat Reguler">Kenaikan Pangkat Reguler</option>
+                                <option value="Mutasi Internal Antar-Puskesmas/RSUD">Mutasi Internal Antar-Puskesmas / RSUD Lobar</option>
+                                <option value="Mutasi Masuk dari Luar Daerah">Mutasi Masuk dari Luar Daerah</option>
+                                <option value="Mutasi Keluar Daerah">Mutasi Keluar Daerah</option>
+                                <option value="Alih Jabatan Struktural ke Fungsional">Alih Jabatan Struktural ke Fungsional</option>
+                                <option value="Alih Jabatan Fungsional ke Struktural">Alih Jabatan Fungsional ke Struktural</option>
+                                <option value="Penyesuaian Ijazah">Penyesuaian Ijazah</option>
+                                <option value="Pengangkatan Pertama CPNS">Pengangkatan Pertama CPNS</option>
+                              </select>
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
+                            <div>
+                              <label className="block font-bold text-amber-950 mb-1">
+                                No. Pertek BKN (Persetujuan Teknis):
+                              </label>
+                              <input
+                                id="input-no-pertek-bkn"
+                                type="text"
+                                value={formData.no_pertek_bkn || ''}
+                                onChange={(e) => setFormData({ ...formData, no_pertek_bkn: e.target.value })}
+                                placeholder="Contoh: 12345/B-MP.01.01/SD/D/2023"
+                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-amber-400"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block font-bold text-amber-950 mb-1">
+                                Tanggal Pertek BKN:
+                              </label>
+                              <input
+                                id="input-tgl-pertek-bkn"
+                                type="date"
+                                value={formData.tgl_pertek_bkn || ''}
+                                onChange={(e) => setFormData({ ...formData, tgl_pertek_bkn: e.target.value })}
+                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1 border-t border-amber-200">
+                            <div>
+                              <label className="block font-bold text-amber-950 mb-1">
+                                Nama Jabatan / Penempatan:
+                              </label>
+                              <input
+                                id="input-nama-jabatan-pns"
+                                type="text"
+                                value={formData.nama_jabatan_pns || formData.jabatan_spesifik || ''}
+                                onChange={(e) => setFormData({ ...formData, nama_jabatan_pns: e.target.value })}
+                                placeholder="Nama jabatan sesuai SK penempatan"
+                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block font-bold text-amber-950 mb-1">
+                                No. SK Penempatan / Mutasi:
+                              </label>
+                              <input
+                                id="input-no-sk-jabatan-pns"
+                                type="text"
+                                value={formData.no_sk_jabatan_pns || ''}
+                                onChange={(e) => setFormData({ ...formData, no_sk_jabatan_pns: e.target.value })}
+                                placeholder="Nomor SK Bupati / Kadinkes"
+                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-amber-400"
+                              />
+                            </div>
+
+                            <div>
+                              <label className="block font-bold text-amber-950 mb-1">
+                                TMT Jabatan / Penempatan:
+                              </label>
+                              <input
+                                id="input-tmt-jabatan-pns"
+                                type="date"
+                                value={formData.tmt_jabatan_pns || ''}
+                                onChange={(e) =>
+                                  setFormData({
+                                    ...formData,
+                                    tmt_jabatan_pns: e.target.value,
+                                    tmt_jafung: formData.jenis_jabatan === 'Fungsional' ? e.target.value : formData.tmt_jafung,
+                                  })
+                                }
+                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-1 border-t border-amber-200">
+                            <div>
+                              <label className="block font-bold text-amber-950 mb-1">
+                                TMT CPNS (Pengangkatan Awal):*
+                              </label>
+                              <input
+                                id="input-tmt-cpns"
+                                type="date"
+                                value={formData.tmt_cpns || ''}
+                                onChange={(e) => setFormData({ ...formData, tmt_cpns: e.target.value })}
+                                className="w-full px-3 py-2 bg-white border border-amber-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-amber-400"
+                              />
+                            </div>
+
+                            {(featureConfig?.kenaikan_pangkat !== false || featureConfig?.kenaikan_gaji_berkala !== false) && (
+                              <div className="bg-white/80 p-2.5 rounded-lg border border-amber-200 flex items-center space-x-2.5">
+                                <Calendar className="w-4 h-4 text-amber-600 shrink-0" />
+                                <div className="text-[11px] text-amber-900">
+                                  <strong>Otomatisasi Berkala:</strong>{' '}
+                                  Kenaikan Pangkat +4 Tahun dari TMT Golongan, dan KGB +2 Tahun dari TMT KGB/Golongan.
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
+                      )}
                     </div>
                   )}
 
