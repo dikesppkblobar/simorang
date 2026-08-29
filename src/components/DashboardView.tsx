@@ -28,6 +28,7 @@ import {
   CartesianGrid,
 } from 'recharts';
 import { DashboardStats, Pegawai, UnitKerjaItem, RiwayatSK, KeluargaKP4 } from '../types';
+import { MppPredictiveAnalyticsWidget } from './MppPredictiveAnalyticsWidget';
 
 interface DashboardViewProps {
   stats: DashboardStats | null;
@@ -652,6 +653,12 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Widget Analitik Prediktif Masa Persiapan Pensiun (MPP - 1 s.d. 5 Tahun) & Regenerasi Jabatan */}
+      <MppPredictiveAnalyticsWidget
+        pegawaiList={pegawaiList}
+        onNavigateTab={onNavigateTab}
+      />
     </div>
   );
 };
