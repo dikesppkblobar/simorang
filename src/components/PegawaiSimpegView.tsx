@@ -32,6 +32,7 @@ import {
   Check,
 } from 'lucide-react';
 import { Pegawai, RiwayatSK, KeluargaKP4, StatusKepegawaian, SumberPembiayaan, JenisJabatan, StatusHubungan, AppFeatureConfig, DEFAULT_FEATURE_CONFIG } from '../types';
+import { PROFESI_SDMK_LIST } from '../data/profesiLulusanData';
 import { dbStore } from '../services/dbStore';
 import { ConfirmDeleteModal } from './ConfirmDeleteModal';
 import { PegawaiAddEditModal } from './PegawaiAddEditModal';
@@ -74,21 +75,7 @@ interface PegawaiSimpegViewProps {
   onUpdateTanggungan?: (id: string, status: boolean, suratUrl?: string) => Promise<boolean>;
 }
 
-const PROFESI_SDMK_OPTIONS = [
-  'Dokter / Dokter Spesialis',
-  'Perawat',
-  'Bidan',
-  'Apoteker / Tenaga Kefarmasian',
-  'Sanitarian / Kesling',
-  'Nutrisionis / Dietisien',
-  'Pranata Laboratorium Kesehatan',
-  'Administrator Kesehatan',
-  'Radiografer',
-  'Penata Anestesi',
-  'Perekam Medis',
-  'Epidemiolog Kesehatan',
-  'Tenaga Teknis Umum / Administrasi',
-];
+const PROFESI_SDMK_OPTIONS = PROFESI_SDMK_LIST;
 
 const DEFAULT_LOBAR_UNITS = [
   'Dinas Kesehatan Kab. Lombok Barat',
@@ -671,8 +658,10 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
         (p.nik && p.nik.includes(q)) ||
         p.nama_lengkap.toLowerCase().includes(q) ||
         p.unit_kerja.toLowerCase().includes(q) ||
-        p.jabatan_spesifik.toLowerCase().includes(q) ||
-        (p.profesi_sdmk && p.profesi_sdmk.toLowerCase().includes(q))
+        (p.jabatan_spesifik && p.jabatan_spesifik.toLowerCase().includes(q)) ||
+        (p.profesi_sdmk && p.profesi_sdmk.toLowerCase().includes(q)) ||
+        (p.pendidikan_terakhir && p.pendidikan_terakhir.toLowerCase().includes(q)) ||
+        (p.program_studi && p.program_studi.toLowerCase().includes(q))
       );
     }
     return true;
@@ -781,7 +770,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                 tempat_lahir: 'Lombok Barat',
                 tanggal_lahir: '',
                 jenis_kelamin: 'L',
-                profesi_sdmk: 'Perawat',
+                profesi_sdmk: 'Dokter Umum',
                 jenis_jabatan: 'Fungsional',
                 jabatan_spesifik: '',
                 unit_kerja: defaultUnit,
@@ -991,14 +980,22 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
                         {/* 5. JABATAN RUMPUN & PENDIDIKAN */}
                         <td className="p-3">
                           <div className="font-semibold text-slate-800">
-                            {p.profesi_sdmk || p.jabatan_spesifik || 'Staf Umum'}
+                            {p.jabatan_spesifik || p.profesi_sdmk || 'Staf Umum'}
                           </div>
-                          <div className="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap">
-                            <span>{p.jenis_jabatan === 'Struktural' ? 'Struktural/Staf' : p.jenis_jabatan}</span>
+                          <div className="text-[11px] text-slate-500 flex items-center gap-1.5 flex-wrap mt-0.5">
+                            {p.profesi_sdmk && p.profesi_sdmk !== p.jabatan_spesifik && (
+                              <span className="text-slate-600 font-medium">{p.profesi_sdmk}</span>
+                            )}
+                            {p.jenis_jabatan && (
+                              <>
+                                {p.profesi_sdmk && p.profesi_sdmk !== p.jabatan_spesifik && <span className="text-slate-300">•</span>}
+                                <span>{p.jenis_jabatan === 'Struktural' ? 'Struktural' : p.jenis_jabatan}</span>
+                              </>
+                            )}
                             {p.pendidikan_terakhir && (
                               <>
                                 <span className="text-slate-300">•</span>
-                                <span className="text-indigo-700 font-bold bg-indigo-50/90 px-1.5 py-0.2 rounded border border-indigo-100/80 text-[10.5px]">
+                                <span className="text-indigo-700 font-bold bg-indigo-50/90 px-1.5 py-0.5 rounded border border-indigo-100/80 text-[10.5px]">
                                   {p.pendidikan_terakhir}
                                 </span>
                               </>
