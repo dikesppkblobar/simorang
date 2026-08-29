@@ -107,7 +107,7 @@ export function createPegawai(req: Request, res: Response) {
       nip: effectiveNip,
       nik: effectiveNik,
       status_kepegawaian: statusKepeg,
-      profesi_sdmk: profesi_sdmk || 'Perawat',
+      profesi_sdmk: profesi_sdmk || 'Tenaga Kesehatan / Administrasi',
       nama_lengkap: nama_lengkap.trim().toUpperCase(),
       gelar_depan: gelar_depan || null,
       gelar_belakang: gelar_belakang || null,
