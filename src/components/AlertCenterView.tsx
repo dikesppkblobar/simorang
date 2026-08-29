@@ -130,6 +130,7 @@ export const AlertCenterView: React.FC<AlertCenterViewProps> = ({
   const [pangkatFilter, setPangkatFilter] = useState<
     'all' | 'h3' | 'overdue' | 'struktural' | 'ujian_dinas' | 'ukom' | 'tugas_belajar' | 'aman'
   >('h3');
+  const [cutiFilter, setCutiFilter] = useState<'aktif' | 'kritis' | 'belum_ambil' | 'all'>('aktif');
 
   const currentCalYear = new Date().getFullYear();
   const nextCalYear = currentCalYear + 1;
@@ -352,6 +353,22 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
 
   const mutasiCount = activePegawai.filter(isPegawaiMutasi).length;
 
+  // Counters for Pusat Kendali Cuti ASN
+  const countCutiAktif = activePegawai.filter((p) => {
+    const sisa = p.sisa_cuti_tahunan !== undefined ? p.sisa_cuti_tahunan : 12;
+    return 12 - sisa > 0;
+  }).length;
+
+  const countCutiKritis = activePegawai.filter((p) => {
+    const sisa = p.sisa_cuti_tahunan !== undefined ? p.sisa_cuti_tahunan : 12;
+    return sisa <= 3;
+  }).length;
+
+  const countCutiBelumAmbil = activePegawai.filter((p) => {
+    const sisa = p.sisa_cuti_tahunan !== undefined ? p.sisa_cuti_tahunan : 12;
+    return sisa >= 12;
+  }).length;
+
   // Configuration for monitoring cards grid in requested order:
   // Kenaikan Pangkat, Jafung, KGB, UKOM, Ujian Dinas, Izin Belajar, Pencantuman Gelar, Mutasi, KP4, Cuti, Pensiun (paling kanan)
   const allMonitoringCards: {
@@ -486,16 +503,16 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
     },
     {
       id: 'cuti',
-      title: 'Hak & Sisa Cuti Tahunan',
-      count: activePegawai.length,
-      countLabel: 'Pegawai',
-      badgeBg: 'bg-teal-100',
-      badgeText: 'text-teal-900',
+      title: 'Pusat Kendali Hak Cuti',
+      count: countCutiKritis > 0 ? countCutiKritis : countCutiAktif > 0 ? countCutiAktif : activePegawai.length,
+      countLabel: countCutiKritis > 0 ? 'Kritis' : countCutiAktif > 0 ? 'Aktif' : 'Pegawai',
+      badgeBg: countCutiKritis > 0 ? 'bg-rose-100' : 'bg-amber-100',
+      badgeText: countCutiKritis > 0 ? 'text-rose-900' : 'text-amber-900',
       icon: Calendar,
       iconBg: 'bg-teal-50 border-teal-200',
       iconColor: 'text-teal-600',
-      description: 'Saldo Cuti 12 Hari Kerja',
-      regNote: 'Peraturan BKN No. 24/2017',
+      description: 'Pengawasan Sisa Cuti & Pengajuan',
+      regNote: 'Per BKN 24/2017 (Hak 12 Hari Kerja)',
     },
     {
       id: 'pensiun',
@@ -1974,136 +1991,376 @@ Dikirim oleh Pengelola Kepegawaian Unit: ${pengirimUnit} (${currentUser?.nama_le
         </div>
       )}
 
-      {/* SUB-TAB 6: SISA CUTI TAHUNAN */}
+      {/* SUB-TAB 6: PUSAT KENDALI PENGAJUAN & SISA KRITIS CUTI ASN */}
       {activeSubTab === 'cuti' && (
-        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-4">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200 pb-3 gap-2">
+        <div className="bg-white rounded-xl border border-slate-200/80 shadow-sm overflow-hidden p-4 sm:p-6 space-y-5">
+          {/* Header & Subtitle Ringkas */}
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between border-b border-slate-200 pb-4 gap-3">
             <div>
               <h3 className="font-bold text-[#1E293B] text-base flex items-center space-x-2">
-                <Calendar className="w-5 h-5 text-emerald-600 shrink-0" />
-                <span>Pemantauan Hak Cuti Tahunan & Sisa Cuti Pegawai ASN</span>
+                <div className="p-1.5 bg-emerald-100 text-emerald-700 rounded-lg">
+                  <Calendar className="w-5 h-5 shrink-0" />
+                </div>
+                <span>Pusat Kendali Pengajuan & Sisa Kritis Cuti ASN</span>
               </h3>
-              <p className="text-xs text-[#64748B] mt-1">
-                Sesuai Peraturan BKN No. 24 Tahun 2017 tentang Tata Cara Pemberian Cuti PNS (Hak 12 Hari Kerja Per Tahun).
+              <p className="text-xs text-[#64748B] mt-1.5 leading-relaxed">
+                Hak Cuti Tahunan: <strong>12 Hari Kerja</strong> (Peraturan BKN No. 24 Tahun 2017) • Pantau pengajuan cuti aktif, riwayat penggunaan, dan sisa cuti kritis menjelang akhir periode.
               </p>
             </div>
+
+            {/* Subtitle Ringkasan Kuota */}
+            <div className="flex items-center gap-2 bg-slate-50 border border-slate-200 px-3 py-1.5 rounded-lg text-xs shrink-0">
+              <span className="text-slate-500 font-medium">Standar Hak Cuti:</span>
+              <span className="font-extrabold text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200">
+                12 Hari Kerja / Tahun
+              </span>
+            </div>
+          </div>
+
+          {/* Tab Filter Cepat (Filter Chips) */}
+          <div className="flex flex-wrap items-center gap-2 pb-1">
+            <span className="text-xs font-bold text-slate-500 mr-1 flex items-center gap-1">
+              <Filter className="w-3.5 h-3.5" /> Filter Cuti:
+            </span>
+
+            <button
+              onClick={() => setCutiFilter('aktif')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs ${
+                cutiFilter === 'aktif'
+                  ? 'bg-amber-500 text-white shadow-sm ring-2 ring-amber-300 ring-offset-1'
+                  : 'bg-amber-50 text-amber-800 hover:bg-amber-100 border border-amber-200'
+              }`}
+            >
+              <span>🟡 Sedang Cuti / Aktif</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                  cutiFilter === 'aktif' ? 'bg-amber-700 text-white' : 'bg-amber-200 text-amber-900'
+                }`}
+              >
+                {countCutiAktif}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setCutiFilter('kritis')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs ${
+                cutiFilter === 'kritis'
+                  ? 'bg-rose-600 text-white shadow-sm ring-2 ring-rose-300 ring-offset-1'
+                  : 'bg-rose-50 text-rose-800 hover:bg-rose-100 border border-rose-200'
+              }`}
+            >
+              <span>🔴 Sisa Cuti Menipis / Kritis (≤ 3 Hari)</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                  cutiFilter === 'kritis' ? 'bg-rose-800 text-white' : 'bg-rose-200 text-rose-900'
+                }`}
+              >
+                {countCutiKritis}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setCutiFilter('belum_ambil')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs ${
+                cutiFilter === 'belum_ambil'
+                  ? 'bg-blue-600 text-white shadow-sm ring-2 ring-blue-300 ring-offset-1'
+                  : 'bg-blue-50 text-blue-800 hover:bg-blue-100 border border-blue-200'
+              }`}
+            >
+              <span>🔵 Belum Pernah Ambil Cuti</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                  cutiFilter === 'belum_ambil' ? 'bg-blue-800 text-white' : 'bg-blue-200 text-blue-900'
+                }`}
+              >
+                {countCutiBelumAmbil}
+              </span>
+            </button>
+
+            <button
+              onClick={() => setCutiFilter('all')}
+              className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all flex items-center space-x-1.5 shadow-xs ${
+                cutiFilter === 'all'
+                  ? 'bg-emerald-600 text-white shadow-sm ring-2 ring-emerald-300 ring-offset-1'
+                  : 'bg-emerald-50 text-emerald-800 hover:bg-emerald-100 border border-emerald-200'
+              }`}
+            >
+              <span>🟢 Semua Pegawai</span>
+              <span
+                className={`px-1.5 py-0.2 rounded-full text-[10px] font-extrabold ${
+                  cutiFilter === 'all' ? 'bg-emerald-800 text-white' : 'bg-emerald-200 text-emerald-900'
+                }`}
+              >
+                {activePegawai.length}
+              </span>
+            </button>
           </div>
 
           {/* Desktop Table View */}
           <div className="hidden md:block overflow-x-auto">
-            <table className="w-full text-left border-collapse text-xs">
-              <thead>
-                <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
-                  <th className="p-3.5">Pegawai</th>
-                  <th className="p-3.5">Hak Cuti Tahunan</th>
-                  <th className="p-3.5">Sisa Cuti Saat Ini</th>
-                  <th className="p-3.5">Status Pengajuan Terakhir</th>
-                  <th className="p-3.5 text-right">Aksi Admin</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100">
-                {filteredPegawai.map((pegawai) => {
-                  const sisaCuti = pegawai.sisa_cuti_tahunan ?? 12;
-                  const isLow = sisaCuti <= 3;
-                  return (
-                    <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
-                      <td className="p-3.5">
-                        <div className="font-bold text-[#1E293B]">{pegawai.nama_lengkap}</div>
-                        <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
-                        <div className="text-[11px] text-slate-500">{pegawai.unit_kerja}</div>
-                      </td>
-                      <td className="p-3.5 font-bold text-slate-700">12 Hari Kerja</td>
-                      <td className="p-3.5">
-                        <span
-                          className={`font-extrabold px-3 py-1 rounded-full text-xs inline-block ${
-                            isLow
-                              ? 'bg-red-100 text-red-800 border border-red-200'
-                              : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
-                          }`}
-                        >
-                          {sisaCuti} Hari Sisa
-                        </span>
-                      </td>
-                      <td className="p-3.5 text-slate-600 font-medium">
-                        Cuti Tahunan (3 Hari) - Disetujui
-                      </td>
-                      <td className="p-3.5 text-right">
-                        {isSuperAdmin ? (
-                          <button
-                            onClick={() => handleOpenActionModal(pegawai, 'cuti')}
-                            className="inline-flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
-                          >
-                            <Plus className="w-3.5 h-3.5" />
-                            <span>Input Pengajuan Cuti</span>
-                          </button>
-                        ) : (
-                          <button
-                            onClick={() => handleOpenSendNotification(pegawai, 'Pengajuan Cuti Tahunan', `Sisa cuti tahunan saat ini: ${pegawai.sisa_cuti_tahunan ?? 12} Hari Kerja. Imbauan verifikasi pengajuan cuti.`)}
-                            className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
-                          >
-                            <Send className="w-3.5 h-3.5" />
-                            <span>Kirim Pemberitahuan</span>
-                          </button>
-                        )}
-                      </td>
+            {(() => {
+              const displayList = filteredPegawai.filter((pegawai) => {
+                const sisa = pegawai.sisa_cuti_tahunan ?? 12;
+                const terpakai = Math.max(0, 12 - sisa);
+                if (cutiFilter === 'aktif') return terpakai > 0;
+                if (cutiFilter === 'kritis') return sisa <= 3;
+                if (cutiFilter === 'belum_ambil') return sisa >= 12;
+                return true;
+              });
+
+              if (displayList.length === 0) {
+                return (
+                  <div className="p-8 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl space-y-2">
+                    <div className="w-10 h-10 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle className="w-6 h-6" />
+                    </div>
+                    <div className="font-bold text-slate-800 text-sm">Tidak Ada Pegawai Pada Filter Ini</div>
+                    <p className="text-xs text-slate-500 max-w-md mx-auto">
+                      Tidak ditemukan pegawai yang sesuai dengan kriteria filter yang dipilih. Silakan pilih filter lain atau lihat seluruh data.
+                    </p>
+                    <button
+                      onClick={() => setCutiFilter('all')}
+                      className="mt-2 text-xs font-bold text-emerald-600 hover:text-emerald-700 underline"
+                    >
+                      Tampilkan Semua Pegawai
+                    </button>
+                  </div>
+                );
+              }
+
+              return (
+                <table className="w-full text-left border-collapse text-xs">
+                  <thead>
+                    <tr className="bg-[#F8FAFC] border-b border-slate-200 text-[#64748B] uppercase tracking-wider font-semibold">
+                      <th className="p-3.5">Pegawai</th>
+                      <th className="p-3.5">Penggunaan & Riwayat Cuti</th>
+                      <th className="p-3.5">Sisa Saldo Cuti</th>
+                      <th className="p-3.5">Status Kendali / Alert</th>
+                      <th className="p-3.5 text-right">Aksi Admin</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody className="divide-y divide-slate-100">
+                    {displayList.map((pegawai) => {
+                      const sisaCuti = pegawai.sisa_cuti_tahunan ?? 12;
+                      const terpakai = Math.max(0, 12 - sisaCuti);
+                      const isLow = sisaCuti <= 3;
+                      const isUtuh = sisaCuti >= 12;
+
+                      return (
+                        <tr key={pegawai.nip} className="hover:bg-slate-50/60 transition-colors">
+                          <td className="p-3.5">
+                            <div className="font-bold text-[#1E293B] text-sm">{pegawai.nama_lengkap}</div>
+                            <div className="text-[11px] text-[#64748B] font-mono">NIP: {pegawai.nip}</div>
+                            <div className="text-[11px] text-slate-600 font-medium">{pegawai.jabatan_spesifik || pegawai.profesi_sdmk || pegawai.jenis_jabatan} • {pegawai.unit_kerja}</div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="font-semibold text-slate-800">
+                              {terpakai > 0 ? (
+                                <span className="text-amber-900 font-bold">
+                                  Cuti Tahunan ({terpakai} Hari Terpakai)
+                                </span>
+                              ) : (
+                                <span className="text-slate-500">
+                                  Belum Mengambil Cuti
+                                </span>
+                              )}
+                            </div>
+                            <div className="text-[11px] text-slate-500 mt-0.5 flex items-center gap-1">
+                              {terpakai > 0 ? (
+                                <span className="text-emerald-700 font-medium">✓ Berkas Fisik Terverifikasi ({currentCalYear})</span>
+                              ) : (
+                                <span className="text-blue-600 font-medium">Saldo Utuh Periode {currentCalYear}</span>
+                              )}
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            <div className="flex items-center gap-2">
+                              <span
+                                className={`font-extrabold px-2.5 py-0.5 rounded-full text-xs inline-block ${
+                                  isLow
+                                    ? 'bg-red-100 text-red-800 border border-red-200'
+                                    : isUtuh
+                                    ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                                    : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                                }`}
+                              >
+                                {sisaCuti} / 12 Hari
+                              </span>
+                            </div>
+                            {/* Visual Progress Bar */}
+                            <div className="w-28 bg-slate-200 h-1.5 rounded-full mt-1.5 overflow-hidden">
+                              <div
+                                className={`h-full rounded-full ${
+                                  isLow ? 'bg-red-500' : isUtuh ? 'bg-blue-500' : 'bg-emerald-500'
+                                }`}
+                                style={{ width: `${Math.min(100, Math.max(0, (sisaCuti / 12) * 100))}%` }}
+                              />
+                            </div>
+                          </td>
+                          <td className="p-3.5">
+                            {isLow ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-extrabold bg-rose-100 text-rose-800 border border-rose-200">
+                                <span className="w-1.5 h-1.5 rounded-full bg-rose-600 animate-pulse"></span>
+                                🔴 Sisa Kritis (≤ 3 Hari)
+                              </span>
+                            ) : terpakai > 0 ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-amber-100 text-amber-800 border border-amber-200">
+                                🟡 Cuti Aktif / Riwayat
+                              </span>
+                            ) : (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-[11px] font-bold bg-blue-100 text-blue-800 border border-blue-200">
+                                🔵 Saldo Penuh (12 Hari)
+                              </span>
+                            )}
+                          </td>
+                          <td className="p-3.5 text-right">
+                            {isSuperAdmin ? (
+                              <button
+                                onClick={() => handleOpenActionModal(pegawai, 'cuti')}
+                                className="inline-flex items-center space-x-1 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-sm transition-colors"
+                              >
+                                <Plus className="w-3.5 h-3.5" />
+                                <span>Input Pengajuan Cuti</span>
+                              </button>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  handleOpenSendNotification(
+                                    pegawai,
+                                    'Pengajuan Cuti Tahunan',
+                                    `Sisa cuti tahunan saat ini: ${pegawai.sisa_cuti_tahunan ?? 12} Hari Kerja. Riwayat cuti terpakai: ${terpakai} Hari. Imbauan verifikasi pengajuan cuti.`
+                                  )
+                                }
+                                className="inline-flex items-center space-x-1.5 bg-emerald-600 hover:bg-emerald-700 text-white px-3 py-1.5 rounded-lg font-bold text-xs shadow-xs transition-colors"
+                              >
+                                <Send className="w-3.5 h-3.5" />
+                                <span>Kirim Pemberitahuan</span>
+                              </button>
+                            )}
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              );
+            })()}
           </div>
 
           {/* Mobile Card List View */}
           <div className="md:hidden space-y-3">
-            {filteredPegawai.map((pegawai) => {
-              const sisaCuti = pegawai.sisa_cuti_tahunan ?? 12;
-              const isLow = sisaCuti <= 3;
-              return (
-                <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
-                  <div className="flex items-start justify-between gap-2">
-                    <div>
-                      <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
-                        {pegawai.nama_lengkap}
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
-                      <div className="text-[11px] text-slate-600 font-medium">{pegawai.unit_kerja}</div>
+            {(() => {
+              const displayList = filteredPegawai.filter((pegawai) => {
+                const sisa = pegawai.sisa_cuti_tahunan ?? 12;
+                const terpakai = Math.max(0, 12 - sisa);
+                if (cutiFilter === 'aktif') return terpakai > 0;
+                if (cutiFilter === 'kritis') return sisa <= 3;
+                if (cutiFilter === 'belum_ambil') return sisa >= 12;
+                return true;
+              });
+
+              if (displayList.length === 0) {
+                return (
+                  <div className="p-6 text-center bg-slate-50 border border-dashed border-slate-200 rounded-xl space-y-2">
+                    <div className="w-8 h-8 bg-emerald-100 text-emerald-600 rounded-full flex items-center justify-center mx-auto">
+                      <CheckCircle className="w-5 h-5" />
                     </div>
-                    <span
-                      className={`text-xs font-extrabold px-2.5 py-1 rounded-full shrink-0 ${
-                        isLow ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'
-                      }`}
-                    >
-                      {sisaCuti} Hari Sisa
-                    </span>
+                    <div className="font-bold text-slate-800 text-xs">Tidak Ada Pegawai Pada Filter Ini</div>
+                    <p className="text-[11px] text-slate-500">
+                      Silakan ganti filter di bagian atas untuk melihat data lainnya.
+                    </p>
                   </div>
+                );
+              }
 
-                  <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs flex items-center justify-between">
-                    <span className="text-slate-500">Hak Tahunan: <strong>12 Hari</strong></span>
-                    <span className="text-slate-700 font-medium">Status: Pengajuan Aktif</span>
-                  </div>
+              return displayList.map((pegawai) => {
+                const sisaCuti = pegawai.sisa_cuti_tahunan ?? 12;
+                const terpakai = Math.max(0, 12 - sisaCuti);
+                const isLow = sisaCuti <= 3;
+                const isUtuh = sisaCuti >= 12;
 
-                  <div className="pt-1">
-                    {isSuperAdmin ? (
-                      <button
-                        onClick={() => handleOpenActionModal(pegawai, 'cuti')}
-                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                return (
+                  <div key={pegawai.nip} className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 space-y-2.5">
+                    <div className="flex items-start justify-between gap-2">
+                      <div>
+                        <div className="font-heading font-bold text-sm text-slate-900 leading-tight">
+                          {pegawai.nama_lengkap}
+                        </div>
+                        <div className="text-[11px] text-slate-500 font-mono">NIP: {pegawai.nip}</div>
+                        <div className="text-[11px] text-slate-600 font-medium">
+                          {pegawai.jabatan_spesifik || pegawai.profesi_sdmk || pegawai.jenis_jabatan} • {pegawai.unit_kerja}
+                        </div>
+                      </div>
+                      <span
+                        className={`text-xs font-extrabold px-2.5 py-1 rounded-full shrink-0 ${
+                          isLow
+                            ? 'bg-red-100 text-red-800 border border-red-200'
+                            : isUtuh
+                            ? 'bg-blue-100 text-blue-800 border border-blue-200'
+                            : 'bg-emerald-100 text-emerald-800 border border-emerald-200'
+                        }`}
                       >
-                        <Plus className="w-3.5 h-3.5" />
-                        <span>Input Pengajuan Cuti</span>
-                      </button>
-                    ) : (
-                      <button
-                        onClick={() => handleOpenSendNotification(pegawai, 'Pengajuan Cuti Tahunan', `Sisa cuti tahunan saat ini: ${pegawai.sisa_cuti_tahunan ?? 12} Hari Kerja. Imbauan verifikasi pengajuan cuti.`)}
-                        className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
-                      >
-                        <Send className="w-3.5 h-3.5" />
-                        <span>Kirim Pemberitahuan</span>
-                      </button>
-                    )}
+                        {sisaCuti} / 12 Hari Sisa
+                      </span>
+                    </div>
+
+                    <div className="bg-white p-2.5 rounded-lg border border-slate-200/80 text-xs space-y-1.5">
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Penggunaan:</span>
+                        <strong className="text-slate-800 font-semibold">
+                          {terpakai > 0 ? `${terpakai} Hari Terpakai` : 'Belum Digunakan'}
+                        </strong>
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <span className="text-slate-500">Status Kendali:</span>
+                        {isLow ? (
+                          <span className="font-bold text-red-700">🔴 Kritis (≤ 3 Hari)</span>
+                        ) : terpakai > 0 ? (
+                          <span className="font-bold text-amber-700">🟡 Cuti Aktif / Riwayat</span>
+                        ) : (
+                          <span className="font-bold text-blue-700">🔵 Saldo Utuh (12 Hari)</span>
+                        )}
+                      </div>
+                      {/* Visual Progress Bar */}
+                      <div className="w-full bg-slate-200 h-1.5 rounded-full mt-1 overflow-hidden">
+                        <div
+                          className={`h-full rounded-full ${
+                            isLow ? 'bg-red-500' : isUtuh ? 'bg-blue-500' : 'bg-emerald-500'
+                          }`}
+                          style={{ width: `${Math.min(100, Math.max(0, (sisaCuti / 12) * 100))}%` }}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="pt-1">
+                      {isSuperAdmin ? (
+                        <button
+                          onClick={() => handleOpenActionModal(pegawai, 'cuti')}
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <Plus className="w-3.5 h-3.5" />
+                          <span>Input Pengajuan Cuti</span>
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() =>
+                            handleOpenSendNotification(
+                              pegawai,
+                              'Pengajuan Cuti Tahunan',
+                              `Sisa cuti tahunan saat ini: ${pegawai.sisa_cuti_tahunan ?? 12} Hari Kerja. Riwayat cuti terpakai: ${terpakai} Hari. Imbauan verifikasi pengajuan cuti.`
+                            )
+                          }
+                          className="w-full py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg font-bold text-xs flex items-center justify-center gap-1.5 shadow-xs"
+                        >
+                          <Send className="w-3.5 h-3.5" />
+                          <span>Kirim Pemberitahuan</span>
+                        </button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              );
-            })}
+                );
+              });
+            })()}
           </div>
         </div>
       )}
