@@ -56,6 +56,7 @@ import { AplikasiKepegawaianView } from './components/AplikasiKepegawaianView';
 import { SettingsView } from './components/SettingsView';
 import { LoginView } from './components/LoginView';
 import { UploadSkModal } from './components/UploadSkModal';
+import { MobileBottomNav } from './components/MobileBottomNav';
 import {
   DashboardStats,
   Pegawai,
@@ -1233,7 +1234,7 @@ export default function App() {
         </aside>
 
         {/* Main Content Area */}
-        <main className="flex-grow p-3 sm:p-5 md:p-6 overflow-y-auto bg-[#F4F7F9] w-full min-w-0">
+        <main className="flex-grow p-3 sm:p-5 md:p-6 pb-20 md:pb-6 overflow-y-auto bg-[#F4F7F9] w-full min-w-0">
           <AnimatePresence mode="wait">
             <motion.div
               key={`${activeTab}-${selectedUnitScope}-${currentUser.id}`}
@@ -1399,6 +1400,18 @@ export default function App() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation (Visible on mobile, preserves sidebar & drawer) */}
+      <MobileBottomNav
+        activeTab={activeTab}
+        onTabChange={(tab) => {
+          handleNavigateTab(tab);
+          setIsMobileDrawerOpen(false);
+        }}
+        onOpenMenuDrawer={() => setIsMobileDrawerOpen(!isMobileDrawerOpen)}
+        isMobileDrawerOpen={isMobileDrawerOpen}
+        alertsCount={grandTotalAlerts}
+      />
 
       {/* Global SK Upload Modal */}
       {isUploadSkModalOpen && (
