@@ -31,6 +31,7 @@ import {
   AlertTriangle,
   ChevronDown,
   ChevronUp,
+  Download,
 } from 'lucide-react';
 import { dbStore } from './services/dbStore';
 import { apiClient } from './services/apiClient';
@@ -57,6 +58,7 @@ import { SettingsView } from './components/SettingsView';
 import { LoginView } from './components/LoginView';
 import { UploadSkModal } from './components/UploadSkModal';
 import { MobileBottomNav } from './components/MobileBottomNav';
+import { PwaInstallModal } from './components/PwaInstallModal';
 import {
   DashboardStats,
   Pegawai,
@@ -130,6 +132,23 @@ export default function App() {
   const [isUploadSkModalOpen, setIsUploadSkModalOpen] = useState(false);
   const [selectedNipForSk, setSelectedNipForSk] = useState<string | undefined>(undefined);
   const [defaultJenisSkForModal, setDefaultJenisSkForModal] = useState<JenisSK>('KGB');
+
+  // PWA & Desktop App Download Modal state
+  const [isPwaModalOpen, setIsPwaModalOpen] = useState(false);
+  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+
+  useEffect(() => {
+    const handleBeforeInstallPrompt = (e: Event) => {
+      e.preventDefault();
+      setDeferredPrompt(e);
+    };
+
+    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+
+    return () => {
+      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
+    };
+  }, []);
 
   // Subtab navigation states
   const [alertsDefaultSubTab, setAlertsDefaultSubTab] = useState<
@@ -1015,11 +1034,22 @@ export default function App() {
                 </div>
 
                 {/* Fixed Drawer Footer */}
-                <div className="p-4 border-t border-slate-100 bg-slate-50 shrink-0">
+                <div className="p-3.5 border-t border-slate-100 bg-slate-50 shrink-0 space-y-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsMobileDrawerOpen(false);
+                      setIsPwaModalOpen(true);
+                    }}
+                    className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 text-[#004B87] py-2 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-heading font-bold transition-all cursor-pointer shadow-2xs"
+                  >
+                    <Download className="w-4 h-4 text-[#004B87]" />
+                    <span>Download / Pasang Aplikasi (PWA)</span>
+                  </button>
                   <div className="text-[11px] text-slate-500 text-center font-medium">
                     SIMORANG DINKES-PPKB
                   </div>
-                  <div className="text-[10px] text-slate-400 text-center font-mono mt-0.5">
+                  <div className="text-[10px] text-slate-400 text-center font-mono">
                     Kabupaten Lombok Barat v2.5
                   </div>
                 </div>
@@ -1221,16 +1251,47 @@ export default function App() {
             </nav>
           </div>
 
-          <div className={`border-t border-slate-100 bg-slate-50/50 shrink-0 ${isSidebarCollapsed ? 'p-2 text-center' : 'p-4'}`}>
-            {isSidebarCollapsed ? (
-              <span className="text-[9px] font-mono text-slate-400 font-bold">v2.5</span>
-            ) : (
-              <div className="text-[11px] text-[#64748B] font-medium text-center">
-                SIMORANG DINKES-PPKB
-                <div className="text-[10px] text-slate-400 font-mono mt-0.5">Kab. Lombok Barat v2.5</div>
+          {/* Desktop PWA App Download Card in Sidebar Footer */}
+          {!isSidebarCollapsed ? (
+            <div className="p-3 border-t border-slate-100 bg-slate-50/90 shrink-0 space-y-2">
+              <button
+                type="button"
+                onClick={() => setIsPwaModalOpen(true)}
+                className="w-full group bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 rounded-xl p-2.5 flex items-center gap-2.5 transition-all text-left shadow-2xs cursor-pointer"
+                title="Download & Pasang Aplikasi Desktop (PWA)"
+              >
+                <div className="w-8 h-8 rounded-lg bg-[#004B87] text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
+                  <Download className="w-4 h-4" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="text-[11px] font-heading font-bold text-slate-800 flex items-center justify-between">
+                    <span>Desktop App</span>
+                    <span className="text-[9px] bg-[#82BE00] text-white font-extrabold px-1.5 py-0.2 rounded shadow-2xs">
+                      PWA
+                    </span>
+                  </div>
+                  <div className="text-[10px] text-slate-500 truncate">
+                    Pasang di PC &amp; Laptop
+                  </div>
+                </div>
+              </button>
+              <div className="text-[10px] text-slate-400 font-mono text-center">
+                SIMORANG DINKES-PPKB v2.5
               </div>
-            )}
-          </div>
+            </div>
+          ) : (
+            <div className="p-2 border-t border-slate-100 bg-slate-50/80 shrink-0 flex flex-col items-center gap-1.5">
+              <button
+                type="button"
+                onClick={() => setIsPwaModalOpen(true)}
+                title="Download / Pasang Desktop App"
+                className="w-9 h-9 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#004B87] border border-blue-200 flex items-center justify-center transition-all shadow-2xs cursor-pointer"
+              >
+                <Download className="w-4 h-4" />
+              </button>
+              <span className="text-[9px] font-mono text-slate-400 font-bold">v2.5</span>
+            </div>
+          )}
         </aside>
 
         {/* Main Content Area */}
@@ -1423,6 +1484,13 @@ export default function App() {
           onSubmitSk={handleSubmitSk}
         />
       )}
+
+      {/* Global PWA & Desktop App Install Modal */}
+      <PwaInstallModal
+        isOpen={isPwaModalOpen}
+        onClose={() => setIsPwaModalOpen(false)}
+        deferredPrompt={deferredPrompt}
+      />
     </div>
   );
 }
