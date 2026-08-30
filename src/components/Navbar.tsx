@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { LogOut, Smartphone, ShieldCheck, Building2, User } from 'lucide-react';
+import React from 'react';
+import { LogOut, ShieldCheck, Building2 } from 'lucide-react';
 import { LogoLombokBarat } from './LogoLombokBarat';
 import { UserAccount } from '../types';
 
@@ -15,39 +15,7 @@ interface NavbarProps {
 export const Navbar: React.FC<NavbarProps> = ({
   currentUser,
   onLogout,
-  onToggleMobileMenu,
-  isMobileMenuOpen = false,
 }) => {
-  const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
-  const [isInstalled, setIsInstalled] = useState(false);
-
-  useEffect(() => {
-    const handleBeforeInstallPrompt = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e);
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-
-    if (window.matchMedia('(display-mode: standalone)').matches) {
-      setIsInstalled(true);
-    }
-
-    return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-    };
-  }, []);
-
-  const handleInstallPWA = async () => {
-    if (!deferredPrompt) return;
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    if (outcome === 'accepted') {
-      setIsInstalled(true);
-    }
-    setDeferredPrompt(null);
-  };
-
   const getInitials = (name: string) => {
     if (!name) return 'U';
     return name
@@ -89,19 +57,6 @@ export const Navbar: React.FC<NavbarProps> = ({
 
       {/* Right: Actions & User Profile */}
       <div className="flex items-center gap-1.5 sm:gap-2 md:gap-3 shrink-0">
-        {/* PWA Install Button if prompt is available */}
-        {deferredPrompt && !isInstalled && (
-          <button
-            type="button"
-            onClick={handleInstallPWA}
-            className="flex items-center space-x-1 sm:space-x-1.5 bg-[#82BE00] hover:bg-[#6ea000] text-white px-2 sm:px-2.5 py-1.5 rounded-xl text-[11px] sm:text-xs font-heading font-bold shadow-xs transition-all cursor-pointer"
-            title="Install SIMORANG DINKES-PPKB ke HP (PWA)"
-          >
-            <Smartphone className="w-3.5 h-3.5" />
-            <span className="hidden lg:inline">Install App</span>
-          </button>
-        )}
-
         {/* User Identity Display Badge */}
         <div className="flex items-center space-x-2 bg-white/10 border border-white/20 px-2 sm:px-2.5 md:px-3 py-1 sm:py-1.5 rounded-xl shadow-xs">
           <div className="relative shrink-0">
