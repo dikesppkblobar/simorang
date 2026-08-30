@@ -495,61 +495,24 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                     </div>
                   </div>
 
-                  {/* Baris Nama & Gelar (Responsive Grid: Adapt based on featureConfig?.pencantuman_gelar) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-6 gap-3 pt-1">
-                    {/* Gelar Depan (Tampil jika fitur pencantuman gelar aktif) */}
-                    {featureConfig?.pencantuman_gelar !== false && (
-                      <div className="sm:col-span-1">
-                        <label className="block font-bold text-[#1E293B] mb-1">
-                          Gelar Depan:
-                        </label>
-                        <input
-                          id="input-gelar-depan"
-                          type="text"
-                          value={formData.gelar_depan || ''}
-                          onChange={(e) => setFormData({ ...formData, gelar_depan: e.target.value })}
-                          placeholder="dr., Dr., Ns."
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    )}
-
-                    {/* Nama Lengkap */}
-                    <div className={featureConfig?.pencantuman_gelar !== false ? "sm:col-span-4" : "sm:col-span-6"}>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        Nama Lengkap (Tanpa Gelar):*
-                      </label>
-                      <input
-                        id="input-nama-lengkap"
-                        type="text"
-                        required
-                        value={formData.nama_lengkap}
-                        onChange={(e) => setFormData({ ...formData, nama_lengkap: e.target.value })}
-                        placeholder="Masukkan nama lengkap sesuai KTP / SK BKN"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
-                      />
-                    </div>
-
-                    {/* Gelar Belakang (Tampil jika fitur pencantuman gelar aktif) */}
-                    {featureConfig?.pencantuman_gelar !== false && (
-                      <div className="sm:col-span-1">
-                        <label className="block font-bold text-[#1E293B] mb-1">
-                          Gelar Belakang:
-                        </label>
-                        <input
-                          id="input-gelar-belakang"
-                          type="text"
-                          value={formData.gelar_belakang || ''}
-                          onChange={(e) => setFormData({ ...formData, gelar_belakang: e.target.value })}
-                          placeholder="S.Kep., M.Kes."
-                          className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
-                    )}
+                  {/* Baris Nama Lengkap (dengan Gelar) */}
+                  <div className="pt-1">
+                    <label className="block font-bold text-[#1E293B] mb-1">
+                      Nama Lengkap (dengan Gelar):*
+                    </label>
+                    <input
+                      id="input-nama-lengkap"
+                      type="text"
+                      required
+                      value={formData.nama_lengkap}
+                      onChange={(e) => setFormData({ ...formData, nama_lengkap: e.target.value })}
+                      placeholder="Masukkan nama lengkap beserta gelar (contoh: dr. H. Ahmad Fauzi, Sp.A / Ns. Nurhasanah, S.Kep)"
+                      className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
+                    />
                   </div>
 
-                  {/* Baris Demografi & Kontak (Responsive Grid) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 pt-1">
+                  {/* Baris Demografi (Responsive Grid) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-1">
                     <div>
                       <label className="block font-bold text-[#1E293B] mb-1">
                         Tempat Lahir:*
@@ -592,23 +555,6 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                         <option value="L">Laki-laki</option>
                         <option value="P">Perempuan</option>
                       </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        Nomor WhatsApp / HP:
-                      </label>
-                      <div className="relative">
-                        <Phone className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-2.5" />
-                        <input
-                          id="input-no-whatsapp"
-                          type="text"
-                          value={formData.no_whatsapp || ''}
-                          onChange={(e) => setFormData({ ...formData, no_whatsapp: e.target.value })}
-                          placeholder="08123456789"
-                          className="w-full pl-8 pr-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-mono font-semibold focus:ring-2 focus:ring-blue-500"
-                        />
-                      </div>
                     </div>
                   </div>
 
@@ -771,7 +717,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                   </div>
 
                   {/* Baris Jabatan & Unit Kerja (Responsive Grid) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                     <div>
                       <label className="block font-bold text-[#1E293B] mb-1">
                         Jenis Jabatan:*
@@ -794,27 +740,6 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                         <option value="Pelaksana">Pelaksana (Staf Teknis/Umum)</option>
                         <option value="Struktural">Struktural (Manajerial/Pimpinan)</option>
                       </select>
-                    </div>
-
-                    <div>
-                      <label className="block font-bold text-[#1E293B] mb-1">
-                        Jabatan Spesifik / Nomenklatur:*
-                      </label>
-                      <input
-                        id="input-jabatan-spesifik"
-                        type="text"
-                        required
-                        list="list-jabatan-spesifik-suggestions"
-                        value={formData.jabatan_spesifik}
-                        onChange={(e) => setFormData({ ...formData, jabatan_spesifik: e.target.value })}
-                        placeholder="Contoh: Dokter Ahli Pertama / Bidan Terampil / Analis Keuangan"
-                        className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
-                      />
-                      <datalist id="list-jabatan-spesifik-suggestions">
-                        {LULUSAN_PRESETS.map((p) => (
-                          <option key={p.jabatan_spesifik} value={p.jabatan_spesifik} />
-                        ))}
-                      </datalist>
                     </div>
 
                     <div>
@@ -1078,8 +1003,8 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                         </span>
                       </div>
 
-                      {/* Row 1: Jenjang & TMT Jafung & SK Pengangkatan Jafung */}
-                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
+                      {/* Row 1: Jenjang & TMT Jafung */}
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                         <div>
                           <label className="block font-bold text-slate-700 mb-1">
                             Jenjang Jafung:*
@@ -1116,33 +1041,6 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               })
                             }
                             className="w-full px-3 py-2 bg-white border border-blue-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">
-                            No. SK Jabatan Fungsional:
-                          </label>
-                          <input
-                            id="input-no-sk-jafung"
-                            type="text"
-                            value={formData.no_sk_jabatan_pns || ''}
-                            onChange={(e) => setFormData({ ...formData, no_sk_jabatan_pns: e.target.value })}
-                            placeholder="Contoh: 821.2/123/BKD/2023"
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-blue-500"
-                          />
-                        </div>
-
-                        <div>
-                          <label className="block font-bold text-slate-700 mb-1">
-                            Tanggal SK Jafung:
-                          </label>
-                          <input
-                            id="input-tgl-sk-jafung"
-                            type="date"
-                            value={formData.tgl_sk_jabatan_pns || ''}
-                            onChange={(e) => setFormData({ ...formData, tgl_sk_jabatan_pns: e.target.value })}
-                            className="w-full px-3 py-2 bg-white border border-slate-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                           />
                         </div>
                       </div>
@@ -1367,7 +1265,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                           <span>Pangkat &amp; Golongan Ruang PNS Terakhir</span>
                         </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
                           <div>
                             <label className="block font-bold text-blue-950 mb-1">
                               Golongan / Ruang:*
@@ -1409,9 +1307,7 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
-                        </div>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 pt-2 border-t border-blue-100">
                           <div>
                             <label className="block font-bold text-blue-950 mb-1">
                               TMT CPNS (Pengangkatan Awal):*
@@ -1422,31 +1318,6 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                               required={formData.status_kepegawaian === 'PNS'}
                               value={formData.tmt_cpns || ''}
                               onChange={(e) => setFormData({ ...formData, tmt_cpns: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-blue-950 mb-1">
-                              No. SK Pangkat Terakhir:
-                            </label>
-                            <input
-                              type="text"
-                              value={formData.no_sk_pangkat || ''}
-                              onChange={(e) => setFormData({ ...formData, no_sk_pangkat: e.target.value })}
-                              placeholder="Contoh: 823/123/BKD-PSDM/2023"
-                              className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-blue-500"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-blue-950 mb-1">
-                              Tanggal SK Pangkat Terakhir:
-                            </label>
-                            <input
-                              type="date"
-                              value={formData.tgl_sk_pangkat || ''}
-                              onChange={(e) => setFormData({ ...formData, tgl_sk_pangkat: e.target.value })}
                               className="w-full px-3 py-2 bg-white border border-blue-200 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-blue-500"
                             />
                           </div>
@@ -1471,47 +1342,18 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                           Riwayat penetapan Surat Keterangan Kenaikan Gaji Berkala (KGB) dan pemantauan jatuh tempo otomatis.
                         </p>
 
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div>
-                            <label className="block font-bold text-emerald-950 mb-1">
-                              TMT Gaji Berkala (KGB) Terakhir:*
-                            </label>
-                            <input
-                              id="input-tmt-kgb-pns"
-                              type="date"
-                              required={formData.status_kepegawaian === 'PNS'}
-                              value={formData.tmt_kgb_terakhir || ''}
-                              onChange={(e) => setFormData({ ...formData, tmt_kgb_terakhir: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-emerald-400"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-emerald-950 mb-1">
-                              Nomor SK Gaji Berkala (KGB):
-                            </label>
-                            <input
-                              id="input-no-sk-kgb-pns"
-                              type="text"
-                              value={formData.no_sk_kgb || ''}
-                              onChange={(e) => setFormData({ ...formData, no_sk_kgb: e.target.value })}
-                              placeholder="Contoh: 822/045/Dinkes-KGB/2023"
-                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold font-mono focus:ring-2 focus:ring-emerald-400"
-                            />
-                          </div>
-
-                          <div>
-                            <label className="block font-bold text-emerald-950 mb-1">
-                              Tanggal SK Gaji Berkala (KGB):
-                            </label>
-                            <input
-                              id="input-tgl-sk-kgb-pns"
-                              type="date"
-                              value={formData.tgl_sk_kgb || ''}
-                              onChange={(e) => setFormData({ ...formData, tgl_sk_kgb: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-emerald-400"
-                            />
-                          </div>
+                        <div>
+                          <label className="block font-bold text-emerald-950 mb-1">
+                            TMT Gaji Berkala (KGB) Terakhir:*
+                          </label>
+                          <input
+                            id="input-tmt-kgb-pns"
+                            type="date"
+                            required={formData.status_kepegawaian === 'PNS'}
+                            value={formData.tmt_kgb_terakhir || ''}
+                            onChange={(e) => setFormData({ ...formData, tmt_kgb_terakhir: e.target.value })}
+                            className="w-full sm:max-w-xs px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold focus:ring-2 focus:ring-emerald-400"
+                          />
                         </div>
                       </div>
 
@@ -1814,44 +1656,17 @@ export const PegawaiAddEditModal: React.FC<PegawaiAddEditModalProps> = ({
                           <CreditCard className="w-3.5 h-3.5 text-emerald-700" />
                           <span>Kenaikan Gaji Berkala (KGB) PPPK</span>
                         </div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                          <div>
-                            <label className="block font-bold text-emerald-950 mb-1">
-                              TMT KGB Terakhir:
-                            </label>
-                            <input
-                              id="input-tmt-kgb-pppk"
-                              type="date"
-                              value={formData.tmt_kgb_terakhir || ''}
-                              onChange={(e) => setFormData({ ...formData, tmt_kgb_terakhir: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold"
-                            />
-                          </div>
-                          <div>
-                            <label className="block font-bold text-emerald-950 mb-1">
-                              No. SK KGB:
-                            </label>
-                            <input
-                              id="input-no-sk-kgb-pppk"
-                              type="text"
-                              value={formData.no_sk_kgb || ''}
-                              onChange={(e) => setFormData({ ...formData, no_sk_kgb: e.target.value })}
-                              placeholder="Nomor SK KGB PPPK"
-                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold font-mono"
-                            />
-                          </div>
-                          <div>
-                            <label className="block font-bold text-emerald-950 mb-1">
-                              Tanggal SK KGB:
-                            </label>
-                            <input
-                              id="input-tgl-sk-kgb-pppk"
-                              type="date"
-                              value={formData.tgl_sk_kgb || ''}
-                              onChange={(e) => setFormData({ ...formData, tgl_sk_kgb: e.target.value })}
-                              className="w-full px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold"
-                            />
-                          </div>
+                        <div>
+                          <label className="block font-bold text-emerald-950 mb-1">
+                            TMT KGB Terakhir:
+                          </label>
+                          <input
+                            id="input-tmt-kgb-pppk"
+                            type="date"
+                            value={formData.tmt_kgb_terakhir || ''}
+                            onChange={(e) => setFormData({ ...formData, tmt_kgb_terakhir: e.target.value })}
+                            className="w-full sm:max-w-xs px-3 py-2 bg-white border border-emerald-300 rounded-lg outline-none text-xs font-semibold"
+                          />
                         </div>
                       </div>
                     </div>
