@@ -1,19 +1,91 @@
 {
+  "id": "/?source=pwa",
   "short_name": "SIMORANG",
   "name": "SIMORANG DINKES-PPKB Kab. Lombok Barat",
   "description": "Sistem Monitoring Ruang Kepegawaian Dinas Kesehatan, Pengendalian Penduduk dan Keluarga Berencana Kab. Lombok Barat",
+  "categories": [
+    "productivity",
+    "government",
+    "utilities",
+    "business"
+  ],
+  "lang": "id",
+  "dir": "ltr",
+  "start_url": "/?source=pwa",
+  "scope": "/",
+  "display": "standalone",
+  "display_override": [
+    "window-controls-overlay",
+    "standalone",
+    "minimal-ui",
+    "browser"
+  ],
+  "orientation": "any",
+  "background_color": "#004B87",
+  "theme_color": "#004B87",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/logo-lombok-barat.jpeg",
       "type": "image/jpeg",
-      "sizes": "192x192 512x512",
+      "sizes": "72x72 96x96 128x128 144x144 152x152 192x192 384x384 512x512",
       "purpose": "any maskable"
+    },
+    {
+      "src": "/logo-sipatuh.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
     }
   ],
-  "start_url": "/",
-  "background_color": "#0F172A",
-  "theme_color": "#0B4F9B",
-  "display": "standalone",
-  "orientation": "any",
-  "scope": "/"
+  "shortcuts": [
+    {
+      "name": "Data Pegawai",
+      "short_name": "Pegawai",
+      "description": "Daftar data dan profil ASN Dinkes-PPKB",
+      "url": "/?tab=pegawai",
+      "icons": [
+        {
+          "src": "/logo-lombok-barat.jpeg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Pusat Pemantauan ASN",
+      "short_name": "Pemantauan",
+      "description": "Alert jatuh tempo KGB, Kenaikan Pangkat, Jafung, dan Pensiun",
+      "url": "/?tab=alerts",
+      "icons": [
+        {
+          "src": "/logo-lombok-barat.jpeg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Arsip Digital SK",
+      "short_name": "Arsip SK",
+      "description": "Repositori berkas dan digitalisasi SK kepegawaian",
+      "url": "/?tab=arsip",
+      "icons": [
+        {
+          "src": "/logo-lombok-barat.jpeg",
+          "sizes": "192x192"
+        }
+      ]
+    },
+    {
+      "name": "Ekspor Laporan BKD",
+      "short_name": "Laporan",
+      "description": "Cetak dan ekspor laporan kepegawaian format resmi",
+      "url": "/?tab=export",
+      "icons": [
+        {
+          "src": "/logo-lombok-barat.jpeg",
+          "sizes": "192x192"
+        }
+      ]
+    }
+  ]
 }
