@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { LogOut, Smartphone, ShieldCheck, Building2, User, Menu, X } from 'lucide-react';
+import { LogOut, Smartphone, ShieldCheck, Building2, User } from 'lucide-react';
 import { LogoLombokBarat } from './LogoLombokBarat';
 import { UserAccount } from '../types';
 
@@ -62,25 +62,8 @@ export const Navbar: React.FC<NavbarProps> = ({
 
   return (
     <nav className="bg-[#004B87] text-white px-3 sm:px-4 md:px-6 py-2.5 min-h-14 sm:min-h-16 flex items-center justify-between shrink-0 shadow-md border-b border-[#003663] z-30 font-body relative">
-      {/* Left: Hamburger Button (Mobile Only) + Logo + App Title */}
+      {/* Left: Logo + App Title */}
       <div className="flex items-center space-x-2 sm:space-x-3 min-w-0">
-        {/* Hamburger Menu Button on Mobile */}
-        {onToggleMobileMenu && (
-          <button
-            type="button"
-            onClick={onToggleMobileMenu}
-            className="md:hidden p-2 rounded-xl bg-white/10 hover:bg-white/20 active:bg-white/30 text-white transition-colors cursor-pointer shrink-0"
-            title={isMobileMenuOpen ? 'Tutup Menu Navigasi' : 'Buka Menu Navigasi'}
-            aria-label="Toggle Navigation Menu"
-          >
-            {isMobileMenuOpen ? (
-              <X className="w-5 h-5" />
-            ) : (
-              <Menu className="w-5 h-5" />
-            )}
-          </button>
-        )}
-
         {/* Lombok Barat Official Coat of Arms Logo */}
         <div className="bg-white/15 p-1 rounded-xl backdrop-blur-xs border border-white/25 shadow-xs flex items-center justify-center shrink-0">
           <LogoLombokBarat size={32} />
