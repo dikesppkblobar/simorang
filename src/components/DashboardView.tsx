@@ -121,13 +121,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({
   const totalNonAsn = activePegawai.filter((p) => p.status_kepegawaian === 'Non-ASN').length;
 
   // Calculate totals for Jabatan Distribution
-  const totalJabatanCount = stats.jabatanDistribution.reduce(
-    (acc, curr) => acc + (curr.count || 0),
+  const safeJabatanDist = Array.isArray(stats?.jabatanDistribution) ? stats.jabatanDistribution : [];
+  const totalJabatanCount = safeJabatanDist.reduce(
+    (acc, curr) => acc + (curr?.count || 0),
     0
   ) || activePegawai.length;
 
   // Filter non-zero items for donut chart visualization
-  const nonZeroJabatan = stats.jabatanDistribution.filter((item) => item.count > 0);
+  const nonZeroJabatan = safeJabatanDist.filter((item) => item && item.count > 0);
   const chartPieData =
     nonZeroJabatan.length > 0
       ? nonZeroJabatan
