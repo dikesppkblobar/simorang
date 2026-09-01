@@ -439,10 +439,10 @@ class DBStore {
       const query = search.toLowerCase().trim();
       result = result.filter(
         (p) =>
-          p.nip.includes(query) ||
-          p.nama_lengkap.toLowerCase().includes(query) ||
-          p.unit_kerja.toLowerCase().includes(query) ||
-          p.jabatan_spesifik.toLowerCase().includes(query)
+          (p.nip && p.nip.includes(query)) ||
+          (p.nama_lengkap && p.nama_lengkap.toLowerCase().includes(query)) ||
+          (p.unit_kerja && p.unit_kerja.toLowerCase().includes(query)) ||
+          (p.jabatan_spesifik && p.jabatan_spesifik.toLowerCase().includes(query))
       );
     }
     return result;
