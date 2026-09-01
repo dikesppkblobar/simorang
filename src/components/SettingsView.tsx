@@ -335,112 +335,146 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
       {/* Tab Content 6: Scope Data Disajikan */}
       {activeTab === 'scope' && (
         <div className="space-y-4 font-body">
-          {/* Unified Scope Control Card */}
+          {/* Main Clean Scope Card */}
           <div className="bg-white rounded-2xl border border-slate-200/90 p-5 md:p-6 shadow-xs space-y-5">
-            {/* Top Bar: Active Scope Status & Quick Toggle */}
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-4 pb-5 border-b border-slate-100">
-              <div className="flex items-start space-x-3.5">
+            {/* Top Row: Scope Status Header & Quick Summary */}
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-4 border-b border-slate-100">
+              <div className="flex items-center space-x-3.5">
                 <div className="p-3 bg-blue-50 border border-blue-200/80 rounded-xl text-[#004B87] shrink-0">
                   <Globe className="w-5 h-5" />
                 </div>
                 <div>
-                  <div className="flex items-center space-x-2 flex-wrap">
-                    <span className="text-[11px] font-heading font-bold uppercase tracking-wider text-slate-500">
-                      Cakupan Data Disajikan (<em>Scope Data</em>)
-                    </span>
-                    <span className="px-2 py-0.5 rounded-md text-[10px] font-heading font-bold bg-blue-50 text-[#004B87] border border-blue-200">
-                      {activePegawaiCount} Pegawai Tampil
-                    </span>
+                  <div className="text-xs font-heading font-semibold text-slate-500 uppercase tracking-wide">
+                    Cakupan Data Aktif (Scope)
                   </div>
-                  <div className="text-base sm:text-lg font-heading font-extrabold text-[#004B87] mt-0.5 flex items-center gap-2">
+                  <div className="text-base sm:text-lg font-heading font-extrabold text-[#004B87] mt-0.5">
                     {getScopeBadge()}
                   </div>
-                  <p className="text-xs text-slate-500 mt-1 max-w-xl">
-                    Membatasi data pada modul Dashboard, Data Pegawai, Notifikasi KGB & Pangkat, Rekap KP4, dan Arsip.
-                  </p>
                 </div>
               </div>
 
-              {/* Sisi Kanan: Pengalih Mode Gabungan */}
-              <div className="flex items-center self-start lg:self-center bg-slate-50 p-2.5 sm:p-3 rounded-xl border border-slate-200/80 gap-3 shrink-0">
-                <div>
-                  <div className="text-xs font-heading font-bold text-slate-800">
-                    Mode Gabungan Semua Unit
-                  </div>
-                  <div className="text-[11px] text-slate-500">
-                    {isAllUnitsActive ? 'Aktif (Seluruh Puskesmas & RS)' : 'Nonaktif (Unit Terpilih)'}
-                  </div>
-                </div>
-
-                {currentUser.role === 'Admin Dinkes' ? (
-                  <div className="flex items-center space-x-1.5 bg-white p-1 rounded-lg border border-slate-200 shrink-0">
-                    <button
-                      type="button"
-                      id="btn-scope-toggle-all"
-                      onClick={() => handleToggleAllUnits(true)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        isAllUnitsActive
-                          ? 'bg-[#00A3AD] text-white shadow-2xs'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
-                    >
-                      <ToggleRight className="w-3.5 h-3.5" />
-                      <span>Aktif</span>
-                    </button>
-                    <button
-                      type="button"
-                      id="btn-scope-toggle-off"
-                      onClick={() => handleToggleAllUnits(false)}
-                      className={`px-3 py-1.5 rounded-md text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
-                        !isAllUnitsActive
-                          ? 'bg-slate-700 text-white shadow-2xs'
-                          : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
-                      }`}
-                    >
-                      <ToggleLeft className="w-3.5 h-3.5" />
-                      <span>Nonaktif</span>
-                    </button>
-                  </div>
-                ) : (
-                  <span className="text-[11px] text-amber-700 font-semibold bg-amber-50 px-2 py-1 rounded-lg border border-amber-200">
-                    Terkunci Role
-                  </span>
-                )}
+              <div className="inline-flex items-center gap-2 self-start sm:self-center bg-blue-50/80 border border-blue-200/80 px-3.5 py-1.5 rounded-xl">
+                <Users className="w-4 h-4 text-[#004B87]" />
+                <span className="text-xs font-heading font-extrabold text-[#004B87]">
+                  {activePegawaiCount} Pegawai
+                </span>
+                <span className="text-[11px] text-slate-500 font-medium">dalam cakupan</span>
               </div>
             </div>
 
-            {/* Bottom Row: Quick Select Buttons & Specific Unit Dropdown Aligned */}
+            {/* Interactive Mode Selector Cards */}
+            {currentUser.role === 'Admin Dinkes' ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Mode 1: Gabungan Semua Unit */}
+                <div
+                  onClick={() => handleToggleAllUnits(true)}
+                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start justify-between gap-3 ${
+                    isAllUnitsActive
+                      ? 'border-[#00A3AD] bg-teal-50/40 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-slate-50/40'
+                  }`}
+                >
+                  <div className="space-y-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-heading font-bold text-slate-900">
+                        🌐 Mode Gabungan Semua Unit
+                      </span>
+                      {isAllUnitsActive && (
+                        <span className="text-[10px] font-heading font-extrabold bg-[#00A3AD] text-white px-2 py-0.5 rounded-full">
+                          Aktif
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Tampilkan seluruh ASN dari Dinas, Puskesmas, dan RSUD ({pegawaiList.filter(p => !p.is_deleted).length} total pegawai).
+                    </p>
+                  </div>
+                  <div className="shrink-0 mt-0.5">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center border ${
+                        isAllUnitsActive
+                          ? 'border-[#00A3AD] bg-[#00A3AD] text-white'
+                          : 'border-slate-300 bg-white text-transparent'
+                      }`}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-white" />
+                    </div>
+                  </div>
+                </div>
+
+                {/* Mode 2: Unit Terpilih / Dinas */}
+                <div
+                  onClick={() => {
+                    if (isAllUnitsActive) {
+                      handleToggleAllUnits(false);
+                    }
+                  }}
+                  className={`p-4 rounded-xl border-2 transition-all cursor-pointer flex items-start justify-between gap-3 ${
+                    !isAllUnitsActive
+                      ? 'border-[#004B87] bg-blue-50/40 shadow-xs'
+                      : 'border-slate-200 hover:border-slate-300 bg-slate-50/40'
+                  }`}
+                >
+                  <div className="space-y-1 flex-1">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-heading font-bold text-slate-900">
+                        🏥 Unit Kerja Terpilih
+                      </span>
+                      {!isAllUnitsActive && (
+                        <span className="text-[10px] font-heading font-extrabold bg-[#004B87] text-white px-2 py-0.5 rounded-full">
+                          Aktif
+                        </span>
+                      )}
+                    </div>
+                    <p className="text-xs text-slate-500">
+                      Tampilkan data khusus untuk unit kerja yang dipilih di bawah.
+                    </p>
+                  </div>
+                  <div className="shrink-0 mt-0.5">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center border ${
+                        !isAllUnitsActive
+                          ? 'border-[#004B87] bg-[#004B87] text-white'
+                          : 'border-slate-300 bg-white text-transparent'
+                      }`}
+                    >
+                      <div className="w-2 h-2 rounded-full bg-white" />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="p-3.5 bg-slate-50 rounded-xl border border-slate-200 text-xs text-slate-600">
+                Scope akun Anda dikunci untuk unit kerja <strong>{currentUser.unit_kerja}</strong>.
+              </div>
+            )}
+
+            {/* Quick Filter & Specific Unit Selector */}
             {currentUser.role === 'Admin Dinkes' && (
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 pt-1">
-                <div className="flex flex-wrap items-center gap-2">
-                  <span className="text-xs font-heading font-bold text-slate-700 mr-1">
-                    Pilih Cepat:
-                  </span>
+              <div className="pt-2 border-t border-slate-100 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span className="text-xs font-heading font-bold text-slate-700">Pilih Cepat:</span>
                   <button
                     type="button"
-                    id="btn-quick-dinkes"
                     onClick={() => onSelectUnitScope('Dinas Kesehatan Kab. Lombok Barat')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer ${
                       selectedUnitScope === 'Dinas Kesehatan Kab. Lombok Barat'
                         ? 'bg-[#004B87] text-white shadow-2xs'
                         : 'bg-slate-100 text-slate-700 hover:bg-slate-200'
                     }`}
                   >
-                    <span>🏥 Data Dinkes</span>
+                    🏥 Data Dinkes
                   </button>
-
                   <button
                     type="button"
-                    id="btn-quick-all"
                     onClick={() => onSelectUnitScope('SEMUA_UNIT')}
-                    className={`px-3.5 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer flex items-center gap-1.5 ${
+                    className={`px-3 py-1.5 rounded-xl text-xs font-heading font-bold transition-all cursor-pointer ${
                       selectedUnitScope === 'SEMUA_UNIT'
                         ? 'bg-[#00A3AD] text-white shadow-2xs'
                         : 'bg-teal-50 text-[#00858e] border border-teal-200 hover:bg-teal-100'
                     }`}
                   >
-                    <Globe className="w-3.5 h-3.5" />
-                    <span>🌐 Semua Unit (Gabungan)</span>
+                    🌐 Semua Unit
                   </button>
                 </div>
 
@@ -468,23 +502,6 @@ export const SettingsView: React.FC<SettingsViewProps> = ({
               </div>
             )}
           </div>
-
-          {/* Clean Muted Footer Info */}
-          <div className="px-4 py-2.5 rounded-xl bg-slate-50 border border-slate-200/80 flex items-center gap-2 text-xs text-slate-500">
-            <Info className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-            <span>
-              <strong>Petunjuk:</strong> Cakupan data (<em>scope</em>) ini membatasi data yang ditampilkan di Dashboard, Data Pegawai, Notifikasi KGB & Pangkat, serta Laporan. Anda juga dapat menggantinya melalui tombol <em>scope</em> di navbar atas.
-            </span>
-          </div>
-
-          {!featureConfig.scope_data_unrestricted && (
-            <div className="p-3.5 rounded-xl bg-amber-50 border border-amber-200 flex items-center gap-2.5 text-xs text-amber-900">
-              <Info className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                <strong>Catatan Master Fitur:</strong> Mode Scope Terkunci aktif di Master Fitur. Data disajikan dan penambahan akun saat ini dibatasi hanya untuk unit kerja Dinas Kesehatan.
-              </span>
-            </div>
-          )}
         </div>
       )}
     </div>
