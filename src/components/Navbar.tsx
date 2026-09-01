@@ -40,14 +40,14 @@ export const Navbar: React.FC<NavbarProps> = ({
         <div className="flex flex-col justify-center min-w-0">
           <div className="flex items-center space-x-1.5">
             <span className="font-heading font-extrabold text-sm sm:text-base md:text-lg lg:text-xl tracking-tight text-white leading-tight truncate">
-              SIMORANG DINKES-PPKB
+              SIMPEG DIKES PPKB
             </span>
             <span className="hidden sm:inline-block bg-[#82BE00] text-[#003663] font-heading font-extrabold text-[9px] px-1.5 py-0.2 rounded font-bold">
               v2.5
             </span>
           </div>
           <span className="text-[10px] sm:text-[11px] md:text-xs text-blue-100 font-medium leading-tight truncate hidden sm:block max-w-xs sm:max-w-md md:max-w-xl lg:max-w-3xl">
-            Sistem Monitoring Ruang Kepegawaian Dinkes-PPKB Kab. Lombok Barat
+            Sistem Monitoring Pegawai Dinas Kesehatan PPKB Kab. Lombok Barat
           </span>
           <span className="text-[9px] text-blue-100/90 font-medium leading-tight truncate sm:hidden">
             Dinas Kesehatan Kab. Lombok Barat
