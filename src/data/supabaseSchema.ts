@@ -1,6 +1,6 @@
 export const SUPABASE_SCHEMA_SQL = `-- ==============================================================================
--- SKEMA LENGKAP DATABASE DARI 0 (CLEAN PRODUCTION SCHEMA - SIMORANG DINKES-PPKB)
--- SISTEM: SIMORANG DINKES-PPKB KABUPATEN LOMBOK BARAT
+-- SKEMA LENGKAP DATABASE DARI 0 (CLEAN PRODUCTION SCHEMA - SIMPEG DIKES PPKB)
+-- SISTEM: SIMPEG DIKES PPKB KABUPATEN LOMBOK BARAT
 -- (Sistem Monitoring Ruang Kepegawaian Dinas Kesehatan, Pengendalian Penduduk
 --  dan Keluarga Berencana Kab. Lombok Barat)
 -- ==============================================================================
