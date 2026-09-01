@@ -430,7 +430,7 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                   Manajemen User & Master Unit Kerja
                 </h1>
                 <p className="text-xs text-slate-500 mt-1 max-w-2xl">
-                  Atur otentikasi hak akses akun administrator dan master data unit kerja SIMORANG DINKES-PPKB.
+                  Atur otentikasi hak akses akun administrator dan master data unit kerja SIMPEG DIKES PPKB.
                 </p>
               </div>
             </div>
@@ -1549,7 +1549,7 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
                     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(pegawaiList, null, 2));
                     const downloadAnchor = document.createElement('a');
                     downloadAnchor.setAttribute("href", dataStr);
-                    downloadAnchor.setAttribute("download", `simorang_backup_pegawai_${new Date().toISOString().split('T')[0]}.json`);
+                    downloadAnchor.setAttribute("download", `simpeg_backup_pegawai_${new Date().toISOString().split('T')[0]}.json`);
                     document.body.appendChild(downloadAnchor);
                     downloadAnchor.click();
                     downloadAnchor.remove();
@@ -1600,7 +1600,7 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
               </div>
 
               <p className="text-xs text-slate-600 leading-relaxed">
-                Aplikasi SIMORANG DINKES-PPKB telah dikonfigurasi murni untuk data kepegawaian real ASN & Non-ASN. Anda dapat menambahkan data pegawai melalui modul <strong>SIMPEG Data Pegawai</strong> dan membuat unit kerja baru di tab <strong>Master Unit Kerja</strong>.
+                Aplikasi SIMPEG DIKES PPKB telah dikonfigurasi murni untuk data kepegawaian real ASN & Non-ASN. Anda dapat menambahkan data pegawai melalui modul <strong>SIMPEG Data Pegawai</strong> dan membuat unit kerja baru di tab <strong>Master Unit Kerja</strong>.
               </p>
 
               <div className="pt-2 flex flex-wrap items-center gap-3">
