@@ -45,7 +45,7 @@ export function uploadAndCreateSk(req: Request, res: Response) {
       nomor_sk: nomor_sk.trim(),
       tmt_berlaku,
       file_url: file_url || undefined,
-      keterangan: keterangan || `Diunggah via Sistem SIMORANG Dikes Lombok Barat`,
+      keterangan: keterangan || `Diunggah via Sistem SIMPEG DIKES PPKB Lombok Barat`,
       golongan_pangkat: golongan_pangkat || undefined,
       nama_pangkat: nama_pangkat || undefined,
       created_at: new Date().toISOString(),
