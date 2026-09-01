@@ -1,5 +1,5 @@
-// Service Worker SIMORANG DINKES-PPKB Kab. Lombok Barat
-const CACHE_NAME = 'simorang-cache-v1';
+// Service Worker SIMPEG DIKES PPKB Kab. Lombok Barat
+const CACHE_NAME = 'simpeg-cache-v1';
 const ASSETS_TO_CACHE = [
   '/',
   '/index.html',
