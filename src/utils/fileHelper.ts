@@ -1,5 +1,5 @@
 /**
- * File Helper Utilities for SIMORANG DINKES-PPKB
+ * File Helper Utilities for SIMPEG DIKES PPKB
  * Menangani konversi Base64, Blob URL, dan Membuka Berkas di Tab Baru dengan Pembuka Bawaan Browser
  */
 
@@ -109,11 +109,11 @@ export function openDocumentInNewTab(
       return;
     }
 
-    // 2. Jika berkas fisik belum diunggah, buat Lembar Dokumen Resmi SIMORANG di Tab Baru Browser
+    // 2. Jika berkas fisik belum diunggah, buat Lembar Dokumen Resmi SIMPEG di Tab Baru Browser
     const sk = skMetadata?.sk;
     const pegawai = skMetadata?.pegawai;
     const jenisSk = sk?.jenis_sk || 'KGB';
-    const nomorSk = sk?.nomor_sk || '821.1/SK-SIMORANG/DK-PPKB/2026';
+    const nomorSk = sk?.nomor_sk || '821.1/SK-SIMPEG/DK-PPKB/2026';
     const tmtBerlaku = sk?.tmt_berlaku ? formatDateIndonesian(sk.tmt_berlaku) : '-';
     const judul = skMetadata?.title || getJenisSkLabel(jenisSk);
 
@@ -285,7 +285,7 @@ export function openDocumentInNewTab(
             <h3>Pemerintah Kabupaten Lombok Barat</h3>
             <h2>Dinas Kesehatan dan PPKB</h2>
             <p>Jalan Soekarno - Hatta, Giri Menang, Gerung, Kabupaten Lombok Barat, NTB 83363</p>
-            <p>Sistem Informasi Monitoring dan Rekapitulasi ASN Kepegawaian (SIMORANG)</p>
+            <p>Sistem Monitoring Pegawai Dinas Kesehatan PPKB (SIMPEG DIKES PPKB)</p>
           </div>
 
           <div class="doc-title">
@@ -339,7 +339,7 @@ export function openDocumentInNewTab(
           </table>
 
           <div class="badge-box">
-            <strong>✓ Keabsahan Arsip SIMORANG:</strong> Dokumen SK ini tercatat aktif dalam pangkalan data digital SIMORANG DINKES-PPKB Lombok Barat dan memiliki kekuatan hukum administrasi kepegawaian yang sah.
+            <strong>✓ Keabsahan Arsip SIMPEG:</strong> Dokumen SK ini tercatat aktif dalam pangkalan data digital SIMPEG DIKES PPKB Lombok Barat dan memiliki kekuatan hukum administrasi kepegawaian yang sah.
           </div>
 
           <div class="footer-section">
@@ -347,7 +347,7 @@ export function openDocumentInNewTab(
               <div style="font-weight: bold; margin-bottom: 4px; color: #1e3a8a;">TANDA TANGAN ELEKTRONIK</div>
               <div style="font-size: 24px; margin: 6px 0;">🛡️</div>
               <div>Dokumen Resmi Tersertifikasi</div>
-              <div style="font-family: monospace; font-size: 7pt; color: #6b7280; margin-top: 4px;">ID: SIMORANG-DOC-${sk?.id || Date.now()}</div>
+              <div style="font-family: monospace; font-size: 7pt; color: #6b7280; margin-top: 4px;">ID: SIMPEG-DOC-${sk?.id || Date.now()}</div>
             </div>
 
             <div class="signature-box">
