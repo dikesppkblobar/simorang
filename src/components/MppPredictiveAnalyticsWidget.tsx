@@ -260,10 +260,10 @@ export const MppPredictiveAnalyticsWidget: React.FC<MppPredictiveAnalyticsWidget
       }
       if (searchTerm) {
         const q = searchTerm.toLowerCase();
-        const matchName = p.nama_lengkap.toLowerCase().includes(q);
-        const matchNip = p.nip.includes(q);
-        const matchUnit = p.unit_kerja.toLowerCase().includes(q);
-        const matchJabatan = p.jabatan_spesifik.toLowerCase().includes(q);
+        const matchName = (p.nama_lengkap && p.nama_lengkap.toLowerCase().includes(q)) || false;
+        const matchNip = (p.nip && p.nip.includes(q)) || false;
+        const matchUnit = (p.unit_kerja && p.unit_kerja.toLowerCase().includes(q)) || false;
+        const matchJabatan = (p.jabatan_spesifik && p.jabatan_spesifik.toLowerCase().includes(q)) || false;
         if (!matchName && !matchNip && !matchUnit && !matchJabatan) return false;
       }
       return true;
