@@ -168,17 +168,19 @@ export function getPegawaiTmtJafung(pegawai: Pegawai, skList: RiwayatSK[] = []):
  * HANYA menampilkan alert pegawai yang H-3 Bulan (sisa_bulan <= 3) menuju jatuh tempo di tahun berjalan atau yang sudah jatuh tempo sebelumnya.
  */
 export function calculateKgbAlerts(
-  pegawaiList: Pegawai[],
-  skList: RiwayatSK[],
+  pegawaiList: Pegawai[] = [],
+  skList: RiwayatSK[] = [],
   referenceDateStr?: string
 ): AlertKGBItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
   const currentYear = refDate.getFullYear();
-  const activePegawai = pegawaiList.filter((p) => !p.is_deleted && p.status_kepegawaian === 'PNS');
+  const safePegawaiList = Array.isArray(pegawaiList) ? pegawaiList : [];
+  const safeSkList = Array.isArray(skList) ? skList : [];
+  const activePegawai = safePegawaiList.filter((p) => p && !p.is_deleted && p.status_kepegawaian === 'PNS');
   const alerts: AlertKGBItem[] = [];
 
   for (const pegawai of activePegawai) {
-    const tmtKgbTerakhir = getPegawaiTmtKgb(pegawai, skList);
+    const tmtKgbTerakhir = getPegawaiTmtKgb(pegawai, safeSkList);
     const tmtDate = parseDate(tmtKgbTerakhir);
 
     // Tanggal jatuh tempo = TMT + 2 Tahun
@@ -489,17 +491,19 @@ export function getPeriodeBknShort(targetDate: Date): string {
  * - Belum Waktunya: Jika belum masuk waktu usulan (⚪ Aman / Belum Waktunya)
  */
 export function calculatePangkatAlerts(
-  pegawaiList: Pegawai[],
-  skList: RiwayatSK[],
+  pegawaiList: Pegawai[] = [],
+  skList: RiwayatSK[] = [],
   referenceDateStr?: string
 ): AlertPangkatItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
   const currentYear = refDate.getFullYear();
-  const activePegawai = pegawaiList.filter((p) => !p.is_deleted && p.status_kepegawaian === 'PNS');
+  const safePegawaiList = Array.isArray(pegawaiList) ? pegawaiList : [];
+  const safeSkList = Array.isArray(skList) ? skList : [];
+  const activePegawai = safePegawaiList.filter((p) => p && !p.is_deleted && p.status_kepegawaian === 'PNS');
   const alerts: AlertPangkatItem[] = [];
 
   for (const pegawai of activePegawai) {
-    const tmtPangkatTerakhir = getPegawaiTmtPangkat(pegawai, skList);
+    const tmtPangkatTerakhir = getPegawaiTmtPangkat(pegawai, safeSkList);
     const tmtDate = parseDate(tmtPangkatTerakhir);
 
     // Tanggal jatuh tempo = TMT + 4 Tahun
@@ -578,14 +582,16 @@ export function calculatePangkatAlerts(
  * Menampilkan ASN Fungsional PNS yang siap UKKJ / memenuhi target AK Kumulatif / jatuh tempo evaluasi jenjang di tahun berjalan.
  */
 export function calculateJafungAlerts(
-  pegawaiList: Pegawai[],
+  pegawaiList: Pegawai[] = [],
   skList: RiwayatSK[] = [],
   referenceDateStr?: string
 ): AlertJafungItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
   const currentYear = refDate.getFullYear();
-  const activePnsJafung = pegawaiList.filter(
-    (p) => !p.is_deleted && p.status_kepegawaian === 'PNS' && p.jenis_jabatan === 'Fungsional'
+  const safePegawaiList = Array.isArray(pegawaiList) ? pegawaiList : [];
+  const safeSkList = Array.isArray(skList) ? skList : [];
+  const activePnsJafung = safePegawaiList.filter(
+    (p) => p && !p.is_deleted && p.status_kepegawaian === 'PNS' && p.jenis_jabatan === 'Fungsional'
   );
   const alerts: AlertJafungItem[] = [];
 
@@ -610,7 +616,7 @@ export function calculateJafungAlerts(
     const targetAk = currentJenjang === 'Ahli Madya' ? 225 : currentJenjang === 'Ahli Muda' ? 150 : 100;
     const akKonversi = pegawai.ak_konversi_skp ?? 12.5;
 
-    const tmtJafungStr = getPegawaiTmtJafung(pegawai, skList);
+    const tmtJafungStr = getPegawaiTmtJafung(pegawai, safeSkList);
     const tmtDate = parseDate(tmtJafungStr);
 
     // Evaluasi jenjang: siklus 2-3 tahun TMT Jafung
@@ -648,13 +654,14 @@ export function calculateJafungAlerts(
  * Menghitung Batas Usia Pensiun (BUP)
  * Pelaksana: 58 thn, Fungsional: 60 thn (Utama 65), Struktural: 58/60 thn
  */
-export function getBUP(jenisJabatan: string, jabatanSpesifik: string): number {
+export function getBUP(jenisJabatan: string = '', jabatanSpesifik: string = ''): number {
+  const jabLower = (jabatanSpesifik || '').toLowerCase();
   if (jenisJabatan === 'Fungsional') {
-    if (jabatanSpesifik.toLowerCase().includes('utama')) return 65;
+    if (jabLower.includes('utama')) return 65;
     return 60;
   }
   if (jenisJabatan === 'Struktural') {
-    if (jabatanSpesifik.toLowerCase().includes('kepala dinas') || jabatanSpesifik.toLowerCase().includes('eselon ii')) {
+    if (jabLower.includes('kepala dinas') || jabLower.includes('eselon ii')) {
       return 60;
     }
     return 58;
@@ -668,13 +675,14 @@ export function getBUP(jenisJabatan: string, jabatanSpesifik: string): number {
  * Memberikan status peringatan tegas ketika sudah mendekati H-3 Bulan (sisa_bulan <= 3).
  */
 export function calculatePensiunAlerts(
-  pegawaiList: Pegawai[],
+  pegawaiList: Pegawai[] = [],
   referenceDateStr?: string
 ): AlertPensiunItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
   const currentYear = refDate.getFullYear();
   const nextYear = currentYear + 1;
-  const activePegawai = pegawaiList.filter((p) => !p.is_deleted);
+  const safePegawaiList = Array.isArray(pegawaiList) ? pegawaiList : [];
+  const activePegawai = safePegawaiList.filter((p) => p && !p.is_deleted);
   const alerts: AlertPensiunItem[] = [];
 
   for (const pegawai of activePegawai) {
@@ -833,24 +841,27 @@ export function calculatePensiunAlerts(
  * Menghitung Alert KP4 Anak di TAHUN BERJALAN (Batas 21 Tahun tanpa surat kuliah, Batas 25 Tahun batas maksimal)
  */
 export function calculateKp4AnakAlerts(
-  pegawaiList: Pegawai[],
-  keluargaList: KeluargaKP4[],
+  pegawaiList: Pegawai[] = [],
+  keluargaList: KeluargaKP4[] = [],
   referenceDateStr?: string
 ): AlertKP4AnakItem[] {
   const refDate = referenceDateStr ? parseDate(referenceDateStr) : new Date();
   const currentYear = refDate.getFullYear();
+  const safePegawaiList = Array.isArray(pegawaiList) ? pegawaiList : [];
+  const safeKeluargaList = Array.isArray(keluargaList) ? keluargaList : [];
   const activePegawaiMap = new Map(
-    pegawaiList.filter((p) => !p.is_deleted).map((p) => [p.nip, p])
+    safePegawaiList.filter((p) => p && !p.is_deleted).map((p) => [p.nip, p])
   );
 
-  const anakList = keluargaList.filter(
-    (k) => k.status_hubungan === 'Anak' && k.status_tanggungan && activePegawaiMap.has(k.nip_pegawai)
+  const anakList = safeKeluargaList.filter(
+    (k) => k && k.status_hubungan === 'Anak' && k.status_tanggungan && activePegawaiMap.has(k.nip_pegawai)
   );
 
   const alerts: AlertKP4AnakItem[] = [];
 
   for (const anak of anakList) {
-    const pegawai = activePegawaiMap.get(anak.nip_pegawai)!;
+    const pegawai = activePegawaiMap.get(anak.nip_pegawai);
+    if (!pegawai) continue;
     const birthDate = parseDate(anak.tanggal_lahir);
     const totalMonths = getMonthsBetween(birthDate, refDate);
 
