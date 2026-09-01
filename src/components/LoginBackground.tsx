@@ -16,7 +16,7 @@ export const LoginBackground: React.FC = () => {
       {/* User Uploaded Background Image: /public/backkgroun login.png */}
       <img
         src="/backkgroun%20login.png"
-        alt="Login Background SIMORANG"
+        alt="Login Background SIMPEG DIKES PPKB"
         className={`absolute inset-0 w-full h-full object-cover object-center transition-opacity duration-700 ${
           imageLoaded ? 'opacity-100' : 'opacity-0'
         }`}
