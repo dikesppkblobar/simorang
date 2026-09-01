@@ -136,7 +136,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
 
         const worksheet = XLSX.utils.json_to_sheet(rows);
         const workbook = XLSX.utils.book_new();
-        XLSX.utils.book_append_sheet(workbook, worksheet, 'Laporan Lengkap SIMORANG');
+        XLSX.utils.book_append_sheet(workbook, worksheet, 'Laporan Lengkap SIMPEG');
 
         // Professional Column Widths
         worksheet['!cols'] = [
@@ -191,7 +191,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           { wch: 18 }, // WA
         ];
 
-        XLSX.writeFile(workbook, `Laporan_Komprehensif_SIMORANG_DINKES_PPKB_${getTodayFormatted()}.xlsx`);
+        XLSX.writeFile(workbook, `Laporan_Komprehensif_SIMPEG_DIKES_PPKB_${getTodayFormatted()}.xlsx`);
       } catch (err) {
         console.error('Error exporting Comprehensive XLSX:', err);
       } finally {
@@ -252,7 +252,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           { wch: 24 }, // Status KGB
         ];
 
-        XLSX.writeFile(workbook, `Rekap_Pangkat_KGB_MasaKerja_SIMORANG_${getTodayFormatted()}.xlsx`);
+        XLSX.writeFile(workbook, `Rekap_Pangkat_KGB_MasaKerja_SIMPEG_${getTodayFormatted()}.xlsx`);
       } catch (err) {
         console.error('Error exporting Pangkat & KGB XLSX:', err);
       } finally {
@@ -303,7 +303,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           { wch: 20 }, // MKG
         ];
 
-        XLSX.writeFile(workbook, `Rekap_Jabatan_Fungsional_Kesehatan_SIMORANG_${getTodayFormatted()}.xlsx`);
+        XLSX.writeFile(workbook, `Rekap_Jabatan_Fungsional_Kesehatan_SIMPEG_${getTodayFormatted()}.xlsx`);
       } catch (err) {
         console.error('Error exporting Jafung XLSX:', err);
       } finally {
@@ -356,7 +356,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
           { wch: 16 }, // Semester
         ];
 
-        XLSX.writeFile(workbook, `Rekap_Tunjangan_Keluarga_KP4_SIMORANG_${getTodayFormatted()}.xlsx`);
+        XLSX.writeFile(workbook, `Rekap_Tunjangan_Keluarga_KP4_SIMPEG_${getTodayFormatted()}.xlsx`);
       } catch (err) {
         console.error('Error exporting KP4 XLSX:', err);
       } finally {
@@ -435,7 +435,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
         const ws3 = XLSX.utils.json_to_sheet(sheet3Data);
         XLSX.utils.book_append_sheet(workbook, ws3, '3. Data Tanggungan KP4');
 
-        XLSX.writeFile(workbook, `Paket_Lengkap_Laporan_SIMORANG_DINKES_PPKB_${getTodayFormatted()}.xlsx`);
+        XLSX.writeFile(workbook, `Paket_Lengkap_Laporan_SIMPEG_DIKES_PPKB_${getTodayFormatted()}.xlsx`);
       } catch (err) {
         console.error('Error exporting All-in-One XLSX:', err);
       } finally {
@@ -463,7 +463,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
                 </span>
               </div>
               <p className="text-xs text-slate-500 mt-1 max-w-2xl leading-relaxed">
-                Unduh rekapitulasi data SIMORANG DINKES-PPKB lengkap mencakup <strong>KP4 Keluarga</strong>, <strong>Pangkat (Sebelumnya & Selanjutnya)</strong>, <strong>Jafung (Sebelumnya & Selanjutnya)</strong>, <strong>Masa Kerja (MKG)</strong>, dan <strong>KGB (Sebelumnya & Selanjutnya)</strong>.
+                Unduh rekapitulasi data SIMPEG DIKES PPKB lengkap mencakup <strong>KP4 Keluarga</strong>, <strong>Pangkat (Sebelumnya & Selanjutnya)</strong>, <strong>Jafung (Sebelumnya & Selanjutnya)</strong>, <strong>Masa Kerja (MKG)</strong>, dan <strong>KGB (Sebelumnya & Selanjutnya)</strong>.
               </p>
             </div>
           </div>
@@ -517,7 +517,7 @@ export const EksporLaporanView: React.FC<EksporLaporanViewProps> = ({
               </span>
             </div>
             <h3 className="font-heading font-bold text-slate-900 text-sm mb-1">
-              Rekap Komprehensif SIMORANG
+              Rekap Komprehensif SIMPEG
             </h3>
             <p className="text-xs text-slate-500 leading-relaxed mb-4">
               Mencakup semua kolom: Pangkat, Jafung, Masa Kerja (MKG), KGB, KP4, dan NIP/NIK.
