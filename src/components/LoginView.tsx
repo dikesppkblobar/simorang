@@ -233,7 +233,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                 />
                 <div className="min-w-0">
                   <h1 className="text-base sm:text-lg font-heading font-extrabold text-[#004B87] tracking-tight leading-tight">
-                    SIMORANG DINKES-PPKB
+                    SIMPEG DIKES PPKB
                   </h1>
                   <p className="text-[11px] text-slate-500 font-medium leading-tight">
                     Kabupaten Lombok Barat
@@ -337,7 +337,7 @@ export const LoginView: React.FC<LoginViewProps> = ({
                   ) : (
                     <>
                       <LogIn className="w-4 h-4" />
-                      <span>Masuk ke Sistem SIMORANG</span>
+                      <span>Masuk ke Sistem SIMPEG</span>
                     </>
                   )}
                 </button>
