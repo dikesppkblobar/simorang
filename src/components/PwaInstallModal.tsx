@@ -110,7 +110,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                 <Sparkles className="w-3 h-3" /> Progressive Web App (PWA)
               </div>
               <h2 className="text-lg sm:text-xl font-heading font-extrabold text-white leading-tight">
-                Download & Pasang SIMORANG
+                Download & Pasang SIMPEG DIKES PPKB
               </h2>
               <p className="text-xs text-blue-100 mt-0.5">
                 Dinas Kesehatan & PPKB Kab. Lombok Barat
@@ -131,7 +131,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                 Siap Dipasang Langsung ke Perangkat Anda!
               </h3>
               <p className="text-xs text-slate-600 mt-1 max-w-md mx-auto">
-                Klik tombol di bawah untuk memasang aplikasi SIMORANG ke Desktop PC/Laptop atau Smartphone Anda dalam 1 detik.
+                Klik tombol di bawah untuk memasang aplikasi SIMPEG DIKES PPKB ke Desktop PC/Laptop atau Smartphone Anda dalam 1 detik.
               </p>
               <button
                 type="button"
@@ -151,7 +151,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
               <div className="text-xs">
                 <div className="font-bold text-emerald-950">Aplikasi Siap Diinstal Menjadi Desktop App</div>
                 <div className="text-emerald-800 mt-0.5">
-                  Anda dapat menginstal SIMORANG di Windows, macOS, atau Linux menggunakan browser Chrome, Microsoft Edge, atau browser modern lainnya.
+                  Anda dapat menginstal SIMPEG DIKES PPKB di Windows, macOS, atau Linux menggunakan browser Chrome, Microsoft Edge, atau browser modern lainnya.
                 </div>
               </div>
             </div>
@@ -203,13 +203,13 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                     Lihat bagian kanan bilah alamat (URL bar) di atas browser Anda.
                   </li>
                   <li>
-                    Cari ikon <strong className="text-slate-800">Komputer dengan panah bawah</strong> atau <strong className="text-slate-800">"Instal SIMORANG"</strong> (di samping bintang bookmark).
+                    Cari ikon <strong className="text-slate-800">Komputer dengan panah bawah</strong> atau <strong className="text-slate-800">"Instal SIMPEG DIKES PPKB"</strong> (di samping bintang bookmark).
                   </li>
                   <li>
                     Klik ikon tersebut lalu pilih <strong className="text-[#004B87]">"Instal"</strong>.
                   </li>
                   <li>
-                    Aplikasi SIMORANG akan langsung terpasang di Desktop, Start Menu, dan Taskbar Windows/Mac Anda!
+                    Aplikasi SIMPEG DIKES PPKB akan langsung terpasang di Desktop, Start Menu, dan Taskbar Windows/Mac Anda!
                   </li>
                 </ol>
               </div>
@@ -228,7 +228,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
                     Pilih menu <strong className="text-slate-800">"Simpan dan bagikan"</strong> atau <strong className="text-slate-800">"Aplikasi / Apps"</strong>.
                   </li>
                   <li>
-                    Klik <strong className="text-[#004B87]">"Instal SIMORANG..."</strong> atau <strong className="text-[#004B87]">"Instal situs ini sebagai aplikasi"</strong>.
+                    Klik <strong className="text-[#004B87]">"Instal SIMPEG DIKES PPKB..."</strong> atau <strong className="text-[#004B87]">"Instal situs ini sebagai aplikasi"</strong>.
                   </li>
                 </ol>
               </div>
@@ -286,7 +286,7 @@ export const PwaInstallModal: React.FC<PwaInstallModalProps> = ({
         {/* Modal Footer */}
         <div className="p-4 bg-slate-50 border-t border-slate-200 flex items-center justify-between shrink-0">
           <span className="text-[11px] text-slate-500">
-            SIMORANG PWA Standalone Engine v2.5
+            SIMPEG DIKES PPKB PWA Standalone Engine v2.5
           </span>
           <button
             type="button"
