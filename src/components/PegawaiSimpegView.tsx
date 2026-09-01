@@ -871,7 +871,7 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
       <div className="bg-white rounded-xl border border-[#E2E8F0] shadow-xs overflow-hidden">
         <div className="px-6 py-3.5 bg-[#F8FAFC] border-b border-[#E2E8F0] flex items-center justify-between">
           <span className="text-xs font-heading font-bold text-[#1E293B] uppercase tracking-wider">
-            DATA PEGAWAI SIMORANG DINKES-PPKB ({filteredPegawai.length} DATA PEGAWAI)
+            DATA PEGAWAI SIMPEG DIKES PPKB ({filteredPegawai.length} DATA PEGAWAI)
           </span>
         </div>
 
