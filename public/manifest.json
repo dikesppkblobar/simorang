@@ -1,8 +1,8 @@
 {
   "id": "/?source=pwa",
-  "short_name": "SIMORANG",
-  "name": "SIMORANG DINKES-PPKB Kab. Lombok Barat",
-  "description": "Sistem Monitoring Ruang Kepegawaian Dinas Kesehatan, Pengendalian Penduduk dan Keluarga Berencana Kab. Lombok Barat",
+  "short_name": "SIMPEG DIKES PPKB",
+  "name": "SIMPEG DIKES PPKB Kab. Lombok Barat",
+  "description": "Sistem Monitoring Pegawai Dinas Kesehatan PPKB Kab. Lombok Barat",
   "categories": [
     "productivity",
     "government",
