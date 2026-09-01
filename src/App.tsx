@@ -124,9 +124,20 @@ export default function App() {
   });
 
   // Selected Unit Scope Filter ('Dinas Kesehatan Kab. Lombok Barat', 'SEMUA_UNIT', or specific unit)
-  const [selectedUnitScope, setSelectedUnitScope] = useState<string>(
-    'Dinas Kesehatan Kab. Lombok Barat'
-  );
+  const [selectedUnitScope, setSelectedUnitScope] = useState<string>(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('simpeg_selected_unit_scope');
+      if (saved) return saved;
+    }
+    return 'Dinas Kesehatan Kab. Lombok Barat';
+  });
+
+  const handleSelectUnitScope = (scope: string) => {
+    setSelectedUnitScope(scope);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('simpeg_selected_unit_scope', scope);
+    }
+  };
 
   // Modal Upload SK
   const [isUploadSkModalOpen, setIsUploadSkModalOpen] = useState(false);
@@ -871,10 +882,10 @@ export default function App() {
                     </div>
                     <div>
                       <div className="font-heading font-extrabold text-sm tracking-tight text-white leading-tight">
-                        SIMORANG
+                        SIMPEG DIKES PPKB
                       </div>
                       <div className="text-[10px] text-blue-100 font-medium">
-                        DINKES-PPKB Lombok Barat
+                        Kabupaten Lombok Barat
                       </div>
                     </div>
                   </div>
@@ -1034,22 +1045,11 @@ export default function App() {
                 </div>
 
                 {/* Fixed Drawer Footer */}
-                <div className="p-3.5 border-t border-slate-100 bg-slate-50 shrink-0 space-y-2">
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setIsMobileDrawerOpen(false);
-                      setIsPwaModalOpen(true);
-                    }}
-                    className="w-full bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 text-[#004B87] py-2 px-3 rounded-xl flex items-center justify-center gap-2 text-xs font-heading font-bold transition-all cursor-pointer shadow-2xs"
-                  >
-                    <Download className="w-4 h-4 text-[#004B87]" />
-                    <span>Download / Pasang Aplikasi (PWA)</span>
-                  </button>
-                  <div className="text-[11px] text-slate-500 text-center font-medium">
-                    SIMORANG DINKES-PPKB
+                <div className="p-3.5 border-t border-slate-100 bg-slate-50 shrink-0 space-y-1 text-center">
+                  <div className="text-xs text-slate-700 font-heading font-bold">
+                    SIMPEG DIKES PPKB
                   </div>
-                  <div className="text-[10px] text-slate-400 text-center font-mono">
+                  <div className="text-[10px] text-slate-400 font-mono">
                     Kabupaten Lombok Barat v2.5
                   </div>
                 </div>
@@ -1251,44 +1251,18 @@ export default function App() {
             </nav>
           </div>
 
-          {/* Desktop PWA App Download Card in Sidebar Footer */}
+          {/* Desktop Sidebar Footer */}
           {!isSidebarCollapsed ? (
-            <div className="p-3 border-t border-slate-100 bg-slate-50/90 shrink-0 space-y-2">
-              <button
-                type="button"
-                onClick={() => setIsPwaModalOpen(true)}
-                className="w-full group bg-gradient-to-r from-blue-50 to-indigo-50 hover:from-blue-100 hover:to-indigo-100 border border-blue-200 rounded-xl p-2.5 flex items-center gap-2.5 transition-all text-left shadow-2xs cursor-pointer"
-                title="Download & Pasang Aplikasi Desktop (PWA)"
-              >
-                <div className="w-8 h-8 rounded-lg bg-[#004B87] text-white flex items-center justify-center shrink-0 shadow-xs group-hover:scale-105 transition-transform">
-                  <Download className="w-4 h-4" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="text-[11px] font-heading font-bold text-slate-800 flex items-center justify-between">
-                    <span>Desktop App</span>
-                    <span className="text-[9px] bg-[#82BE00] text-white font-extrabold px-1.5 py-0.2 rounded shadow-2xs">
-                      PWA
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-slate-500 truncate">
-                    Pasang di PC &amp; Laptop
-                  </div>
-                </div>
-              </button>
-              <div className="text-[10px] text-slate-400 font-mono text-center">
-                SIMORANG DINKES-PPKB v2.5
+            <div className="p-3 border-t border-slate-100 bg-slate-50/90 shrink-0 text-center">
+              <div className="text-[11px] font-heading font-bold text-slate-700">
+                SIMPEG DIKES PPKB
+              </div>
+              <div className="text-[10px] text-slate-400 font-mono">
+                Kabupaten Lombok Barat v2.5
               </div>
             </div>
           ) : (
-            <div className="p-2 border-t border-slate-100 bg-slate-50/80 shrink-0 flex flex-col items-center gap-1.5">
-              <button
-                type="button"
-                onClick={() => setIsPwaModalOpen(true)}
-                title="Download / Pasang Desktop App"
-                className="w-9 h-9 rounded-xl bg-blue-50 hover:bg-blue-100 text-[#004B87] border border-blue-200 flex items-center justify-center transition-all shadow-2xs cursor-pointer"
-              >
-                <Download className="w-4 h-4" />
-              </button>
+            <div className="p-2.5 border-t border-slate-100 bg-slate-50/80 shrink-0 flex flex-col items-center">
               <span className="text-[9px] font-mono text-slate-400 font-bold">v2.5</span>
             </div>
           )}
@@ -1384,7 +1358,7 @@ export default function App() {
                 <SettingsView
                   currentUser={currentUser}
                   selectedUnitScope={selectedUnitScope}
-                  onSelectUnitScope={setSelectedUnitScope}
+                  onSelectUnitScope={handleSelectUnitScope}
                   unitsList={unitsList}
                   usersList={usersList}
                   pegawaiList={pegawaiList}
@@ -1410,7 +1384,7 @@ export default function App() {
                 <SettingsView
                   currentUser={currentUser}
                   selectedUnitScope={selectedUnitScope}
-                  onSelectUnitScope={setSelectedUnitScope}
+                  onSelectUnitScope={handleSelectUnitScope}
                   unitsList={unitsList}
                   usersList={usersList}
                   pegawaiList={pegawaiList}
@@ -1436,7 +1410,7 @@ export default function App() {
                 <SettingsView
                   currentUser={currentUser}
                   selectedUnitScope={selectedUnitScope}
-                  onSelectUnitScope={setSelectedUnitScope}
+                  onSelectUnitScope={handleSelectUnitScope}
                   unitsList={unitsList}
                   usersList={usersList}
                   pegawaiList={pegawaiList}
