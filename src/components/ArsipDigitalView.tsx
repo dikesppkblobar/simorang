@@ -845,7 +845,7 @@ export const ArsipDigitalView: React.FC<ArsipDigitalViewProps> = ({
                   Hapus Berkas Arsip Digital?
                 </h3>
                 <p className="text-xs text-slate-500 leading-relaxed">
-                  Tindakan ini akan menghapus dokumen berkas ini secara permanen dari database Supabase dan histori SIMORANG.
+                  Tindakan ini akan menghapus dokumen berkas ini secara permanen dari database Supabase dan histori SIMPEG DIKES PPKB.
                 </p>
               </div>
             </div>
