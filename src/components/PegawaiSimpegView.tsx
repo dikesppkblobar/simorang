@@ -644,7 +644,9 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
   };
 
   // Filtered List
-  const filteredPegawai = pegawaiList.filter((p) => {
+  const safePegawaiList = Array.isArray(pegawaiList) ? pegawaiList : [];
+  const filteredPegawai = safePegawaiList.filter((p) => {
+    if (!p) return false;
     if (!showDeleted && p.is_deleted) return false;
     if (showDeleted && !p.is_deleted) return false;
 
@@ -654,10 +656,10 @@ export const PegawaiSimpegView: React.FC<PegawaiSimpegViewProps> = ({
     if (searchTerm.trim() !== '') {
       const q = searchTerm.toLowerCase();
       return (
-        p.nip.includes(q) ||
+        (p.nip && p.nip.includes(q)) ||
         (p.nik && p.nik.includes(q)) ||
-        p.nama_lengkap.toLowerCase().includes(q) ||
-        p.unit_kerja.toLowerCase().includes(q) ||
+        (p.nama_lengkap && p.nama_lengkap.toLowerCase().includes(q)) ||
+        (p.unit_kerja && p.unit_kerja.toLowerCase().includes(q)) ||
         (p.jabatan_spesifik && p.jabatan_spesifik.toLowerCase().includes(q)) ||
         (p.profesi_sdmk && p.profesi_sdmk.toLowerCase().includes(q)) ||
         (p.pendidikan_terakhir && p.pendidikan_terakhir.toLowerCase().includes(q)) ||
