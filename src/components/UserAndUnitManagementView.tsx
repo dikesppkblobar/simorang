@@ -380,21 +380,24 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
       const query = userSearch.toLowerCase().trim();
       const matchSearch =
-        u.nama_lengkap.toLowerCase().includes(query) ||
-        u.username.toLowerCase().includes(query) ||
-        u.email.toLowerCase().includes(query) ||
+        (u.nama_lengkap && u.nama_lengkap.toLowerCase().includes(query)) ||
+        (u.username && u.username.toLowerCase().includes(query)) ||
+        (u.email && u.email.toLowerCase().includes(query)) ||
         (u.nip && u.nip.toLowerCase().includes(query)) ||
-        u.unit_kerja.toLowerCase().includes(query);
+        (u.unit_kerja && u.unit_kerja.toLowerCase().includes(query));
       const matchRole = roleFilter === 'Semua' || u.role === roleFilter;
       return matchSearch && matchRole;
     });
   }, [usersList, userSearch, roleFilter, currentUser, featureConfig.scope_data_unrestricted, unitsList]);
 
-  const filteredUnits = unitsList.filter((u) => {
+  const safeUnitsList = Array.isArray(unitsList) ? unitsList : [];
+  const filteredUnits = safeUnitsList.filter((u) => {
+    if (!u) return false;
+    const uQuery = (unitSearch || '').toLowerCase();
     const matchSearch =
-      u.nama_unit.toLowerCase().includes(unitSearch.toLowerCase()) ||
-      u.kode_unit.toLowerCase().includes(unitSearch.toLowerCase()) ||
-      (u.kepala_unit && u.kepala_unit.toLowerCase().includes(unitSearch.toLowerCase()));
+      (u.nama_unit && u.nama_unit.toLowerCase().includes(uQuery)) ||
+      (u.kode_unit && u.kode_unit.toLowerCase().includes(uQuery)) ||
+      (u.kepala_unit && u.kepala_unit.toLowerCase().includes(uQuery));
     const matchKat =
       kategoriFilter === 'Semua' ||
       (kategoriFilter === 'Dinas'
@@ -405,10 +408,13 @@ export const UserAndUnitManagementView: React.FC<UserAndUnitManagementViewProps>
 
   // Calculate live pegawai count per unit
   const getPegawaiCountForUnit = (unitName: string) => {
+    if (!unitName) return 0;
     const uLower = unitName.toLowerCase().trim();
-    return pegawaiList.filter(
+    const safePegawai = Array.isArray(pegawaiList) ? pegawaiList : [];
+    return safePegawai.filter(
       (p) =>
-        !p.is_deleted &&
+        p && !p.is_deleted &&
+        p.unit_kerja &&
         (p.unit_kerja.toLowerCase().trim() === uLower ||
           p.unit_kerja.toLowerCase().includes(uLower) ||
           uLower.includes(p.unit_kerja.toLowerCase().trim()))
